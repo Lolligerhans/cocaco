@@ -7,7 +7,7 @@
 
 #explorer-tbl {
     position: absolute;
-    background-color: white;
+    background-color: gray;
     z-index: 9999;
     top: 10px;
     left: 10px;
@@ -35,6 +35,8 @@
 .explorer-tbl-cell {
     border: none;
     box-sizing: unset;
+    color: black;
+    font-weight: bold;
     padding: 0 2px;
     text-align: center;
     line-height: 3em;
@@ -55,6 +57,7 @@
 }
 
 .explorer-tbl-player-name {
+    font-weight: bold;
     margin: 0px 10px 0 4px;
 }
 
