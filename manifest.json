@@ -16,7 +16,7 @@
           "matches": ["https://colonist.io/*"],
           "css": ["styles.css"],
           "run_at": "document_idle",
-          "js": ["explorer.js"]
+          "js": ["explorer.js", "plot.js", "plotly-2.20.0.min.js"]
         }
       ]
 }

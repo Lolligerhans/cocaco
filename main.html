@@ -1,8 +1,84 @@
+
 <html>
+
     <head>
+        <link rel="stylesheet" href="styles.css">
         <script src="explorer.js"></script>
+        <script src="data.js"></script>
+        <script src="plot.js"></script>
+        <script src="plotly-2.20.0.min.js"></script>
     </head>
 </html>
+
 <body>
-    <button onclick="worldTest()">Run worldTest()"</button>
+
+    <div> <button onclick="plotTest()">Run plotTest()</button> </div>
+    <div id="testPlotDiv" class="plot-window"></div>
+    <div> <button onclick="bubbleTest()">Run bubble test</button> </div>
+    <div id="testBubblePlotDivision" class="plot-window"></div>
+    <div> <button onclick="worldTest()">Run worldTest()</button> </div>
+
+
+    <!--This is the table layout copied verbatim. Will be outdated eventually. Use for testing layouting-->
+    <div>
+    <table id="explorer-tbl" cellspacing="0" cellpadding="0" border="2">
+        <thead class="explorer-tbl-header">
+            <tr>
+                <td class="explorer-tbl-player-col-header">Guess (Chance)</td>
+                <td class="explorer-tbl-cell"> <img src="https://colonist.io/dist/images/card_lumber.svg" class="explorer-tbl-resource-icon"></td>
+                <td class="explorer-tbl-cell"> <img src="https://colonist.io/dist/images/card_brick.svg" class="explorer-tbl-resource-icon"></td>
+                <td class="explorer-tbl-cell"> <img src="https://colonist.io/dist/images/card_wool.svg" class="explorer-tbl-resource-icon"></td>
+                <td class="explorer-tbl-cell"> <img src="https://colonist.io/dist/images/card_grain.svg" class="explorer-tbl-resource-icon"></td>
+                <td class="explorer-tbl-cell"> <img src="https://colonist.io/dist/images/card_ore.svg" class="explorer-tbl-resource-icon"></td></tr></thead>
+        <tbody>
+            <tr class="explorer-tbl-row">
+                <td class="explorer-tbl-player-col-cell">
+
+                    <div class="explorer-tbl-player-col-cell-color" style="background-color:blue"></div>
+
+                    <span class="explorer-tbl-player-name" style="color:blue">Leon</span>
+                </td>
+                <td class="explorer-tbl-cell">0<br>(0.67)</td>
+                <td class="explorer-tbl-cell">0<br>(0.67)</td>
+                <td class="explorer-tbl-cell">1</td>
+                <td class="explorer-tbl-cell">2</td>
+                <td class="explorer-tbl-cell">0<br>(0.67)</td></tr>
+            <tr class="explorer-tbl-row">
+                <td class="explorer-tbl-player-col-cell">
+
+                    <div class="explorer-tbl-player-col-cell-color" style="background-color:orange"></div>
+
+                    <span class="explorer-tbl-player-name" style="color:orange">Charles</span>
+                </td>
+                <td class="explorer-tbl-cell">1<br>(0.67)</td>
+                <td class="explorer-tbl-cell">2<br>(0.67)</td>
+                <td class="explorer-tbl-cell">0</td>
+                <td class="explorer-tbl-cell">0</td>
+                <td class="explorer-tbl-cell">1<br>(0.67)</td></tr>
+            <tr class="explorer-tbl-row">
+                <td class="explorer-tbl-player-col-cell">
+
+                    <div class="explorer-tbl-player-col-cell-color" style="background-color:green"></div>
+
+                    <span class="explorer-tbl-player-name" style="color:green">Ennie</span>
+                </td>
+                <td class="explorer-tbl-cell">0</td>
+                <td class="explorer-tbl-cell">2</td>
+                <td class="explorer-tbl-cell">2</td>
+                <td class="explorer-tbl-cell">0</td>
+                <td class="explorer-tbl-cell">0</td></tr>
+            <tr class="explorer-tbl-row">
+                <td class="explorer-tbl-player-col-cell">
+
+                    <div class="explorer-tbl-player-col-cell-color" style="background-color:red"></div>
+
+                    <span class="explorer-tbl-player-name" style="color:red">John#1234</span>
+                </td>
+                <td class="explorer-tbl-cell">2</td>
+                <td class="explorer-tbl-cell">0</td>
+                <td class="explorer-tbl-cell">0</td>
+                <td class="explorer-tbl-cell">1</td>
+                <td class="explorer-tbl-cell">1</td>
+            </tr></tbody></table>
+    </div>
 </body>

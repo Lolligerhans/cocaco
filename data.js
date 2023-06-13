@@ -1,0 +1,330 @@
+//============================================================
+// Example Data
+//============================================================
+
+const example_players = ["Leon", "Charles", "Ennie", "John#1234"];
+const example_mw_human =
+[
+{"Leon":
+    {"wood":11,"brick":1,"sheep":1,"wheat":0,"ore":3},"Charles":
+    {"wood":0,"brick":1,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.004359831419851763},
+{"Leon":
+    {"wood":10,"brick":2,"sheep":1,"wheat":0,"ore":3},"Charles":
+    {"wood":1,"brick":0,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.004359831419851763},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":2,"wheat":0,"ore":3},"Charles":
+    {"wood":1,"brick":1,"sheep":6,"wheat":0,"ore":4},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.030518819938962338},
+{"Leon":
+    {"wood":11,"brick":1,"sheep":0,"wheat":0,"ore":4},"Charles":
+    {"wood":0,"brick":1,"sheep":8,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0010899578549629408},
+{"Leon":
+    {"wood":11,"brick":1,"sheep":0,"wheat":0,"ore":4},"Charles":
+    {"wood":0,"brick":1,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0010899578549629406},
+{"Leon":
+    {"wood":10,"brick":2,"sheep":0,"wheat":0,"ore":4},"Charles":
+    {"wood":1,"brick":0,"sheep":8,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0010899578549629408},
+{"Leon":
+    {"wood":10,"brick":2,"sheep":0,"wheat":0,"ore":4},"Charles":
+    {"wood":1,"brick":0,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0010899578549629406},
+{"Leon":
+    {"wood":11,"brick":0,"sheep":1,"wheat":0,"ore":4},"Charles":
+    {"wood":0,"brick":2,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0010899578549629408},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":1,"wheat":0,"ore":4},"Charles":
+    {"wood":1,"brick":1,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.01416945211451823},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":1,"wheat":0,"ore":4},"Charles":
+    {"wood":1,"brick":1,"sheep":6,"wheat":0,"ore":4},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.007629704984740586},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":1,"wheat":0,"ore":4},"Charles":
+    {"wood":0,"brick":1,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.015259409969481172},
+{"Leon":
+    {"wood":9,"brick":2,"sheep":1,"wheat":0,"ore":4},"Charles":
+    {"wood":2,"brick":0,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.010899578549629406},
+{"Leon":
+    {"wood":9,"brick":2,"sheep":1,"wheat":0,"ore":4},"Charles":
+    {"wood":1,"brick":0,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.015259409969481172},
+{"Leon":
+    {"wood":10,"brick":0,"sheep":2,"wheat":0,"ore":4},"Charles":
+    {"wood":1,"brick":2,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.007629704984740584},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":2,"wheat":0,"ore":4},"Charles":
+    {"wood":2,"brick":1,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.07629704984740585},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":2,"wheat":0,"ore":4},"Charles":
+    {"wood":1,"brick":1,"sheep":6,"wheat":0,"ore":4},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.10681586978636819},
+{"Leon":
+    {"wood":11,"brick":0,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":0,"brick":2,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.00021799157099258815},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":1,"sheep":8,"wheat":0,"ore":2},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0032698735648888223},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":1,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0019619241389332936},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":0,"brick":1,"sheep":8,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0030518819938962346},
+{"Leon":
+    {"wood":10,"brick":1,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":0,"brick":1,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0008719662839703526},
+{"Leon":
+    {"wood":9,"brick":2,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":2,"brick":0,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0021799157099258813},
+{"Leon":
+    {"wood":9,"brick":2,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":0,"sheep":8,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0030518819938962346},
+{"Leon":
+    {"wood":9,"brick":2,"sheep":0,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":0,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0008719662839703526},
+{"Leon":
+    {"wood":10,"brick":0,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":2,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0032698735648888223},
+{"Leon":
+    {"wood":10,"brick":0,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":2,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0015259409969481173},
+{"Leon":
+    {"wood":10,"brick":0,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":0,"brick":2,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0030518819938962346},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":2,"brick":1,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":4,"brick":0,"sheep":9,"wheat":0,"ore":6},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.03269873564888822},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":2,"brick":1,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.015259409969481172},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":1,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.03662258392675481},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":1,"sheep":6,"wheat":0,"ore":4},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.006103763987792469},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":0,"brick":1,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.007847696555733173},
+{"Leon":
+    {"wood":8,"brick":2,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":2,"brick":0,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.02746693794506611},
+{"Leon":
+    {"wood":8,"brick":2,"sheep":1,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":0,"sheep":7,"wheat":0,"ore":4},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.007847696555733173},
+{"Leon":
+    {"wood":9,"brick":0,"sheep":2,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":2,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.02136317395727364},
+{"Leon":
+    {"wood":8,"brick":1,"sheep":2,"wheat":0,"ore":5},"Charles":
+    {"wood":2,"brick":1,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.19226856561546277},
+{"Leon":
+    {"wood":8,"brick":1,"sheep":2,"wheat":0,"ore":5},"Charles":
+    {"wood":1,"brick":1,"sheep":6,"wheat":0,"ore":4},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.05493387589013222},
+{"Leon":
+    {"wood":10,"brick":0,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":2,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0006539747129777645},
+{"Leon":
+    {"wood":10,"brick":0,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":0,"brick":2,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.00014532771399505877},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":2,"brick":1,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":4,"brick":0,"sheep":10,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.006539747129777645},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":1,"sheep":8,"wheat":0,"ore":2},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.009155645981688703},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":1,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.001307949425955529},
+{"Leon":
+    {"wood":9,"brick":1,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":0,"brick":1,"sheep":8,"wheat":0,"ore":3},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.001307949425955529},
+{"Leon":
+    {"wood":8,"brick":2,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":2,"brick":0,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.001307949425955529},
+{"Leon":
+    {"wood":8,"brick":2,"sheep":0,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":0,"sheep":8,"wheat":0,"ore":3},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.001307949425955529},
+{"Leon":
+    {"wood":9,"brick":0,"sheep":1,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":2,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.009155645981688703},
+{"Leon":
+    {"wood":9,"brick":0,"sheep":1,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":2,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.0010172939979654115},
+{"Leon":
+    {"wood":9,"brick":0,"sheep":1,"wheat":0,"ore":6},"Charles":
+    {"wood":0,"brick":2,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.001307949425955529},
+{"Leon":
+    {"wood":8,"brick":1,"sheep":1,"wheat":0,"ore":6},"Charles":
+    {"wood":2,"brick":1,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":5,"brick":0,"sheep":9,"wheat":0,"ore":5},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.08240081383519833},
+{"Leon":
+    {"wood":8,"brick":1,"sheep":1,"wheat":0,"ore":6},"Charles":
+    {"wood":2,"brick":1,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.009155645981688703},
+{"Leon":
+    {"wood":8,"brick":1,"sheep":1,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":1,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.014387443685510816},
+{"Leon":
+    {"wood":7,"brick":2,"sheep":1,"wheat":0,"ore":6},"Charles":
+    {"wood":2,"brick":0,"sheep":7,"wheat":0,"ore":3},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.010463595407644232},
+{"Leon":
+    {"wood":8,"brick":0,"sheep":2,"wheat":0,"ore":6},"Charles":
+    {"wood":1,"brick":2,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.009155645981688703},
+{"Leon":
+    {"wood":7,"brick":1,"sheep":2,"wheat":0,"ore":6},"Charles":
+    {"wood":2,"brick":1,"sheep":6,"wheat":0,"ore":3},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.07324516785350962},
+{"Leon":
+    {"wood":9,"brick":0,"sheep":0,"wheat":0,"ore":7},"Charles":
+    {"wood":1,"brick":2,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.00043598314198517636},
+{"Leon":
+    {"wood":8,"brick":1,"sheep":0,"wheat":0,"ore":7},"Charles":
+    {"wood":2,"brick":1,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":5,"brick":0,"sheep":10,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.003923848277866587},
+{"Leon":
+    {"wood":8,"brick":1,"sheep":0,"wheat":0,"ore":7},"Charles":
+    {"wood":1,"brick":1,"sheep":8,"wheat":0,"ore":2},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.003923848277866586},
+{"Leon":
+    {"wood":8,"brick":0,"sheep":1,"wheat":0,"ore":7},"Charles":
+    {"wood":1,"brick":2,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.003923848277866586},
+{"Leon":
+    {"wood":7,"brick":1,"sheep":1,"wheat":0,"ore":7},"Charles":
+    {"wood":2,"brick":1,"sheep":7,"wheat":0,"ore":2},"Ennie":
+    {"wood":6,"brick":0,"sheep":9,"wheat":0,"ore":4},"John#1234":
+    {"wood":2,"brick":1,"sheep":2,"wheat":2,"ore":0},"chance":0.03139078622293269}
+];
+// Generate fake player and color mappigns
+const example_player_colors =
+{
+    [example_players[0]]: "blue",
+    [example_players[1]]: "green",
+    [example_players[2]]: "orange",
+    [example_players[3]]: "red"
+};
+
+const example_mw = mwHumanReadableToMwFormat(
+    example_mw_human, example_players);
+
+const example_guessAndRange =
+{"Leon":
+    {"wood":[7,0.4120040691759916,8,11],"brick":[0,0.8488591774451386,1,2],"sheep":[0,0.572227873855544,2,2],"wheat":[0,1.0000000000000002,0,0],"ore":[3,0.42573753814852466,5,7]},"Charles":
+    {"wood":[0,0.5754977474204328,2,2],"brick":[0,0.8488591774451386,1,2],"sheep":[6,0.6129196337741605,6,8],"wheat":[0,1.0000000000000002,0,0],"ore":[2,0.5443976166254901,3,4]},"Ennie":
+    {"wood":[4,0.5500653974712976,5,6],"brick":[0,1.0000000000000002,0,0],"sheep":[9,0.9367097805551516,9,10],"wheat":[0,1.0000000000000002,0,0],"ore":[4,0.5630722278738551,5,6]},"John#1234":
+    {"wood":[2,1.0000000000000002,2,2],"brick":[1,1.0000000000000002,1,1],"sheep":[2,1.0000000000000002,2,2],"wheat":[2,1.0000000000000002,2,2],"ore":[0,1.0000000000000002,0,0]}
+};
+
+const example_mwDistribution =
+{"Leon":
+    {"wood":[0,0,0,0,0,0,0,0.11509954948408654,0.4120040691759916,0.3654992006975728,0.09954948408661525,0.007847696555733174,0,0,0,0,0,0,0,0],"brick":[0.06394419415782586,0.8488591774451386,0.08719662839703525,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"sheep":[0.04984740590030516,0.3779247202441503,0.572227873855544,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"wheat":[1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ore":[0,0,0,0.039238482778665866,0.2594099694811799,0.42573753814852466,0.23201569539311137,0.043598314198517625,0,0,0,0,0,0,0,0,0,0,0,0]},"Charles":
+    {"wood":[0.04069175991861646,0.3838104926609502,0.5754977474204328,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"brick":[0.08719662839703525,0.8488591774451386,0.06394419415782586,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"sheep":[0,0,0,0,0,0,0.6129196337741605,0.3598314198517655,0.027248946374073525,0,0,0,0,0,0,0,0,0,0,0],"wheat":[1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ore":[0,0,0.19074262461851466,0.5443976166254901,0.2648597587559946,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"Ennie":
+    {"wood":[0,0,0,0,0.2288911495422175,0.5500653974712976,0.22104345298648437,0,0,0,0,0,0,0,0,0,0,0,0,0],"brick":[1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"sheep":[0,0,0,0,0,0,0,0,0,0.9367097805551516,0.0632902194448481,0,0,0,0,0,0,0,0,0],"wheat":[1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ore":[0,0,0,0,0.24618514750762954,0.5630722278738551,0.1907426246185146,0,0,0,0,0,0,0,0,0,0,0,0,0]},"John#1234":
+    {"wood":[0,0,1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"brick":[0,1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"sheep":[0,0,1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"wheat":[0,0,1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ore":[1.0000000000000002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
+};

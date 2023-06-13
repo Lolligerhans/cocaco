@@ -2,14 +2,22 @@
 // CONFIG
 //============================================================
 let configDoAlert = true;
-let configPrintWorlds = true;   // Activate console logging of MW state
+let configPrintWorlds = false;   // Activate console logging of MW state
 let configRunManyWorldsTest = false;    // Run test and quit. Not a full unit test.
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
+const configPlotBubbles = true;
 
 //============================================================
 // Logging helpers
 //============================================================
+
+console.log("[INFO]",
+    "| configDoAlert:", configDoAlert,
+    "| configPrintWorlds:", configPrintWorlds,
+    "| configRunManyWorldsTest:", configRunManyWorldsTest,
+    "| configFixedPlayerName:", configFixedPlayerName,
+    "| configPlayerName:", configPlayerName);
 
 function p(object)
 {
@@ -25,13 +33,13 @@ function log(...args)
 // Log stringified
 function logs(...args)
 {
-    log(args.map( x => p(x) ));
+    log(...args.map( x => p(x) ));
 }
 
 function log2(...args)
 {
-    log("As Object:", ...args);
-    logs("As string:", ...args);
+    log(...args);
+    logs(...args);
 }
 
 let mainLoopInterval;
@@ -71,8 +79,7 @@ let resourceTypes = [wood, brick, sheep, wheat, ore];   // MW depends on this
 let players = [];   // MW depends on this
 let player_colors = {}; // player -> hex
 
-// Per player per resource
-//let resources = {}; // MW depends on this
+const bubblePlotId = "explorer-plt";
 
 // Message offset
 let MSG_OFFSET = 0;
@@ -173,6 +180,8 @@ function findAllResourceCardsInHtml(html)
 //============================================================
 // ManyWorlds 0.0.1
 //============================================================
+
+// TODO Use typed array
 
 // ManyWorlds terms
 //  1) Slice: Range [0, 19] needed. 5 bit value. 1 bit overflow. 5 * 6 bit = 30
@@ -301,6 +310,19 @@ function generateFullNamesFromSlice(slice)
     return res;
 }
 
+function generateFullNamesFromWorld(world)
+{
+    let sum = 0;
+    for (const player of Object.keys(world))
+//    for (let i = 0; i < players.length; ++i)
+    {
+        // TODO Treat chance separate to players, outside of the world object
+        if (player === "chance") continue;
+        sum += world[player];
+    }
+    return generateFullNamesFromSlice(sum);
+}
+
 // res = {ore: "1", wheat: "2", ...}
 function generateWorldSlice(res)
 {
@@ -321,6 +343,42 @@ function worldHasNegativeSlice(world)
             return true;
     }
     return false;
+}
+
+// Return manyworlds data in human readable notation instead of slices. Use
+// this when you want to export the MW state.
+function mwHumanReadableWorld()
+{
+    let mwClone = deepCopy(manyWorlds);
+
+    for (let i = 0; i < manyWorlds.length; ++i)
+    {
+        for (player of players)
+        {
+            mwClone[i][player] = generateFullNamesFromSlice(
+                manyWorlds[i][player]);
+        }
+    }
+    return mwClone;
+}
+
+function mwHumanReadableToMwFormat(humanReadableMw, playerNames = players)
+{
+    let constructedMw = [];
+
+    for(let i = 0; i < humanReadableMw.length; ++i)
+    {
+        constructedMw[i] = {};
+        for (player of playerNames)
+        {
+//            debugger;
+            constructedMw[i][player] = generateFullSliceFromNames(
+                humanReadableMw[i][player]);
+        }
+        constructedMw[i]["chance"] = humanReadableMw[i]["chance"];
+    }
+
+    return constructedMw;
 }
 
 function printWorlds()
@@ -606,6 +664,7 @@ function normalizeManyWorlds()
 
 // The global analyis/stats object
 let worldGuessAndRange = {};
+let mwDistribution = {};
 
 // Generate
 //  - Minimal resource distribution
@@ -622,16 +681,16 @@ function updateWorldGuessAndRange()
     //               "B": {wood:[...] ...                                  },
     //               ...
     //              }
-    let distribution = {};
+//    mwDistribution = {};
     for (player of players)
     {
-        distribution[player] = {};
+        mwDistribution[player] = {};
         for (res of resourceTypes)
         {
             // At most 19 cards because there are only 19 cards per resource
             //  Accumulated chance of player having exactly 4 of this resource
             //                                ~~~v~~~
-            distribution[player][res] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+            mwDistribution[player][res] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
         }
     }
 
@@ -645,7 +704,7 @@ function updateWorldGuessAndRange()
                 const countInWorld = getResourceCountOfSlice(
                     w[worldPlayerIndex(player)],
                     worldResourceIndex(res));   // Helper uses indices
-                distribution[player][res][countInWorld] += w["chance"];
+                mwDistribution[player][res][countInWorld] += w["chance"];
             }
         }
     });
@@ -661,7 +720,7 @@ function updateWorldGuessAndRange()
             let range = [19, 0, 0, 0]; // [ smallest_nonzero_index,
                                     //   max_chance, index_of_max_count
                                     //   largest_nonzero_index ]
-            let maxIndex = distribution[player][res].reduce((r, val, idx) =>
+            let maxIndex = mwDistribution[player][res].reduce((r, val, idx) =>
             {
                 if (val != 0) r[0] = Math.min(r[0], idx);
                 if (val > r[1]) { r[1] = val; r[2] = idx; }
@@ -1013,6 +1072,24 @@ function shouldRenderTable(...deps) {
     return true;
 }
 
+// Temporary helper
+function exportCurrentMW()
+{
+    updateWorldGuessAndRange();
+    console.log("mwHumanReadableWorld:");
+    console.log(p(mwHumanReadableWorld()));
+    console.log("worldGuessAndRange:");
+    console.log(p(worldGuessAndRange));
+    console.log("mwDistribution:");
+    console.log(p(mwDistribution));
+    log("[NOTE] Exportet current ManyWorlds state above");
+}
+
+function renderNewTable(element)
+{
+    plotResourcesAsBubbles(element);
+}
+
 /**
 * Renders the table with the counts.
 */
@@ -1020,18 +1097,39 @@ function render()
 {
     if (!shouldRenderTable(manyWorlds))
     {
-        log(".");
+        log("Skip display update");
         return;
     }
+    log("Updaing display...");
 
+    // TODO Draw only once then only change text content later
+
+    updateWorldGuessAndRange();
+
+    // Display
+    let body = document.getElementsByTagName("body")[0];
+
+    // Display plot
+    if (configPlotBubbles === true)
+    {
+        let existingPlot = document.getElementById(bubblePlotId);
+        try { if (existingTbl) { existingPlot.remove(); } }
+        catch (e) { console.warn("had an issue deleting the plot", e); }
+        let plt = document.createElement("plot");
+        plt.id = bubblePlotId;
+        body.appendChild(plt);
+        renderNewTable(plt.id);
+    }
+
+    // Display table
     let existingTbl = document.getElementById("explorer-tbl");
     try { if (existingTbl) { existingTbl.remove(); } }
-    catch (e) { console.warning("had an issue deleting the table", e); }
-    let body = document.getElementsByTagName("body")[0];
+    catch (e) { console.warn("had an issue deleting the table", e); }
     let tbl = document.createElement("table");
+    tbl.id = "explorer-tbl";
+
     tbl.setAttribute("cellspacing", 0);
     tbl.setAttribute("cellpadding", 0);
-    tbl.id = "explorer-tbl";
 
     // Header row - one column per resource, plus player column
     let header = tbl.createTHead();
@@ -1047,7 +1145,10 @@ function render()
         resourceHeaderCell.innerHTML = getResourceImg(resourceType);
     }
 
-    updateWorldGuessAndRange();
+    playerHeaderCell.addEventListener("click", exportCurrentMW, false);
+
+    // Create bubble plot data
+    // TODO
 
     let tblBody = tbl.createTBody();
     // Row per player
@@ -1069,14 +1170,15 @@ function render()
 
             cell.innerHTML = fraction > 0.999
                            ? "" + resCount
-                           : `${resCount} (${fraction.toFixed(2)})`;
+                           : `${resCount}<br>(${fraction.toFixed(2)})`;
         }
     }
 
     body.appendChild(tbl);
-    tbl.setAttribute("border", "2");
 
-    log("Updated MW resource table");
+    tbl.setAttribute("border", "2"); // (?)
+
+    log("Updated tracker display");
 }
 
 /**
@@ -1134,7 +1236,7 @@ function parseYearOfPlenty(element)
     let textContent = element.textContent;
     if (!textContent.includes(yearOfPlentySnippet))
     {
-        return;
+        return true;
     }
 
     // Determine player
@@ -1153,6 +1255,8 @@ function parseYearOfPlenty(element)
     const asSlice = generateWorldSlice(obtainedResources);
     mwTransformSpawn(beneficiary, asSlice);
     printWorlds();
+
+    return false;
 }
 
 /**
@@ -1176,7 +1280,11 @@ function parseGotMessage(pElement) {
         logs("[INFO] Got resources:", player, "<-", obtainedResources);
         mwTransformSpawn(player, asSlice);
         printWorlds();
+
+        return false;
     }
+
+    return true;
 }
 
 /**
@@ -1185,7 +1293,7 @@ function parseGotMessage(pElement) {
 function parseBuiltMessage(pElement) {
     let textContent = pElement.textContent;
     if (!textContent.includes(builtSnippet)) {
-        return;
+        return true;
     }
     let images = collectionToArray(pElement.getElementsByTagName('img'));
     let player = textContent.split(" ")[0];
@@ -1228,6 +1336,8 @@ function parseBuiltMessage(pElement) {
     logs("[INFO] Built:", player, buildResources);
     mwTransformSpawn(player, asSlice);
     printWorlds();
+
+    return false;
 }
 
 /**
@@ -1237,7 +1347,7 @@ function parseBuiltMessage(pElement) {
 function parseBoughtMessage(pElement) {
     let textContent = pElement.textContent;
     if (!textContent.includes(boughtSnippet)) {
-        return;
+        return true;
     }
     let images = collectionToArray(pElement.getElementsByTagName('img'));
     let player = textContent.split(" ")[0];
@@ -1257,20 +1367,25 @@ function parseBoughtMessage(pElement) {
     const devCardSlice = generateWorldSlice(devCardResources);
     mwTransformSpawn(player, devCardSlice);
     printWorlds();
+
+    return false;
 }
 
 /**
  * Process a trade with the bank message: [user icon] [user] gave bank: ...[resources] and took ...[resources]
  */
-function parseTradeBankMessage(pElement) {
+function parseTradeBankMessage(pElement)
+{
     let textContent = pElement.textContent;
-    if (!textContent.includes(tradeBankGaveSnippet)) {
-        return;
+    if (!textContent.includes(tradeBankGaveSnippet))
+    {
+        return true;
     }
     let player = textContent.split(" ")[0];
     if (!players.includes(player))
     {
         log("Failed to parse player...", player, resources);
+        alertIf(34);
         return;
     }
     // We have to split on the text, which isn't wrapped in tags, so we parse innerHTML, which prints the HTML and the text.
@@ -1294,6 +1409,8 @@ function parseTradeBankMessage(pElement) {
     logs("[INFO] Traded with bank:", player, giveResources, "->", takeResources);
     mwTransformSpawn(player, takeSlice - giveSlice);
     printWorlds();
+
+    return false;
 }
 
 // Parse monopoly steals
@@ -1312,7 +1429,7 @@ function parseMonopoly(element)
     let textContent = element.textContent;
     if (!textContent.includes(" stole ") || textContent.includes("from"))
     {
-        return;
+        return true;
     }
 
     // Identify thief
@@ -1332,6 +1449,8 @@ function parseMonopoly(element)
     logs("[INFO] Monopoly:", thief, "<-", stolenResource);
     transformMonopoly(thief, worldResourceIndex(stolenResource));
     printWorlds();
+
+    return false;
 }
 
 /**
@@ -1340,10 +1459,9 @@ function parseMonopoly(element)
 function parseDiscardedMessage(pElement) {
     let textContent = pElement.textContent;
     if (!textContent.includes(discardedSnippet)) {
-        return;
+        return true;
     }
     const player = textContent.substring(0, textContent.indexOf(discardedSnippet));
-    log2("[WARNING] Found player discarding (remove log if ok):", player);
     if (!players.includes(player))
     {
         log("[ERROR] Failed to parse discarding player |", player, resources);
@@ -1357,6 +1475,8 @@ function parseDiscardedMessage(pElement) {
     logs("[INFO] Discarded:", player, "->", discarded);
     mwTransformSpawn(player, -discardedCardsAsSlie);
     printWorlds();
+
+    return false;
 }
 
 /**
@@ -1372,7 +1492,9 @@ function parseTradeMessage(element)
     // Identify trading messages
     let textContent = element.textContent;
     if (!textContent.includes(tradeSnippet))
-        return;
+    {
+        return true;
+    }
 
     // Determine trading players
     let involvedPlayers = textContent.split(tradeSnippet);
@@ -1407,6 +1529,8 @@ function parseTradeMessage(element)
         "--> | <--", otherPlayer, demand);
     transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
     printWorlds();
+
+    return false;
 }
 
 // Parse steal including "you" or "You"
@@ -1423,7 +1547,7 @@ function parseStealIncludingYou(pElement)
     let containsStealSnippet = textContent.includes(" stole:  from");
     if (!containsYou || !containsStealSnippet)  // (!)
     {
-        return;
+        return true;
     }
 
     // Obtain player names
@@ -1451,7 +1575,7 @@ function parseStealIncludingYou(pElement)
     if (!players.includes(stealingPlayer) || !players.includes(targetPlayer))
     {
         log("[ERROR] Failed to steal. Invalid parse of player(s):",
-                    stealingPlayer, "|", targetPlayer, "|", resources);
+                    stealingPlayer, "|", targetPlayer);
         alertIf(3);
         return;
     }
@@ -1463,6 +1587,8 @@ function parseStealIncludingYou(pElement)
     transformExchange(targetPlayer, stealingPlayer, // source, target
         generateSingularSlice(worldResourceIndex(stolenResourceType)));
     printWorlds();
+
+    return false;
 }
 
 /**
@@ -1480,7 +1606,7 @@ function parseStealFromOtherPlayers(pElement)
     let containsStealSnippet = textContent.includes("stole:");
     if (containsYou || !containsStealSnippet)   // (!)
     {
-        return;
+        return true;
     }
 
     // Obtain player names
@@ -1516,29 +1642,42 @@ function parseStealFromOtherPlayers(pElement)
     logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
     branchSteal(targetPlayer, stealingPlayer);
     printWorlds();
+
+    return false;
 }
 
 function parseWin(element)
 {
     // TODO This includes player names (!). Use longer snippet.
     if (element.textContent.includes("won"))
-        return true;
-    else
+    {
+        clearInterval(mainLoopInterval);
+        log("[INFO] End of Game");
         return false;
+
+        // TODO find a way to start again without immediately
+        // re-discovering the gamelog-text element of the just-finished
+        // game. startTracker() would do this.
+//        startTracker();
+    }
+    return true;
 }
 
 // The parser, parseInitialGotMessage() is not included in this list. We call use it one at the start, not regularly.
 let ALL_PARSERS = [
-    parseYearOfPlenty,
     parseGotMessage,
+
+    parseStealFromOtherPlayers, // TODO rename pair to stealKnwon vs. stealUnknown
+    parseStealIncludingYou,
+    parseTradeBankMessage,
+    parseTradeMessage,
+    parseDiscardedMessage,
     parseBuiltMessage,
     parseBoughtMessage,
-    parseTradeBankMessage,
     parseMonopoly,
-    parseDiscardedMessage,
-    parseTradeMessage,
-    parseStealIncludingYou,
-    parseStealFromOtherPlayers, // TODO rename pair to stealKnwon vs. stealUnknown
+    parseYearOfPlenty,
+
+    parseWin,
 ];
 
 /**
@@ -1546,40 +1685,22 @@ let ALL_PARSERS = [
  */
 function parseLatestMessages() {
     let allMessages = getAllMessages();
-    let newOffset = allMessages.length;
     let newMessages = allMessages.slice(MSG_OFFSET);
-    if (false)
-    {
-        if (MSG_OFFSET === newOffset)
-        {
-            log("No new message");
-        }
-        else
-        {
-            log("Parsing new message(s)...");
-        }
-    }
+
+    // Set offset before parsing so that failing parsers do not loop endlessly
+    let newOffset = allMessages.length;
+    MSG_OFFSET = newOffset;
 
     newMessages.forEach((msg, idx) =>
     {
-        ALL_PARSERS.forEach(parser =>
+        console.log("[NOTE] Msg", MSG_OFFSET + idx);
+        ALL_PARSERS.every(parser =>
         {
-            if (parseWin(msg))
-            {
-                clearInterval(mainLoopInterval);
-                log("[INFO] End of Game");
-
-                // TODO find a way to start again without immediately
-                // re-discovering the gamelog-text element of the just-finished
-                // game. startTracker() would do this.
-//                startTracker();
-            }
-            parser(msg);
+            return parser(msg);
         });
     });
 
-    MSG_OFFSET = newOffset;
-    render();
+    render(manyWorlds);
 }
 
 /**
@@ -1597,7 +1718,7 @@ function comeMrTallyManTallinitialResource() {
     log("Correcting MSG_OFFSET from", MSG_OFFSET, "to", correctedOffset);
     MSG_OFFSET = correctedOffset;
 
-    render();
+    render(manyWorlds);
 }
 
 /**
@@ -1683,13 +1804,16 @@ function findPlayerName()
         {
             clearInterval(findPlayerInterval);
             playerUsername = deepCopy(playerUsernameElement.textContent);
-            playerUsernameElement.textContent = atob("VHJhY2tlciBPSw==");
             console.log("[NOTE] Found profile:", `"${playerUsername}"`);
-        } else
+
+            let e = document.getElementById("header_navigation_store");
+            if (e !== null) e.textContent = atob("VHJhY2tlciBPSw==");
+        }
+        else
         {
             playerUsernameElement= document.getElementById("header_profile_username");
         }
-    }, 5000);
+    }, 3000);
 }
 
 function getAllMessages() {
@@ -1709,17 +1833,17 @@ function collectionToArray(collection) {
 function waitForInitialPlacement() {
     log("[NOTE] Waiting for first roll");
     // TODO reset initialPlacementMade before starting interval?
-    let interval = setInterval(() => {
+    let waitInterval = setInterval(() => {
         if (initialPlacementMade)
         {
-            clearInterval(interval);
+            clearInterval(waitInterval);
             log("[NOTE] Start tracking");
 
             // Init
             recognizeUsers();
             comeMrTallyManTallinitialResource();
             deleteDiscordSigns();
-            render();
+            render(manyWorlds);
 
             // Start main loop
             mainLoopInterval = setInterval(parseLatestMessages, 5000);
@@ -1738,17 +1862,17 @@ function waitForInitialPlacement() {
 //                log("Initial placement done snippet not found");
             }
         }
-    }, 5000);
+    }, 3000);
 }
 
 /**
 * Find the transcription.
 */
 function findTranscription() {
-    let interval = setInterval(() => {
+    let findInterval = setInterval(() => {
         if (logElement) {
 //            log("Found game-log-text element");
-            clearInterval(interval);
+            clearInterval(findInterval);
             clearInterval(findPlayerInterval);  // TODO these interval this are getting too messy (?)
             waitForInitialPlacement();
         } else {
@@ -1758,7 +1882,7 @@ function findTranscription() {
             { log("[NOTE] Waiting to start"); }
             logElement = document.getElementById("game-log-text");
         }
-    }, 5000);
+    }, 3000);
 }
 
 function startTracker()

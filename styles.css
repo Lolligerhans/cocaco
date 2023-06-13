@@ -1,16 +1,55 @@
+/*
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+* {
+    font-family: 'Roboto', sans-serif;
+}
+*/
+
+
+/* For bubble plot on website */
+#explorer-plt
+{
+    width: 400px;
+    height: 400px;
+    position: absolute;
+    top: 300px;
+/*    position: absolute;
+//    top: 0px;
+//    left: 0px;*/
+    padding: 0px;
+    border: none;
+}
+
+/* for test main.HTML */
+.plot-window
+{
+    width: 400px;
+    height: 400px;
+    position: absolute;
+/*    position: absolute;
+//    top: 0px;
+//    left: 0px;*/
+    padding: 0px;
+    border: none;
+}
+
+
+
 #explorer-tbl {
     position: absolute;
+    top: 400;
     background-color: gray;
     z-index: 9999;
-    top: 10px;
-    left: 10px;
+    top: 0;
+    left: 0;
     padding: 3px;
     border: none;
 }
 
 .explorer-tbl-header {
     border: none;
-
+    font-family: sans-serif;
 }
 
 .explorer-tbl-header .explorer-tbl-cell {
@@ -19,7 +58,7 @@
 
 .explorer-tbl-row {
     border: none;
-    height: 3em;
+    height: 1.5em;
 }
 
 .explorer-tbl-row:nth-child(2n-1) { background-color: #eeeeee; }
@@ -30,9 +69,10 @@
     box-sizing: unset;
     color: black;
     font-weight: bold;
+    font-family: monospace;
     padding: 0 2px;
     text-align: center;
-    line-height: 3em;
+    line-height: 1.5em;
     vertical-align: top;
 }
 
@@ -40,7 +80,7 @@
     border: none;
     display: inline-flex;
     padding: 0;
-    line-height: 3em;
+    line-height: 1.5em;
 }
 
 .explorer-tbl-player-col-cell-color {
