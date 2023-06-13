@@ -8,6 +8,8 @@ Counts cards of all players.
 
 - [ ] Output information
     - [ ] Information to generate
+      - [ ] Available builds (%)
+      - [ ] Available steals (%)
     - [ ] UI
 - [ ] Reveal cards through trade offers
 - [ ] Reveal card counts through robber event
