@@ -1,15 +1,15 @@
 //============================================================
 // CONFIG
 //============================================================
-let configDoAlert = true;
-let configPrintWorlds = false;   // Activate console logging of MW state
-let configRunManyWorldsTest = false;    // Run test and quit. Not a full unit test.
+const configDoAlert = true;
+const configPrintWorlds = false;   // Activate console logging of MW state
+const configRunManyWorldsTest = false;    // Run test and quit. Not a full unit test.
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 
 //============================================================
-// Logging helpers
+// Hello
 //============================================================
 
 console.log("[INFO]",
@@ -17,7 +17,18 @@ console.log("[INFO]",
     "| configPrintWorlds:", configPrintWorlds,
     "| configRunManyWorldsTest:", configRunManyWorldsTest,
     "| configFixedPlayerName:", configFixedPlayerName,
-    "| configPlayerName:", configPlayerName);
+    "| configPlayerName:", configPlayerName,
+    "| configPlotBubbles:", configPlotBubbles);
+
+let e = document.getElementById("header_navigation_store");
+if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
+
+//let e = document.getElementById("header_navigation_store");
+//if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
+
+//============================================================
+// Logging helpers
+//============================================================
 
 function p(object)
 {
@@ -78,6 +89,14 @@ let resourceTypes = [wood, brick, sheep, wheat, ore];   // MW depends on this
 // Players
 let players = [];   // MW depends on this
 let player_colors = {}; // player -> hex
+
+const imageNameSnippets =
+{
+    wood: "card_lumber", brick: "card_brick", sheep: "card_wool",
+    wheat: "card_grain", ore: "card_ore", "road": "road_red",
+    "settlement": "settlement_red", "devcard": "card_devcardback",
+    "city": "city_red"
+};
 
 const bubblePlotId = "explorer-plt";
 
@@ -202,7 +221,7 @@ function findAllResourceCardsInHtml(html)
 //  1.1) transform: tweak existing worlds in known ways (e.g., trade, buy)
 //  1.2) branch: Branch worlds from unknown events into multiple options
 //  1.3) collapse: (Potentially) reduce possibilities by revealing information
-//  2) worldGuessAndRange: Call updateWorldGuessAndRange() before reading it.
+//  2) worldGuessAndRange: Call mwUpdateStats() before reading it.
 //                         Then contains the tracking result to display.
 //
 // Internally:
@@ -228,6 +247,13 @@ const wheatMask = 0x1F << (6 * 3);
 const oreMask   = 0x1F << (6 * 4);
 const resourceMask = {0:woodMask, 1:brickMask, 2:sheepMask, 3:wheatMask, 4:oreMask};
 const emptyResourcesByName = {wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0};
+
+const mwRoadSlice = wood1 + brick1;
+const mwSettlementSlice = wood1 + brick1 + sheep1 + wheat1;
+const mwDevcardSlice = sheep1 + wheat1 + ore1;
+const mwCitySlice = 2 * wheat1 + 3 * ore1;
+const mwBuilds = {"road": mwRoadSlice, "settlement": mwSettlementSlice,
+                  "devcard": mwDevcardSlice, "city": mwCitySlice};
 
 // The global tracking structure
 let manyWorlds = [];
@@ -631,7 +657,7 @@ function removeDuplicateWorlds()
 // Ensures that the world probabilities add to 1. Sum can decrese when
 // impossible worlds are filterd out. If the manyWorlds array is read out raw
 // (e.g., from a log), the values might not be normalized. Usually, the call to
-// updateWorldGuessAndRange() triggers normalization for display.
+// mwUpdateStats() triggers normalization for display.
 function normalizeManyWorlds()
 {
     let sum = manyWorlds.reduce((sum, w) => sum + w["chance"], 0);
@@ -665,15 +691,20 @@ function normalizeManyWorlds()
 // The global analyis/stats object
 let worldGuessAndRange = {};
 let mwDistribution = {};
+let mwBuildsProb = {};
 
 // Generate
 //  - Minimal resource distribution
 //  - Maximal resource distribution
 //  - Majority vote distribution
-//
 // At the moment has to be used with filled players and manyWorlds variables.
-function updateWorldGuessAndRange()
+function mwUpdateStats()
 {
+    // This func has 3 stages:
+    //  1) Prepare stats objects
+    //  2) Iterate worlds to fill stats
+    //  3) Update secondary objects derived from those stats
+
     normalizeManyWorlds();
     // Generate empty distribution
     //                             ~~v~~ 4 is number of worlds where A[wood]==1
@@ -684,6 +715,8 @@ function updateWorldGuessAndRange()
 //    mwDistribution = {};
     for (player of players)
     {
+        mwBuildsProb[player] = deepCopy(mwBuilds);
+        Object.keys(mwBuildsProb[player]).forEach(k => mwBuildsProb[player][k] = 0);
         mwDistribution[player] = {};
         for (res of resourceTypes)
         {
@@ -694,17 +727,26 @@ function updateWorldGuessAndRange()
         }
     }
 
+
+
     // Count across all worlds
     manyWorlds.forEach(w =>
     {
         for (player of players)
         {
+            // For distribution
             for (res of resourceTypes)
             {
                 const countInWorld = getResourceCountOfSlice(
                     w[worldPlayerIndex(player)],
                     worldResourceIndex(res));   // Helper uses indices
                 mwDistribution[player][res][countInWorld] += w["chance"];
+            }
+            // For builds
+            for (const [name, slice] of Object.entries(mwBuilds))
+            {
+                if (!sliceHasNegative(w[worldPlayerIndex(player)] - slice))
+                    mwBuildsProb[player][name] += w["chance"];
             }
         }
     });
@@ -784,7 +826,7 @@ function worldTest()
         alertIf(21);
         debugger;
     }
-    updateWorldGuessAndRange();
+    mwUpdateStats();
     if (passedTest === true)
     {
         log("[NOTE] ManyWorlds test1 passed");
@@ -811,7 +853,7 @@ function worldTest()
         removeDuplicateWorlds();
         log("After duplicate removal (should have only 1 world left"); printWorlds();
         logs("again as string:", manyWorlds);
-        updateWorldGuessAndRange();
+        mwUpdateStats();
 
         if (manyWorlds.length !== 1)
         {
@@ -883,11 +925,11 @@ function worldTest()
     transformMonopoly("C", worldResourceIndex(wood));
     log("after monopoly. either B or A have a brick, C has 2 wood."); printWorlds();
     logs(manyWorlds);
-    updateWorldGuessAndRange();
+    mwUpdateStats();
     collapseExact("B", worldResourceIndex(brick), 0);
     log("After measuring B's brick, A has the brick, B nothing, C has 2 wood."); printWorlds();
     logs("again as string:", manyWorlds);
-    updateWorldGuessAndRange();
+    mwUpdateStats();
 
     if (  manyWorlds.length  !== 1
        || manyWorlds[0]["C"] !== 2
@@ -923,7 +965,7 @@ function worldTest()
         branchSteal("A", "B");
     }
     log("after stealing 5 times. Most likely, B stole wood (some brick)"); printWorlds();
-    updateWorldGuessAndRange();
+    mwUpdateStats();
     // Now we expect B not to have taken the 1 sheep in just 5 trades
     if (   worldGuessAndRange["B"]["sheep"][2] !== 0
         || worldGuessAndRange["B"]["sheep"][1] < 0.5) { passed = false; }
@@ -931,7 +973,7 @@ function worldTest()
     collapseExact("B", worldResourceIndex(wood), 1);
     log("After collapsing B's wood. implies 4 steals {brick,sheep}. world:", manyWorlds);
     printWorlds();
-    updateWorldGuessAndRange();
+    mwUpdateStats();
     log2("guess&range:", worldGuessAndRange);
     // Now it is likely that B took the sheep
     if (   worldGuessAndRange["B"]["sheep"][2] !== 1
@@ -965,13 +1007,13 @@ function worldTest()
     log("before anything (6)"); printWorlds();
     mwTransformSpawn("A", 65);
     log("after spawning A a road"); printWorlds();
-    updateWorldGuessAndRange();
+    mwUpdateStats();
     branchSteal("A", "B");
     log("After stealing from A"); printWorlds();
-    updateWorldGuessAndRange();
+    mwUpdateStats();
     mwTransformSpawn("A", -1);
     log("after un-spawning a wood from A. B has a brick left now."); printWorlds();
-    updateWorldGuessAndRange();
+    mwUpdateStats();
 
     if (manyWorlds.length !== 1 || worldGuessAndRange["B"][brick][2] !== 1
                                 || worldGuessAndRange["B"][brick][1] < 0.99)
@@ -1032,8 +1074,12 @@ function calculateTheftForPlayerAndResource(player, resourceType) {
     }).reduce((a, b) => a + b, 0);
 }
 
-function getResourceImg(resourceType) {
-    let img_name = "";
+// <img src="/dist/images/settlement_blue.svg?v159" alt="settlement" class="lobby-chat-text-icon" width="20" height="20">
+function getStuffImage(whichSnippet) {
+    const fullName = `<img src="dist/images/${imageNameSnippets[whichSnippet]}.svg" class="explorer-tbl-resource-icon" />`;
+    return fullName;
+
+    /* TODO Remove this old version
     switch (resourceType) {
         case wheat:
             img_name = "card_grain";
@@ -1050,9 +1096,12 @@ function getResourceImg(resourceType) {
         case wood:
             img_name = "card_lumber";
             break;
+        case "road": im
     }
     if (!img_name.length) throw Error("Couldn't find resource image icon");
+    // TODO Not use colonist resources when used outside of colonist?
     return `<img src="https://colonist.io/dist/images/${img_name}.svg" class="explorer-tbl-resource-icon" />`
+    */
 }
 
 function renderPlayerCell(player) {
@@ -1075,7 +1124,7 @@ function shouldRenderTable(...deps) {
 // Temporary helper
 function exportCurrentMW()
 {
-    updateWorldGuessAndRange();
+    mwUpdateStats();
     console.log("mwHumanReadableWorld:");
     console.log(p(mwHumanReadableWorld()));
     console.log("worldGuessAndRange:");
@@ -1093,6 +1142,7 @@ function renderNewTable(element)
 /**
 * Renders the table with the counts.
 */
+// TODO take data to-be displayed as input?
 function render()
 {
     if (!shouldRenderTable(manyWorlds))
@@ -1104,7 +1154,8 @@ function render()
 
     // TODO Draw only once then only change text content later
 
-    updateWorldGuessAndRange();
+    // TODO generate and return stats object?
+    mwUpdateStats();
 
     // Display
     let body = document.getElementsByTagName("body")[0];
@@ -1142,7 +1193,14 @@ function render()
         let resourceType = resourceTypes[i];
         let resourceHeaderCell = headerRow.insertCell(i + 1);
         resourceHeaderCell.className = "explorer-tbl-cell";
-        resourceHeaderCell.innerHTML = getResourceImg(resourceType);
+        resourceHeaderCell.innerHTML = getStuffImage(resourceType);
+    }
+    let i = resourceTypes.length + 1;
+    for (const [i, v] of Object.keys(mwBuilds).entries())
+    {
+        let headerCell = headerRow.insertCell(i + 1 + resourceTypes.length);
+        headerCell.className = "explorer-tbl-cell";
+        headerCell.innerHTML = getStuffImage(v);
     }
 
     playerHeaderCell.addEventListener("click", exportCurrentMW, false);
@@ -1170,8 +1228,19 @@ function render()
 
             cell.innerHTML = fraction > 0.999
                            ? "" + resCount
-                           : `${resCount}<br>(${fraction.toFixed(2)})`;
+                           : `${resCount}<br>(${Math.round(fraction * 100)}%)`;
         }
+        // Copy the cell-adding for resource
+        let j = resourceTypes.length + 1;
+        let addBuildFunc = b =>
+        {
+            let cell = row.insertCell(j);
+            cell.className = "explorer-tbl-cell";
+            cell.innerHTML = `${Math.round(mwBuildsProb[player][b] * 100)}%`;
+//            cell.innerHTML = "test";
+            ++j;
+        };
+        Object.keys(mwBuilds).forEach(addBuildFunc);
     }
 
     body.appendChild(tbl);

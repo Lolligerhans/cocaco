@@ -49,8 +49,8 @@ function generatePerCountBubbles(allPlayers, distribution, player, resource, tot
     let size = [];
     let y = [];
     let opacity = [];
-    log("Generating distribution bubble for", player, resource);
-    log(distribution[player][resource]);
+//    log("Generating distribution bubble for", player, resource);
+//    log(distribution[player][resource]);
 
 
     // Offset values for better readability
