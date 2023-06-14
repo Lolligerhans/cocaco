@@ -1900,7 +1900,7 @@ function findPlayerName()
         {
             playerUsernameElement= document.getElementById("header_profile_username");
         }
-    }, 3000);
+    }, 2000);
 }
 
 function getAllMessages() {
@@ -1949,7 +1949,7 @@ function waitForInitialPlacement() {
 //                log("Initial placement done snippet not found");
             }
         }
-    }, 3000);
+    }, 10000);
 }
 
 /**
@@ -1969,7 +1969,7 @@ function findTranscription() {
             { log("[NOTE] Waiting to start"); }
             logElement = document.getElementById("game-log-text");
         }
-    }, 3000);
+    }, 10000);
 }
 
 function startTracker()
