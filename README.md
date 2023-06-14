@@ -7,7 +7,7 @@ Counts cards of all players.
 # TODO
 
 - [x] Available builds (%)
-- [ ] Available steals (%)
+- [x] Available steals (%)
 - [ ] UI
 - [ ] Reveal cards through trade offers
 - [ ] Reveal card counts through robber event

@@ -7,6 +7,8 @@ const configRunManyWorldsTest = false;    // Run test and quit. Not a full unit 
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
 const configPlotBubbles = true;
+const configLogMessages = false;
+const configLogWorldCount = false;
 
 //============================================================
 // Hello
@@ -18,7 +20,10 @@ console.log("[INFO]",
     "| configRunManyWorldsTest:", configRunManyWorldsTest,
     "| configFixedPlayerName:", configFixedPlayerName,
     "| configPlayerName:", configPlayerName,
-    "| configPlotBubbles:", configPlotBubbles);
+    "| configPlotBubbles:", configPlotBubbles,
+    "| configLogMessages:", configLogMessages,
+    "| configLogWorldCount:", configLogWorldCount
+);
 
 let e = document.getElementById("header_navigation_store");
 if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
@@ -60,23 +65,25 @@ let playerUsernameElement = null;
 let logElement;
 let initialPlacementMade = false;
 //var initialPlacementDoneMessage = "Giving out starting resources";
-let boughtSnippet = " bought ";
-let builtSnippet = "built a";
-let discardedSnippet = " discarded: ";
+
 let initialPlacementDoneSnippet = "rolled";
 let placeInitialSettlementSnippet = "placed a"; // Normal building uses the word "built", not "placed"
-let receivedInitialResourcesSnippet = "received starting resources:";
-let receivedResourcesSnippet = "got:";
-let stoleAllOfSnippet = "stole all of";
-let stoleFromSnippet = " stole  from: "; // extra space from icon
-let stoleFromYouSnippet = "stole:";
-let tradeBankGaveSnippet = "gave bank:";
+
+// Parser snippets
+let receivedInitialResourcesSnippet = "received starting resources";
+const yearOfPlentySnippet = " took from bank ";
+let receivedResourcesSnippet = " got ";
+let builtSnippet = " built a ";
+let boughtSnippet = " bought ";
+let tradeBankGaveSnippet = "gave bank";
 let tradeBankTookSnippet = "and took";
-let tradeGiveForSnippet = "for:";
-let tradeSnippet = " traded:  for:  with: ";    // Extra spaces for card images
-let tradeWantsToGiveSnippet = "wants to give:";
-let tradedWithSnippet = " traded with: ";
-let yearOfPlentySnippet = " took from bank: ";
+const monoStoleSnippet = " stole "; // Contained
+const monoFromSnippet = "from"; // Not contained
+let discardedSnippet = " discarded ";
+const tradeSnippet = " traded  for  with ";
+const tradeSplitSnippet = " for ";
+const stealingSnippet = " stole  from ";
+const winSnippet = "won the game";
 
 let wood = "wood";
 let ore = "ore";
@@ -246,6 +253,7 @@ const sheepMask = 0x1F << (6 * 2);
 const wheatMask = 0x1F << (6 * 3);
 const oreMask   = 0x1F << (6 * 4);
 const resourceMask = {0:woodMask, 1:brickMask, 2:sheepMask, 3:wheatMask, 4:oreMask};
+// TODO make wrapper that returns a copy
 const emptyResourcesByName = {wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0};
 
 const mwRoadSlice = wood1 + brick1;
@@ -692,6 +700,7 @@ function normalizeManyWorlds()
 let worldGuessAndRange = {};
 let mwDistribution = {};
 let mwBuildsProb = {};
+let mwSteals = {};
 
 // Generate
 //  - Minimal resource distribution
@@ -700,21 +709,16 @@ let mwBuildsProb = {};
 // At the moment has to be used with filled players and manyWorlds variables.
 function mwUpdateStats()
 {
-    // This func has 3 stages:
-    //  1) Prepare stats objects
-    //  2) Iterate worlds to fill stats
+    normalizeManyWorlds();
+
+    // This function has 3 stages:
+    //  1) Fill stats objects with 0s
+    //  2) Iterate worlds to accumulate stats
     //  3) Update secondary objects derived from those stats
 
-    normalizeManyWorlds();
-    // Generate empty distribution
-    //                             ~~v~~ 4 is number of worlds where A[wood]==1
-    //  distribution{"A": {wood: [0, 4, 2, 0, 0], brick: [0, 0, 0, 4, 5, 2]}
-    //               "B": {wood:[...] ...                                  },
-    //               ...
-    //              }
-//    mwDistribution = {};
     for (player of players)
     {
+        mwSteals[player] = deepCopy(emptyResourcesByName);
         mwBuildsProb[player] = deepCopy(mwBuilds);
         Object.keys(mwBuildsProb[player]).forEach(k => mwBuildsProb[player][k] = 0);
         mwDistribution[player] = {};
@@ -727,20 +731,22 @@ function mwUpdateStats()
         }
     }
 
-
-
     // Count across all worlds
     manyWorlds.forEach(w =>
     {
         for (player of players)
         {
-            // For distribution
+            const totalPlayerRes = getResourceSumOfSlice(w[worldPlayerIndex(player)]);
             for (res of resourceTypes)
             {
+                // For distribution
                 const countInWorld = getResourceCountOfSlice(
                     w[worldPlayerIndex(player)],
                     worldResourceIndex(res));   // Helper uses indices
                 mwDistribution[player][res][countInWorld] += w["chance"];
+                // For steals
+                if (countInWorld > 0)
+                    mwSteals[player][res] += (countInWorld / totalPlayerRes) * w["chance"];
             }
             // For builds
             for (const [name, slice] of Object.entries(mwBuilds))
@@ -1134,9 +1140,9 @@ function exportCurrentMW()
     log("[NOTE] Exportet current ManyWorlds state above");
 }
 
-function renderNewTable(element)
+function fillElementWithPlot(element)
 {
-    plotResourcesAsBubbles(element);
+    plotResourcesAsBubbles(element.id);
 }
 
 /**
@@ -1145,7 +1151,7 @@ function renderNewTable(element)
 // TODO take data to-be displayed as input?
 function render()
 {
-    if (!shouldRenderTable(manyWorlds))
+    if (!shouldRenderTable(MSG_OFFSET))
     {
         log("Skip display update");
         return;
@@ -1155,7 +1161,7 @@ function render()
     // TODO Draw only once then only change text content later
 
     // TODO generate and return stats object?
-    mwUpdateStats();
+    mwUpdateStats();     //TODO circumvents souldRenderTable()
 
     // Display
     let body = document.getElementsByTagName("body")[0];
@@ -1164,12 +1170,12 @@ function render()
     if (configPlotBubbles === true)
     {
         let existingPlot = document.getElementById(bubblePlotId);
-        try { if (existingTbl) { existingPlot.remove(); } }
+        try { if (existingPlot) { existingPlot.remove(); } }
         catch (e) { console.warn("had an issue deleting the plot", e); }
         let plt = document.createElement("plot");
         plt.id = bubblePlotId;
         body.appendChild(plt);
-        renderNewTable(plt.id);
+        fillElementWithPlot(plt);
     }
 
     // Display table
@@ -1187,7 +1193,7 @@ function render()
     header.className = "explorer-tbl-header";
     let headerRow = header.insertRow(0);
     let playerHeaderCell = headerRow.insertCell(0);
-    playerHeaderCell.innerHTML = "Guess (Chance)";
+    playerHeaderCell.innerHTML = "Guess (Chance)<br>Steal chance";
     playerHeaderCell.className = "explorer-tbl-player-col-header";
     for (let i = 0; i < resourceTypes.length; i++) {
         let resourceType = resourceTypes[i];
@@ -1211,7 +1217,7 @@ function render()
     let tblBody = tbl.createTBody();
     // Row per player
     for (let i = 0; i < players.length; i++) {
-        let player = players[i];
+        const player = players[i];
         let row = tblBody.insertRow(i);
         row.className = "explorer-tbl-row";
         let playerRowCell = row.insertCell(0);
@@ -1225,19 +1231,21 @@ function render()
             let resourceType = resourceTypes[j];
             const resCount = worldGuessAndRange[player][res][2]; // Guess
             const fraction = worldGuessAndRange[player][res][1]; // Fraction
-
-            cell.innerHTML = fraction > 0.999
-                           ? "" + resCount
-                           : `${resCount}<br>(${Math.round(fraction * 100)}%)`;
+            const percentString = fraction > 0.999 ? "" : `<span style="font-weight:lighter">(${Math.round(fraction * 100)}%)</span>`;
+            cell.innerHTML = worldGuessAndRange[player][res][3] === 0
+                           ? "" // Display nothing if guaranteed 0 amount available
+                           : `${resCount}${percentString}<br><span style="font-weight:lighter">${Math.round(mwSteals[player][res] * 100)}%</span>`;
         }
         // Copy the cell-adding for resource
         let j = resourceTypes.length + 1;
         let addBuildFunc = b =>
         {
+            const chance = mwBuildsProb[player][b];
             let cell = row.insertCell(j);
             cell.className = "explorer-tbl-cell";
-            cell.innerHTML = `${Math.round(mwBuildsProb[player][b] * 100)}%`;
-//            cell.innerHTML = "test";
+            cell.innerHTML = chance < 0.001
+                           ? "" // Show nothing if very unlikely
+                           : `<span style="font-weight:lighter">${Math.round(chance * 100)}%</span>`;
             ++j;
         };
         Object.keys(mwBuilds).forEach(addBuildFunc);
@@ -1379,20 +1387,25 @@ function parseBuiltMessage(pElement) {
         if (img.src.includes("road")) {
             buildResources[wood] = -1;
             buildResources[brick] = -1;
+            building = true;
+            break;
         } else if (img.src.includes("settlement")) {
             buildResources[wood] = -1;
             buildResources[brick] = -1;
             buildResources[sheep] = -1;
             buildResources[wheat] = -1;
+            building = true;
+            break;
         } else if (img.src.includes("city")) {
             buildResources[wheat] = -2;
             buildResources[ore] = -3;
+            building = true;
+            break;
         }
-        else
-        {
-            continue;
-        }
-        building = true;
+//        else
+//        {
+//            continue;
+//        }
     }
     if (!building)
     {
@@ -1410,8 +1423,7 @@ function parseBuiltMessage(pElement) {
 }
 
 /**
- * For dev cards
- * Process a "bought" message: [user icon] [user] built
+ * For dev cards. parseDevCard
  */
 function parseBoughtMessage(pElement) {
     let textContent = pElement.textContent;
@@ -1428,12 +1440,12 @@ function parseBoughtMessage(pElement) {
     }
 
     // ManyWorlds version
-    logs("[INFO] Baught dev card:", player);
     let devCardResources = deepCopy(emptyResourcesByName);
     devCardResources[sheep] = -1;
     devCardResources[wheat] = -1;
     devCardResources[ore  ] = -1;
     const devCardSlice = generateWorldSlice(devCardResources);
+    logs("[INFO] Baught dev card:", player, "->", devCardResources);
     mwTransformSpawn(player, devCardSlice);
     printWorlds();
 
@@ -1496,7 +1508,8 @@ function parseMonopoly(element)
 {
     // Identify if a monopoly message is found
     let textContent = element.textContent;
-    if (!textContent.includes(" stole ") || textContent.includes("from"))
+    if ( !textContent.includes(monoStoleSnippet)
+       || textContent.includes(monoFromSnippet ))
     {
         return true;
     }
@@ -1581,8 +1594,8 @@ function parseTradeMessage(element)
     }
 
     // Split HTML at colons to separate sending from receiving resources
-    let split = element.innerHTML.split(":");
-    if (split.length !== 4) // Sanity check
+    let split = element.innerHTML.split(tradeSplitSnippet);
+    if (split.length !== 2) // Sanity check
     {
         log("[ERROR] Expected 4 parts when parsing trading message.",
                     "Got:", split);
@@ -1590,8 +1603,8 @@ function parseTradeMessage(element)
         alertIf(7);
         return;
     }
-    let offer = findAllResourceCardsInHtml(split[1]);
-    let demand = findAllResourceCardsInHtml(split[2]);
+    let offer = findAllResourceCardsInHtml(split[0]);
+    let demand = findAllResourceCardsInHtml(split[1]);
 
     // ManyWorlds version
     logs("[INFO] Trade:", offer, tradingPlayer,
@@ -1612,8 +1625,9 @@ function parseStealIncludingYou(pElement)
     let textContent = pElement.textContent;
 
     // Detect desired message type
+    // TODO Have a function matchPlayers(string) --> [involved, players]
     let containsYou = textContent.includes("You") || textContent.includes("you");
-    let containsStealSnippet = textContent.includes(" stole:  from");
+    let containsStealSnippet = textContent.includes(stealingSnippet);
     if (!containsYou || !containsStealSnippet)  // (!)
     {
         return true;
@@ -1621,8 +1635,8 @@ function parseStealIncludingYou(pElement)
 
     // Obtain player names
     let involvedPlayers = textContent
-        .replace(/\:/g, "")   // One version has an extra colon
-        .replace(" stole  from ", " ") // After this only the names are left
+        .replace(/\:/g, "")   // One version has an extra colon // TODO Now obsolete
+        .replace(stealingSnippet, " ") // After this only the names are left
         .split(" ");
 
     // Replace player name
@@ -1672,7 +1686,7 @@ function parseStealFromOtherPlayers(pElement)
 
     // Detect desired message type
     let containsYou = textContent.includes("You") || textContent.includes("you");
-    let containsStealSnippet = textContent.includes("stole:");
+    let containsStealSnippet = textContent.includes(stealingSnippet);
     if (containsYou || !containsStealSnippet)   // (!)
     {
         return true;
@@ -1681,7 +1695,7 @@ function parseStealFromOtherPlayers(pElement)
     // Obtain player names
     let involvedPlayers = textContent
         .replace(/\:/g, "")   // One version has an extra colon
-        .replace(" stole  from ", " ") // After this only the names are left
+        .replace(stealingSnippet, " ") // After this only the names are left
         .split(" ");
 
     // Replace player name
@@ -1718,7 +1732,7 @@ function parseStealFromOtherPlayers(pElement)
 function parseWin(element)
 {
     // TODO This includes player names (!). Use longer snippet.
-    if (element.textContent.includes("won"))
+    if (element.textContent.includes(winSnippet))
     {
         clearInterval(mainLoopInterval);
         log("[INFO] End of Game");
@@ -1762,11 +1776,14 @@ function parseLatestMessages() {
 
     newMessages.forEach((msg, idx) =>
     {
-        console.log("[NOTE] Msg", MSG_OFFSET + idx);
+        if (configLogMessages === true)
+            console.log("[NOTE] Msg", MSG_OFFSET + idx, "|", msg.textContent);
         ALL_PARSERS.every(parser =>
         {
             return parser(msg);
         });
+        if (configLogWorldCount === true)
+            console.log("[NOTE] Word count:", manyWorlds.length);
     });
 
     render(manyWorlds);
