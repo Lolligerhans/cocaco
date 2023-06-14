@@ -6,35 +6,20 @@
 }
 */
 
-
-/* For bubble plot on website */
+/* for test main.HTML */
 #explorer-plt
 {
-    width: 400px;
-    height: 400px;
+    /*width: 400px;*/
+    /*height: 400px;*/
     position: absolute;
     top: 300px;
+
+    border: none;
 /*    position: absolute;
 //    top: 0px;
 //    left: 0px;*/
     padding: 0px;
-    border: none;
 }
-
-/* for test main.HTML */
-.plot-window
-{
-    width: 400px;
-    height: 400px;
-    position: absolute;
-/*    position: absolute;
-//    top: 0px;
-//    left: 0px;*/
-    padding: 0px;
-    border: none;
-}
-
-
 
 #explorer-tbl {
     position: absolute;

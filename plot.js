@@ -385,6 +385,7 @@ function plotResourcesAsBubbles(idToPlotInto)
     }
 
     const layout = {
+        margin: {t: 20, b: 20, l: 20, r: 20},
         showlegend: false,
         height: 400 / divideSizes,
         width: 400 / divideSizes,
@@ -403,7 +404,12 @@ function plotResourcesAsBubbles(idToPlotInto)
         }
     };
 
-    Plotly.newPlot(idToPlotInto, playerBubbles, layout);
+    const config =
+    {
+        displayModeBar: false
+    };
+
+    Plotly.newPlot(idToPlotInto, playerBubbles, layout, config);
     log("Finished plotting current MW state into ID =", idToPlotInto);
 }
 

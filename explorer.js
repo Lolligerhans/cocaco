@@ -1174,6 +1174,7 @@ function render()
         catch (e) { console.warn("had an issue deleting the plot", e); }
         let plt = document.createElement("plot");
         plt.id = bubblePlotId;
+//        plt.class = "plot-window";
         body.appendChild(plt);
         fillElementWithPlot(plt);
     }
