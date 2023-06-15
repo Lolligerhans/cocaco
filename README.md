@@ -10,4 +10,4 @@ Counts cards of all players.
 - [x] Available steals (%)
 - [ ] UI
 - [x] Reveal cards through trade offers
-- [ ] Reveal card counts through robber event
+- [x] Reveal card counts through robber event

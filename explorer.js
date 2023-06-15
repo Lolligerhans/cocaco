@@ -617,6 +617,15 @@ function mwCollapseMin(player, slice)
     });
 }
 
+// Discard if 8 or more cards
+function mwCollapseMinTotal(player, count = 8)
+{
+    manyWorlds = manyWorlds.filter(world =>
+    {
+        return getResourceSumOfSlice(world[player]) >= count;
+    });
+}
+
 // Measure single resource of a player
 function collapseMin(player, resourceIndex, count = 1)
 {
@@ -1592,6 +1601,7 @@ function parseDiscardedMessage(pElement) {
     const discarded = findAllResourceCardsInHtml(pElement.innerHTML);
     const discardedCardsAsSlie = generateWorldSlice(discarded);
     logs("[INFO] Discarded:", player, "->", discarded);
+    mwCollapseMinTotal(player); // Total can be unknown to MW after monopoly
     mwTransformSpawn(player, -discardedCardsAsSlie);
     printWorlds();
 
