@@ -71,6 +71,8 @@ let placeInitialSettlementSnippet = "placed a"; // Normal building uses the word
 
 // Parser snippets
 let receivedInitialResourcesSnippet = "received starting resources";
+const tradeOfferSnippet = " wants to give ";
+const tradeOfferResSnippet = " for ";
 const yearOfPlentySnippet = " took from bank ";
 let receivedResourcesSnippet = " got ";
 let builtSnippet = " built a ";
@@ -607,6 +609,14 @@ function collapseTotal(resourceIndex, count)
 {
 }
 
+function mwCollapseMin(player, slice)
+{
+    manyWorlds = manyWorlds.filter(world =>
+    {
+        return !sliceHasNegative(world[player] - slice);
+    });
+}
+
 // Measure single resource of a player
 function collapseMin(player, resourceIndex, count = 1)
 {
@@ -1117,14 +1127,14 @@ function renderPlayerCell(player) {
     `;
 }
 
-let render_cache = null;
-function shouldRenderTable(...deps) {
-    let str = JSON.stringify(deps);
-    if (str === render_cache) {
-        return false;
+let messageNumberDone = 0;
+function isNewMessage(msgNumber) {
+    if (msgNumber > messageNumberDone)
+    {
+        messageNumberDone = msgNumber;
+        return true;
     }
-    render_cache = str;
-    return true;
+    return false;
 }
 
 // Temporary helper
@@ -1151,7 +1161,7 @@ function fillElementWithPlot(element)
 // TODO take data to-be displayed as input?
 function render()
 {
-    if (!shouldRenderTable(MSG_OFFSET))
+    if (isNewMessage(MSG_OFFSET) === false)
     {
         log("Skip display update");
         return;
@@ -1307,6 +1317,32 @@ function parseInitialGotMessage(pElement)
     logs("[INFO] First settlement resources:", player, "<-", initialResourceTypes);
     if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
     mwTransformSpawn(player, asSlice);
+}
+
+function parseTradeOffer(element)
+{
+    const txt = element.textContent;
+    if (!txt.includes(tradeOfferSnippet))
+    {
+        return true;
+    }
+
+    const player = txt.substring(0, txt.indexOf(" "));
+    if (!players.includes(player))
+    {
+        log("[ERROR] Failed to identify trader. | Got:", player);
+        alertIf(36);
+        return;
+    }
+
+    const offerHtml = element.innerHTML.split(tradeOfferResSnippet)[0];
+    const offer = findAllResourceCardsInHtml(offerHtml);
+    const asSlice = generateWorldSlice(offer);
+    logs("[INFO] Trade offer:", player, "->", offer);
+    mwCollapseMin(player, asSlice);
+    printWorlds();
+
+    return false;
 }
 
 function parseYearOfPlenty(element)
@@ -1750,6 +1786,7 @@ function parseWin(element)
 // The parser, parseInitialGotMessage() is not included in this list. We call use it one at the start, not regularly.
 let ALL_PARSERS = [
     parseGotMessage,
+    parseTradeOffer,
 
     parseStealFromOtherPlayers, // TODO rename pair to stealKnwon vs. stealUnknown
     parseStealIncludingYou,
@@ -1933,7 +1970,7 @@ function waitForInitialPlacement() {
             render(manyWorlds);
 
             // Start main loop
-            mainLoopInterval = setInterval(parseLatestMessages, 5000);
+            mainLoopInterval = setInterval(parseLatestMessages, 10000);
         }
         else
         {

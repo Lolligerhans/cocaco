@@ -9,5 +9,5 @@ Counts cards of all players.
 - [x] Available builds (%)
 - [x] Available steals (%)
 - [ ] UI
-- [ ] Reveal cards through trade offers
+- [x] Reveal cards through trade offers
 - [ ] Reveal card counts through robber event
