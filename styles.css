@@ -35,13 +35,13 @@
 }
 
 .explorer-tbl-header {
-    border: solid 1px #555;
+    border: none;
     font-family: sans-serif;
 }
 
 .explorer-tbl-header .explorer-tbl-cell {
-    padding: 4px 7px 2px; /* default override cell padding */
-    border: solid 1px #555;
+    padding: 4px 4px 2px; /* default override cell padding */
+    border: none;
 }
 
 .explorer-tbl-row {
@@ -53,14 +53,14 @@
 .explorer-tbl-row:nth-child(2n) { background-color: #f9f9f9; }
 
 .explorer-tbl-cell {
-    border: solid 1px #555;
+    border: none;
     box-sizing: unset;
     color: black;
     font-weight: bold;
     font-family: monospace;
-    padding: 0 2px;
+    padding: 0px 4px;
     text-align: center;
-    line-height: 1.5em;
+    line-height: 1.2em;
     vertical-align: top;
 }
 
@@ -79,14 +79,14 @@
 
 .explorer-tbl-player-name {
     font-weight: bold;
-    margin: 0px 10px 0 4px;
+    margin: 0px 8px 0 4px;
 }
 
 .explorer-tbl-player-col-header {
     font-weight: 600;
     text-transform: uppercase;
     border: none;
-    padding-left: 10px; /* width of cell-color + margin-left of player-name */
+    padding-left: 8px; /* width of cell-color + margin-left of player-name */
     font-size: 85%;
 }
 
