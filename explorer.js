@@ -9,6 +9,7 @@ const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 const configLogMessages = false;
 const configLogWorldCount = false;
+const configRefreshRate = 10000;
 
 //============================================================
 // Hello
@@ -716,10 +717,12 @@ function normalizeManyWorlds()
 //     ...                                          }
 
 // The global analyis/stats object
+// TODO collect in single object, then pass it to mwUpdateStats
 let worldGuessAndRange = {};
 let mwDistribution = {};
 let mwBuildsProb = {};
 let mwSteals = {};
+let mwTotals = {};
 
 // Generate
 //  - Minimal resource distribution
@@ -797,6 +800,9 @@ function mwUpdateStats()
             worldGuessAndRange[player][res] = range;
         }
     }
+    // For total card stats (doesnt matter which world is used)
+    mwTotals = generateFullNamesFromWorld(manyWorlds[0]);
+
 //    log2("Generated guess and range", worldGuessAndRange);
 }
 
@@ -1213,13 +1219,17 @@ function render()
     header.className = "explorer-tbl-header";
     let headerRow = header.insertRow(0);
     let playerHeaderCell = headerRow.insertCell(0);
-    playerHeaderCell.innerHTML = "Guess (Chance)<br>Steal chance";
+    playerHeaderCell.innerHTML = "Guess (Pr)<br>Steal Pr";
     playerHeaderCell.className = "explorer-tbl-player-col-header";
     for (let i = 0; i < resourceTypes.length; i++) {
         let resourceType = resourceTypes[i];
         let resourceHeaderCell = headerRow.insertCell(i + 1);
         resourceHeaderCell.className = "explorer-tbl-cell";
-        resourceHeaderCell.innerHTML = getStuffImage(resourceType);
+        const total = mwTotals[resourceType];
+        const numberString = total > 0
+                           ? `${total}`
+                           : "";
+        resourceHeaderCell.innerHTML = numberString + getStuffImage(resourceType);
     }
     let i = resourceTypes.length + 1;
     for (const [i, v] of Object.keys(mwBuilds).entries())
@@ -1980,7 +1990,7 @@ function waitForInitialPlacement() {
             render(manyWorlds);
 
             // Start main loop
-            mainLoopInterval = setInterval(parseLatestMessages, 10000);
+            mainLoopInterval = setInterval(parseLatestMessages, configRefreshRate);
         }
         else
         {
