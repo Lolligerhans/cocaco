@@ -12,7 +12,7 @@
     /*width: 400px;*/
     /*height: 400px;*/
     position: absolute;
-    top: 300px;
+    top: 200px;
 
     border: none;
 /*    position: absolute;
@@ -24,7 +24,6 @@
 
 #explorer-tbl {
     position: absolute;
-    top: 400;
     background-color: gray;
     z-index: 9999;
     top: 0;
@@ -80,6 +79,12 @@
 .explorer-tbl-player-name {
     font-weight: bold;
     margin: 0px 8px 0 4px;
+}
+
+.explorer-tbl-unknown-stats
+{
+    font-weight: lighter;
+    color: black;
 }
 
 .explorer-tbl-player-col-header {

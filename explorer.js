@@ -8,7 +8,7 @@ const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 const configLogMessages = false;
-const configLogWorldCount = false;
+const configLogWorldCount = true;
 const configRefreshRate = 10000;
 
 //============================================================
@@ -33,6 +33,24 @@ if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
 //if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
 
 //============================================================
+// Math helpers
+//============================================================
+
+// fac(20) < 2^64 < fac(21)
+let facArray = [];
+function fac(x)
+{
+    if (x < 2) return 1;
+    if (facArray[x] > 0) return facArray[x];    // (undefined > 0) === false
+    return facArray[x] = x * fac(x - 1);
+}
+
+function choose(n, k)
+{
+    return fac(n) / (fac(k) * fac(n-k));
+}
+
+//============================================================
 // Logging helpers
 //============================================================
 
@@ -50,7 +68,7 @@ function log(...args)
 // Log stringified
 function logs(...args)
 {
-    log(...args.map( x => p(x) ));
+    log(...args.map( x => JSON.stringify(x) ));
 }
 
 function log2(...args)
@@ -238,6 +256,11 @@ function findAllResourceCardsInHtml(html)
 //  0) Helpers to mutate, generate, extract and test slices, etc.
 //  1) Use integer indices to index players (TODO) and resourceTypes (done)
 //  2)
+//
+// Recovery:
+//  1) Limited in card count, especially when monos are involved
+//  2) Ignores knowledge of about what resources unknown cards are known NOT to
+//     be (from a monopoly).
 
 // TODO Prefix all manyworlds stuff with "mw"
 
@@ -247,18 +270,27 @@ const brick1 = 0x1 << (6 * 1);
 const sheep1 = 0x1 << (6 * 2);
 const wheat1 = 0x1 << (6 * 3);
 const ore1   = 0x1 << (6 * 4);
-const overflow1  = 0x20820820; // == 0b00100000100000100000100000100000
-const worldResourceIndexTable = {"wood":0, "brick":1, "sheep":2, "wheat":3, "ore":4,};
-const resourceBase = {0:wood1, 1:brick1, 2:sheep1, 3:wheat1, 4:ore1};
+const unknown1 = 0x1 << (6 * 5); // Assumes 64bit int
+// Overflow indicator bits for wood-ore. Not: unknown (!)
+const loverflow1 = 0x20820820; // == 0b 00100000 10000010 00001000 00100000
+const worldResourceIndexTable = {"wood":0, "brick":1, "sheep":2, "wheat":3, "ore":4, "unknown":5};
+// We reserve 9+1 bits for unknown resources (to allow higher values), rest has
+// 5+1 bit. resourceBase[6] is for shifting unknown resources
+const resourceBase = [wood1, brick1, sheep1, wheat1, ore1, unknown1, unknown1 * 512];
+const mwOverflowTable = [wood1 * 32, brick1 * 32, sheep1 * 32, wheat1 * 32, ore1 * 32, unknown1 * 512];
 const woodMask  = 0x1F << (6 * 0);  // Wood-singular slice mask (1 bits in all wood spots)
-const brickMask = 0x1F << (6 * 1);
+const brickMask = 0x1F << (6 * 1);  // Small-enough bit ops here!
 const sheepMask = 0x1F << (6 * 2);
 const wheatMask = 0x1F << (6 * 3);
 const oreMask   = 0x1F << (6 * 4);
-const resourceMask = {0:woodMask, 1:brickMask, 2:sheepMask, 3:wheatMask, 4:oreMask};
+const unknownMask = 0x1FF * 2**(6 * 5); // 9 bit value, 1 bit overflow
+const resourceMask = {0:woodMask, 1:brickMask, 2:sheepMask, 3:wheatMask, 4:oreMask, 5:unknownMask};
 // TODO make wrapper that returns a copy
 const emptyResourcesByName = {wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0};
+const emptyResourcesByNameWithU = {wood:0, brick:0, sheep:0, wheat:0, ore:0, "unknown":0};
 
+// Only normal resources
+const mwUnitsSlice = wood1 + brick1 + sheep1 + wheat1 + ore1;
 const mwRoadSlice = wood1 + brick1;
 const mwSettlementSlice = wood1 + brick1 + sheep1 + wheat1;
 const mwDevcardSlice = sheep1 + wheat1 + ore1;
@@ -294,12 +326,9 @@ function clearResourceFromSlice()
 
 function sliceHasNegative(slice)
 {
-    return (slice & overflow1) ? true : false;
-}
-
-function getSingularSlice(worldSlice, resourceIndex)
-{
-    return worldSlice & resourceMask[resourceIndex];
+    //      low bits overflow            unknown card overflow
+    return ((slice & loverflow1) || (slice / resourceBase[6] < 0))
+        ? true : false;
 }
 
 function generateSingularSlice(oneResourceIndex, count = 1)
@@ -307,20 +336,79 @@ function generateSingularSlice(oneResourceIndex, count = 1)
     return count * resourceBase[oneResourceIndex];
 }
 
-function getResourceCountOfSlice(slice, oneResourceIndex)
+// Get resource count in non-negative (!) slice
+function getResourceCountOfSlice(slice, resIdx)
 {
-    return (slice & resourceMask[oneResourceIndex])
-        >> (oneResourceIndex * manyWorldsBits);
+    return Math.trunc( (slice % resourceBase[resIdx + 1])    // mask up
+                        / resourceBase[resIdx]);                // shift
+
+    // Bitops version
+//    return (slice & resourceMask[resIdx])
+//        >> (resIdx * manyWorldsBits);
+}
+
+// TODO remove: not used and broken bitops
+function getSingularSlice(slice, resIdx)
+{
+    return getResourceCountOfSlice(slice, resIdx) * resourceBase[resIdx];
+    // Bitops version
+//    return worldSlice & resourceMask[resIdx];
 }
 
 function getResourceSumOfSlice(slice)
 {
     // TODO do we get problems if we only mask once at end?
-    return ((slice >> (manyWorldsBits * 0)) & resourceMask[0]) // wood
-         + ((slice >> (manyWorldsBits * 1)) & resourceMask[0])
-         + ((slice >> (manyWorldsBits * 2)) & resourceMask[0])
-         + ((slice >> (manyWorldsBits * 3)) & resourceMask[0])
-         + ((slice >> (manyWorldsBits * 4)) & resourceMask[0]); // ore
+    return getResourceCountOfSlice(slice, 0)
+         + getResourceCountOfSlice(slice, 1)
+         + getResourceCountOfSlice(slice, 2)
+         + getResourceCountOfSlice(slice, 3)
+         + getResourceCountOfSlice(slice, 4)
+         + getResourceCountOfSlice(slice, 5);
+
+    // Bitops version:
+//    return ((slice >> (manyWorldsBits * 0)) & resourceMask[0]) // wood
+//         + ((slice >> (manyWorldsBits * 1)) & resourceMask[0])
+//         + ((slice >> (manyWorldsBits * 2)) & resourceMask[0])
+//         + ((slice >> (manyWorldsBits * 3)) & resourceMask[0])
+//         + ((slice >> (manyWorldsBits * 4)) & resourceMask[0]) // ore
+//         + ( (slice           >> (manyWorldsBits * 5) )
+//           & (resourceMask[5] >> (manyWorldsBits * 5) ));        // Unknown
+}
+
+// (!) Limits amount of unknown cards used per resource
+// TODO This is why recovery will could fail if a world with more unknown cards
+//      appears. Move to more bits, then swap 12 -> 19.
+//
+// Fixes slice using unknown cards. If succeeds, result is free negative
+// values. If impossible, result has a negative value.
+//
+// Algorith to avoid intermediate zeros (we can only test for any-0):
+//  1) Start with U many unknown cards.
+//  2) Spawn 12 extra cards to every normal resource. Any 0 left =>
+//     unrecoverable. No change to unknown cards!
+//  3) From all normal resources with N cards, transfer min(12, N) cards to
+//     unknown cards. This gives back the ghost cards if possible.
+//  4) Despawn 5 * 19 unknown cards. If negative => unrecoverable. Unknon cards
+//     left:
+//
+//      U + (60 - replaced) - 60 === U - replaced
+//
+// Restrict to 12 cards to prevent normal resource overflow (19 + 12 == 31).
+function mwFixOrNegative(slice)
+{
+    // Special case: No fix needed
+    if (!sliceHasNegative(slice)) return slice;
+
+    // General case: fix by distributiong unknown cards
+    let res = slice + 12 * mwUnitsSlice;                              // 2
+    for (let i = 0; i < 5; ++i) // TODO make resources iterable w/ and w/o unknown
+//    for (const [resName, i] of Object.entries(worldResourceIndexTable)) // 3
+    {
+        const tradeSlice = unknown1 - generateSingularSlice(i);
+        res += Math.min(12, getResourceCountOfSlice(res, i)) * tradeSlice;
+    }
+    res -= generateSingularSlice(5) * (5 * 12);                         // 4
+    return res; // Has negative if more unknown cards would be needede
 }
 
 // Takes [wood:0,brick:1,...] and outputs the corresponding slice
@@ -344,6 +432,7 @@ function generateFullNamesFromSlice(slice)
     {
         res[r] = getResourceCountOfSlice(slice, worldResourceIndex(r));
     }
+    res["unknown"] = getResourceCountOfSlice(slice, 5);
     return res;
 }
 
@@ -380,6 +469,25 @@ function worldHasNegativeSlice(world)
             return true;
     }
     return false;
+}
+
+// Return [matched_slice, addedResources]
+// TODO Used anywhere? No. Remove. Probably buggy, too
+function mwGenerateMatchingSlice(slice, minimum)
+{
+    let ret = 0;
+    // Iterate mwResourceIndices
+    for (let i = 0; i < 5; ++i)
+//    for (const [res, i] of Object.entries(worldResourceIndexTable))
+//    for (const i of worldResourceIndexTable)
+    {
+        // Use slices (not counts!)
+        // TODO use count and remove getSlice helper
+        const has = getSingularSlice(slice, i);
+        const needs = getSingularSlice(minimum, i);
+        ret += Math.min(has, needs);
+    }
+    return [ret, ret - slice];
 }
 
 // Return manyworlds data in human readable notation instead of slices. Use
@@ -434,9 +542,74 @@ function printWorlds()
     }
 }
 
+// Fixes world using unknown cards (returning true) or returns false. Use to
+// filter worlds in recovery. When false is returned, the world is unchanged.
+function mwFixOrFalse(world, playerIdx)
+{
+    // Skip fix attemt if no special case (likely)
+    const s = world[playerIdx];
+    if (getResourceCountOfSlice(s, 5) === 0)
+        return !sliceHasNegative(s);
+
+    const fixAttempt = mwFixOrNegative(s);
+    if (sliceHasNegative(fixAttempt))
+    {
+        // Fix failed
+        return false;
+    }
+    else
+    {
+        // Fix succeeded
+        const usedUnknown = getResourceCountOfSlice(world[playerIdx], 5);   // TODO replace raw number with table lookup (?)
+        logs(`[NOTE] Using ${usedUnknown} unknown cards to fix world for player ${playerIdx}`);
+        world[playerIdx] = fixAttempt;
+        return true;
+    }
+}
+
 //------------------------------------------------------------
 // ManyWorlds interface
 //------------------------------------------------------------
+
+// Starts recovery mode.
+// Input: counts === { "alice": 5, ... } the total number of (unknown) cards
+function mwCardRecovery(counts)
+{
+    let world = {};
+    for (const player of players)
+    {
+        world[worldPlayerIndex(player)] = generateSingularSlice(5, counts[player]);
+    }
+    world["chance"] = 1;
+    manyWorlds = [world];
+
+    logs("[NOTE] Starting recovery mode:", manyWorlds);
+    printWorlds();
+}
+
+// Recovers MW state from unknown cards. Player array is used and assumed
+// correct.
+// TODO Add option for player recovery
+function mwManualRecoverCards()
+{
+    log("[NOTE] Starting manual recovery");
+    stopMainLoop();
+    MSG_OFFSET = getAllMessages().length;
+    let counts = {};
+    for (player of players)
+    {
+        const count = prompt(`${player} number of cards:`, 0);
+        counts[player] = count;
+    }
+    mwCardRecovery(counts);
+    restartMainLoop();
+}
+
+// Waits 1 round to collect all player names, then needs card counts (?)
+function mwFullRecovery(playerCount)
+{
+
+}
 
 // Requires existing users array
 function initWorlds(startingResources = null)   // TODO add resources as argument, so we can finally remove the old resources array
@@ -476,7 +649,7 @@ function initWorlds(startingResources = null)   // TODO add resources as argumen
 // Handle unilaterate resource changes like building, YOP, or city profits
 function mwTransformSpawn(playerName, resourceSlice)
 {
-    let playerIdx = worldPlayerIndex(playerName);
+    const playerIdx = worldPlayerIndex(playerName);
     manyWorlds = manyWorlds.map(world =>
     {
         let tmp = world;    // I think no copy needed (?)
@@ -487,6 +660,12 @@ function mwTransformSpawn(playerName, resourceSlice)
     // Only if we remove something can we end up negative
     if (sliceHasNegative(resourceSlice))
     {
+        // TODO Only if recover = on
+        manyWorlds = manyWorlds.map(world =>
+        {
+            world[playerIdx] = mwFixOrNegative(world[playerIdx]);
+            return world;
+        });
         manyWorlds = manyWorlds.filter(world =>
         {
             return !sliceHasNegative(world[playerIdx]);
@@ -497,14 +676,25 @@ function mwTransformSpawn(playerName, resourceSlice)
 // If you do not have a slice, use 'transformTradeByName()' instead
 function transformExchange(source, target, tradedSlice)
 {
+    const s = worldPlayerIndex(source);
+    const t = worldPlayerIndex(target);
     manyWorlds = manyWorlds.map(world =>
     {
         let tmp = deepCopy(world); // TODO Do we need to duplicate here?
         tmp[source] -= tradedSlice;
         tmp[target] += tradedSlice;
         return tmp;
-    }).filter( world =>
+    });
+    manyWorlds = manyWorlds.map(world =>
     {
+        let tmp = world;    // Copy needed (?)
+        tmp[s] = mwFixOrNegative(tmp[s]);
+        tmp[t] = mwFixOrNegative(tmp[t]);
+        return tmp;
+    });
+    manyWorlds = manyWorlds.filter( world =>
+    {
+        // TODO Only if slice (or -slice) have negatives
         return !sliceHasNegative(world[source])
             && !sliceHasNegative(world[target]);
     });
@@ -521,7 +711,7 @@ function transformTradeByName(trader, other, offer, demand)
     slice -= generateFullSliceFromNames(demand);
 
     // Sanity check
-    if (!sliceHasNegative(slice))
+    if (!sliceHasNegative(slice) || !sliceHasNegative(-slice))
     {
         log("[ERROR] Trades must be bidirectional");
         alertIf(23);
@@ -542,63 +732,112 @@ function branchSteal(victim, thief)
     // the resources was stolen.
     for (const world of manyWorlds)
     {
-    for (const r in resourceTypes)  // (!) Iterates indices. Depends on order.
-    {
-        let w = deepCopy(world);
-        const slice = generateSingularSlice(r, 1);
-        w[victim] -= slice;
-        // Do not create negative-card worlds
-        if (sliceHasNegative(w[victim])) continue;
-        w[thief] += slice;
+        const totalRes = getResourceSumOfSlice(world[victim]);
+        if (totalRes === 0) continue;   // Impossible to steal => world dies
+        for (let r = 0; r < resourceTypes.length; ++r)  // TODO How to iterate easier?
+//        for (const [r, resName] of Object.keys(resourceTypes))
+//        for (const r in resourceTypes)  // (!) Iterates indices. Depends on order.
+        {
+            let w = deepCopy(world);
+            const slice = generateSingularSlice(r, 1);
+            w[victim] -= slice;
+            // Do not create negative-card worlds
+            if (sliceHasNegative(w[victim])) continue;
+            w[thief] += slice;
 
-        // Use slice in old (!) world to generate steal chance
-        let totalRes = getResourceSumOfSlice(world[victim]);
-        let thisRes = getResourceCountOfSlice(world[victim], r);
-        w["chance"] = world["chance"] * thisRes / totalRes;
-        if (totalRes < thisRes) { alertIf(27); debugger; } // Sanity check
-
-        newWorlds.push(w);
+            // Use slice in old (!) world to generate steal chance
+            let thisRes = getResourceCountOfSlice(world[victim], r);
+            w["chance"] = world["chance"] * thisRes / totalRes;
+            if (totalRes < thisRes) { alertIf(27); debugger; } // Sanity check
+            newWorlds.push(w);
+        }
+        // TODO Only in recovery mode
+        // TODO Iterate in loop above?
+        const u = getResourceCountOfSlice(world[victim], 5);
+        if (u > 0)
+        {
+            let w = deepCopy(world);
+            const slice = generateSingularSlice(5);
+            w[victim] -= slice;
+            w[thief] += slice;
+            w["chance"] = world["chance"] * u / totalRes;
+            newWorlds.push(w);
+        }
     }
-    }
-    manyWorlds = newWorlds; // TODO rename 'manyWorlds' to 'manyWorlds'
+    manyWorlds = newWorlds;
 
     // Stealing has uncertainty. Hence we create new worlds. Check duplicates.
     removeDuplicateWorlds();
 }
 
-// Transform worlds by monopoly
-// TODO Make the top level functions use names or indices, just consistent
+// Branches by moving, in all worlds, 0 to U from victims unknown cards to the
+// tolen resource. Where U is the number of unknown cards victim has.
+function mwBranchRecoveryMonopoly(victimIdx, thiefIdx, resourceIndex)
+{
+    // Similar to branchSteal()
+
+    let newWorlds = [];
+
+    // For all existing worlds, create up to 5 new worlds, where each one of
+    // the resources was stolen.
+    for (const world of manyWorlds)
+    {
+        const totalRes = getResourceSumOfSlice(world[victimIdx]);
+        const u = getResourceCountOfSlice(world[victimIdx], 5);
+
+        const steal = generateSingularSlice(5);
+        const take = generateSingularSlice(resourceIndex);
+        for (let i = 0; i <= u; ++i)
+        {
+            let w = deepCopy(world);
+            w[victimIdx] -= steal * i;
+            w[thiefIdx] += take * i;
+            // Binomial experiment
+            w["chance"] = world["chance"] * choose(u, i) * 0.2**i * 0.8**(u-i);
+            newWorlds.push(w);
+        }
+    }
+    manyWorlds = newWorlds;
+
+    // Check duplicates after branching recovery monopoly
+    removeDuplicateWorlds();
+}
+
+// Transform worlds by monopoly (branches in recovery)
 function transformMonopoly(thiefName, resourceIndex)
 {
+    const thiefIdx = worldPlayerIndex(thiefName);
     // TODO Store world chance outside of world. Makes iterating better
     manyWorlds = manyWorlds.map( world =>
     {
         // Determine mono count
         let totalCount = 0;
-        const mask = resourceMask[resourceIndex];
-        const shift = resourceIndex * manyWorldsBits;
         for (const player of players)   // Not for the "chance" entry
         {
-            totalCount += (world[player] & mask) >> shift;
+            const n = getResourceCountOfSlice(world[player], resourceIndex);
+            totalCount += n;
+            world[player] -= generateSingularSlice(resourceIndex, n);
         }
 //        log("total count in this world is:", totalCount,
 //            "(should be same in all worlds: expenses are public)");
 
-        // Remove stolen cards
-        for (const player of players)
-        {
-            world[player] = world[player] & ~mask;
-//            world[numb] = slice & ~mask;
-        }
-
         // Give cards to thief
-        const thiefIdx = worldPlayerIndex(thiefName);
         world[thiefIdx] += generateSingularSlice(resourceIndex, totalCount);
 
         return world;
     });
 
     removeDuplicateWorlds();
+
+    // TODO Collapse based on monopolied number of cards for recovery
+
+    // Recovery mode branching
+    for (victim of players)
+    {
+        const victimIdx = worldPlayerIndex(victim);
+        if (victimIdx === thiefIdx) continue;
+        mwBranchRecoveryMonopoly(victimIdx, thiefIdx, resourceIndex);
+    }
 }
 
 // Measure sum of resources of a player (for monos)
@@ -610,12 +849,35 @@ function collapseTotal(resourceIndex, count)
 {
 }
 
+// Collapse to worlds where player has (at least) the content of 'slice' of
+// each resource type. 'slice' must have only positive entries, only normal
+// resources.
 function mwCollapseMin(player, slice)
 {
+    // Sanity check
+    if (sliceHasNegative(slice))
+    {
+        alertIf(37);
+        console.error("[ERROR] mwCollapseMin mut take positive slices");
+        return;
+    }
+
+    // Generate as-if stolen worlds (to filter)
+    const pIdx = worldPlayerIndex(player);
+    manyWorlds = manyWorlds.map(world =>
+    {
+        let tmp = world;
+        tmp[pIdx] = mwFixOrNegative(tmp[pIdx] - slice);
+        return tmp;
+    });
     manyWorlds = manyWorlds.filter(world =>
     {
-        return !sliceHasNegative(world[player] - slice);
+        // For recovery, also try if enough when including unknown cards
+        return !sliceHasNegative(world[player]);
     });
+
+    // Give back to obtain unalterd worlds that survive hypothetical steal
+    mwTransformSpawn(player, slice);
 }
 
 // Discard if 8 or more cards
@@ -623,14 +885,17 @@ function mwCollapseMinTotal(player, count = 8)
 {
     manyWorlds = manyWorlds.filter(world =>
     {
+        // No recovery needed since card count is known in each world
         return getResourceSumOfSlice(world[player]) >= count;
     });
 }
 
 // Measure single resource of a player
+/*
 function collapseMin(player, resourceIndex, count = 1)
 {
 }
+*/
 
 // Measure single resource of a player
 function collapseMax(player, resourceIndex, count = 0)
@@ -643,6 +908,9 @@ function collapseEmpty(player)
 }
 
 // Measure single resource of a player
+//
+// (!) Not part of recovery mechanism! Because not used for games.
+// TODO make it part of recovery mechanism or remove.
 function collapseExact(player, resourceIndex, count)
 {
     manyWorlds = manyWorlds.filter((world) =>
@@ -662,6 +930,7 @@ function removeDuplicateWorlds()
     // Sort worlds, then remove idendical elements following each other
     manyWorlds = manyWorlds.sort((w1, w2) =>
     {
+        // TODO This loop works? Replace with for of Object.keys()
         for (let p in w1)
         {
             if (w1[p] !== w2[p]) return w1[p] < w2[p] ? -1 : 1;
@@ -671,7 +940,7 @@ function removeDuplicateWorlds()
     {
         // Keep unique worlds
         if (pos === 0) { return true; }
-        other = others[pos-1];
+        let other = others[pos-1];
         for (let p of players)
         {
             if (item[p] !== other[p])    // Compare full slices in one go
@@ -701,7 +970,7 @@ function normalizeManyWorlds()
 
 // range has 4 numbers: [ smallest_nonzero_index,
 //                        max_count, index_of_max_count,
-//                        largest_nonzero_index ].
+//                        largest_nonzero_index ].  // TODO This is wrong by now
 //  0) smallest_nonzero_index: minimal amount of available cards
 //  1) fraction: fraction of worlds having the most common (guessed) card count
 //  2) index_of_max_count: is the guess for the resource count, and the most
@@ -740,11 +1009,11 @@ function mwUpdateStats()
 
     for (player of players)
     {
-        mwSteals[player] = deepCopy(emptyResourcesByName);
+        mwSteals[player] = deepCopy(emptyResourcesByNameWithU);
         mwBuildsProb[player] = deepCopy(mwBuilds);
         Object.keys(mwBuildsProb[player]).forEach(k => mwBuildsProb[player][k] = 0);
         mwDistribution[player] = {};
-        for (res of resourceTypes)
+        for (res of [...resourceTypes, "unknown"])
         {
             // At most 19 cards because there are only 19 cards per resource
             //  Accumulated chance of player having exactly 4 of this resource
@@ -754,12 +1023,13 @@ function mwUpdateStats()
     }
 
     // Count across all worlds
+    // TODO Include unknown resources
     manyWorlds.forEach(w =>
     {
         for (player of players)
         {
             const totalPlayerRes = getResourceSumOfSlice(w[worldPlayerIndex(player)]);
-            for (res of resourceTypes)
+            for (res of [...resourceTypes, "unknown"])
             {
                 // For distribution
                 const countInWorld = getResourceCountOfSlice(
@@ -783,13 +1053,17 @@ function mwUpdateStats()
     // TODO Possibly add different statistics: Mean, mode, other percentiles
     for (player of players)
     {
-        for (res of resourceTypes)
+        for (res of [...resourceTypes, "unknown"])
         {
+            if (res === "unknown")
+            {
+//                debugger;
+            }
             // Compute guess and range for this player-resource combo based on
             // the full statistics.
             let range = [19, 0, 0, 0]; // [ smallest_nonzero_index,
-                                    //   max_chance, index_of_max_count
-                                    //   largest_nonzero_index ]
+                                       //   max_chance, index_of_max_count
+                                       //   largest_nonzero_index ]
             let maxIndex = mwDistribution[player][res].reduce((r, val, idx) =>
             {
                 if (val != 0) r[0] = Math.min(r[0], idx);
@@ -802,7 +1076,6 @@ function mwUpdateStats()
     }
     // For total card stats (doesnt matter which world is used)
     mwTotals = generateFullNamesFromWorld(manyWorlds[0]);
-
 //    log2("Generated guess and range", worldGuessAndRange);
 }
 
@@ -915,11 +1188,11 @@ function worldTest()
     log("before anything"); printWorlds();
     logs(manyWorlds);
     branchSteal("A", "B");
-    log("after steal"); printWorlds();
+    log("after steal. should have 2 worlds now"); printWorlds();
     const offer  = {wood:"0", brick:"1", sheep:"0", wheat:"0", ore:"0"};
     const demand = {wood:"1", brick:"0", sheep:"0", wheat:"0", ore:"0"};
     transformTradeByName("B", "C", offer, demand);
-    log("after first trade (should have 2 different worlds now)"); printWorlds();
+    log("after first trade (should have 2 different worlds stile)"); printWorlds();
     transformTradeByName("B", "C", offer, demand);
     log("after second trade (should have collapsed to 1 world)"); printWorlds();
     logs("again as string:", manyWorlds);
@@ -1062,6 +1335,105 @@ function worldTest()
         log("[NOTE] ManyWorlds test 6 (guess and range) passed");
     }
 
+    // Test 7: mwTransformSpawn
+    //  1) Start randomly.
+    //  2) Enter recovery with A=2U, B=2U (sum = 4 cards)
+    //  3) A offers 1 wood. => A has only 1 unknown card left.
+    //  4) A trades 1 wood to B for 1 brick. => A + B have 1 unknown each.
+    //  5) Steal A -> B. => 2 worlds (for B): {road + 1U, wood + 2U}
+    //  6) A monos wood => 5 worlds (for B): {brick, brick+U, 0, U, 2U}
+    //  4) B reveals minTotal, cards >= 2. => 2 worlds left
+    //  5) A offers 1 sheep (new card) => only 1 world left where B has the other unknown + brick.
+    //  6) A trades 1 sheep to B for 1 wheat => full recovery, 1 world.
+    log("-------------------- MW TEST 7 (recovery) ---------------------------------");
+    passedTest = true;
+    resources = { "A": {wood:1,brick:0,sheep:0,wheat:0,ore:0},
+                  "B": {wood:0,brick:1,sheep:0,wheat:0,ore:0},
+                  "C": {wood:0,brick:0,sheep:1,wheat:0,ore:0},
+                  "D": {wood:0,brick:0,sheep:0,wheat:1,ore:0} };
+    initWorlds(resources);
+    log("before anything (7)"); printWorlds();
+    const counts = {"A": 2, "B": 2, "C": 0, "D": 0};
+    mwCardRecovery(counts);
+    log("after entering recovery mode, 2*U each"); printWorlds();
+    if (getResourceCountOfSlice(manyWorlds[0]["A"], 5) != 2) passed = false;
+    const woodOffer = {wood: 1, brick: 0, sheep:0, wheat: 0, ore:0};
+    const revealedSlice = generateFullSliceFromNames(woodOffer);
+    mwCollapseMin("A", revealedSlice);
+    log("After A reveales wood"); printWorlds();
+    const brickDemand = {wood: 0, brick: 1, sheep:0, wheat: 0, ore:0};
+    transformTradeByName("A", "B", woodOffer, brickDemand);
+    log("after A trading wood to B for brick"); printWorlds();
+    branchSteal("A", "B");
+    log("After steal A -> B. 2 worlds left"); printWorlds();
+    transformMonopoly("A", worldResourceIndex(wood));
+    log("After A monos wood. 5 worlds"); printWorlds();
+    if (manyWorlds.length !== 5) passed = false;
+    mwCollapseMinTotal("B", 2);
+    log("After B reveals count >= 2. 2 worlds left"); printWorlds();
+    if (manyWorlds.length !== 2) passed = false;
+    const sheepOffer = {wood: 0, brick: 0, sheep:1, wheat: 0, ore:0};
+    mwCollapseMin("A", generateFullSliceFromNames(sheepOffer));
+    log("After a offers sheep (unknown before). 1 world left with B=brick+U"); printWorlds();
+    const wheatDemand = {wood: 0, brick: 0, sheep:0, wheat: 1, ore:0};
+    transformTradeByName("A", "B", sheepOffer, wheatDemand);
+    log("After last trade. Full recovery into all-known world, 1 version, no unknown"); printWorlds();
+    if (manyWorlds.length !== 1) passed = false;
+    mwUpdateStats();
+    if (manyWorlds.length !== 1 || worldGuessAndRange["B"][brick][2] !== 1
+                                || worldGuessAndRange["B"][brick][1] < 0.99)
+    {
+        passedTest = false;
+    }
+    if (!passedTest)
+    {
+        log("[ERROR] Failed ManyWorlds test 7: spawn transformation");
+        alertIf(38);
+        debugger;
+    }
+    else
+    {
+        log("[NOTE] ManyWorlds test 7 (guess and range) passed");
+    }
+
+    // Test 8: Mono recover
+    //  1) Start with the MW state that failed in testing.
+    //  2) Monopoly the sheep
+    //  3) World sho9uld not corrupt
+    //  4) A trades 1 wood to B for 1 brick. => A + B have 1 unknown each.
+    //  5) Steal A -> B. => 2 worlds (for B): {road + 1U, wood + 2U}
+    //  6) A monos wood => 5 worlds (for B): {brick, brick+U, 0, U, 2U}
+    //  4) B reveals minTotal, cards >= 2. => 2 worlds left
+    //  5) A offers 1 sheep (new card) => only 1 world left where B has the other unknown + brick.
+    //  6) A trades 1 sheep to B for 1 wheat => full recovery, 1 world.
+    log("-------------------- MW TEST 8 (recovery monopoly) --------------------------");
+    passedTest = true;
+    resources = { "A": {wood:0,brick:0,sheep:4,wheat:0,ore:0,unknown:1},
+                  "B": {wood:0,brick:0,sheep:1,wheat:0,ore:0,unknown:0},
+                  "C": {wood:0,brick:0,sheep:1,wheat:0,ore:0,unknown:0},
+                  "D": {wood:0,brick:4,sheep:0,wheat:1,ore:0,unknown:1} };
+    initWorlds(resources);
+    log("Before anything"); printWorlds();
+    debugger;
+    transformMonopoly("B", 2);
+    log("After B monos the sheep. World should not be corrupt."); printWorlds();
+    mwUpdateStats();
+    if (manyWorlds.length === 0) passed = false;
+    else if (manyWorlds.length !== 4) passed = false;
+    else if (getResourceCountOfSlice(manyWorlds[0]["A"],
+             worldResourceIndex(wood)) !== 0) passed = false;
+    else if (getResourceSumOfSlice(manyWorlds[0]["A"]) > 5) passed = false;
+    if (!passedTest)
+    {
+        log("[ERROR] Failed ManyWorlds test 8: spawn transformation");
+        alertIf(42);
+        debugger;
+    }
+    else
+    {
+        log("[NOTE] ManyWorlds test 8 (recovery mono) passed");
+    }
+
     debugger;
 }
 
@@ -1136,10 +1508,14 @@ function getStuffImage(whichSnippet) {
 }
 
 function renderPlayerCell(player) {
-    return `
-        <div class="explorer-tbl-player-col-cell-color" style="background-color:${player_colors[player]}"></div>
+    const gar = worldGuessAndRange[player]["unknown"];
+    const stealProb = Math.round(mwSteals[player]["unknown"] * 100);
+    const unknownString = gar[3] === 0
+                        ? ""
+                        : ` + ${gar[2]} (${Math.round(gar[1] * 100)}%) | ${stealProb}%`;
+    return `<div class="explorer-tbl-player-col-cell-color" style="background-color:${player_colors[player]}"></div>
         <span class="explorer-tbl-player-name" style="color:${player_colors[player]}">${player}</span>
-    `;
+        <span class="explorer-tbl-unknown-stats">${unknownString}</span>`;
 }
 
 let messageNumberDone = 0;
@@ -1239,7 +1615,8 @@ function render()
         headerCell.innerHTML = getStuffImage(v);
     }
 
-    playerHeaderCell.addEventListener("click", exportCurrentMW, false);
+//    playerHeaderCell.addEventListener("click", exportCurrentMW, false);
+    playerHeaderCell.addEventListener("click", mwManualRecoverCards);
 
     // Create bubble plot data
     // TODO
@@ -1399,10 +1776,10 @@ function parseGotMessage(pElement) {
     let textContent = pElement.textContent;
     if (textContent.includes(receivedResourcesSnippet))
     {
-        let player = textContent.replace(receivedResourcesSnippet, "").split(" ")[0];
+        const player = textContent.substring(0, textContent.indexOf(receivedResourcesSnippet));
         if (!players.includes(player))
         {
-            log("[ERROR] Failed to parse got-message player", player, resources);
+            log("[ERROR] Failed to parse got-message player", player);
             alertIf(14);
             return;
         }
@@ -1844,6 +2221,14 @@ function parseLatestMessages() {
             console.log("[NOTE] Word count:", manyWorlds.length);
     });
 
+    if (manyWorlds.length === 0)
+    {
+        console.error("[ERROR] No world left");
+        alertIf("Tracker OFF: Inconsistency (no world left). Try recovery mode.");
+        stopMainLoop();
+        return;
+    }
+
     render(manyWorlds);
 }
 
@@ -1971,6 +2356,17 @@ function collectionToArray(collection) {
     return Array.prototype.slice.call(collection);
 }
 
+function stopMainLoop()
+{
+    clearInterval(mainLoopInterval);
+}
+
+function restartMainLoop()
+{
+    stopMainLoop(); // Sanitize
+    mainLoopInterval = setInterval(parseLatestMessages, configRefreshRate);
+}
+
 /**
 * Wait for players to place initial settlements so we can determine who the players are.
 */
@@ -1989,8 +2385,7 @@ function waitForInitialPlacement() {
             deleteDiscordSigns();
             render(manyWorlds);
 
-            // Start main loop
-            mainLoopInterval = setInterval(parseLatestMessages, configRefreshRate);
+            restartMainLoop();
         }
         else
         {
