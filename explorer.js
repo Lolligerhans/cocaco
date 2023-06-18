@@ -8,7 +8,7 @@ const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 const configLogMessages = false;
-const configLogWorldCount = true;
+const configLogWorldCount = false;
 const configRefreshRate = 10000;
 
 //============================================================
@@ -29,11 +29,8 @@ console.log("[INFO]",
 let e = document.getElementById("header_navigation_store");
 if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
 
-//let e = document.getElementById("header_navigation_store");
-//if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
-
 //============================================================
-// Math helpers
+// Utils
 //============================================================
 
 // fac(20) < 2^64 < fac(21)
@@ -105,6 +102,7 @@ const tradeSnippet = " traded  for  with ";
 const tradeSplitSnippet = " for ";
 const stealingSnippet = " stole  from ";
 const winSnippet = "won the game";
+const rolledSnippet = " rolled ";
 
 let wood = "wood";
 let ore = "ore";
@@ -127,6 +125,7 @@ const imageNameSnippets =
 };
 
 const bubblePlotId = "explorer-plt";
+const tableId = "explorer-tbl";
 
 // Message offset
 let MSG_OFFSET = 0;
@@ -583,7 +582,7 @@ function mwCardRecovery(counts)
     world["chance"] = 1;
     manyWorlds = [world];
 
-    logs("[NOTE] Starting recovery mode:", manyWorlds);
+    logs("[NOTE] Starting MW recovery mode:", manyWorlds);
     printWorlds();
 }
 
@@ -592,8 +591,11 @@ function mwCardRecovery(counts)
 // TODO Add option for player recovery
 function mwManualRecoverCards()
 {
-    log("[NOTE] Starting manual recovery");
+    log("[NOTE] Starting manual card recovery");
     stopMainLoop();
+    // Set MSG_OFFSET to end just before the numbe rquerying starts. This way,
+    // the game can continue while the user enters the number from that moment
+    // in time (e.g., during other moves).
     MSG_OFFSET = getAllMessages().length;
     let counts = {};
     for (player of players)
@@ -602,16 +604,47 @@ function mwManualRecoverCards()
         counts[player] = count;
     }
     mwCardRecovery(counts);
+    render(true);
     restartMainLoop();
 }
 
 // Waits 1 round to collect all player names, then needs card counts (?)
-function mwFullRecovery(playerCount)
+function mwManualFullRecovery()
 {
+    log("[NOTE] Starting manual name recovery");
+    const playerCount = Number(prompt("Player count (0 to abort):", 0));
+    if (playerCount === 0) return;
 
+    stopMainLoop();
+    unrender();
+    // We use callback to emulate while(!ready){ foo(); sleep(5s); }
+    recoverUsers(playerCount, () => {
+    initWorlds();
+    render(true);
+//    mwManualRecoverCards(); // Starts main loop again
+    });
+
+    // End of action triggered by recovery click
 }
 
-// Requires existing users array
+function mwManualRecoveryDispatcher(event)
+{
+    switch (e.button)
+    {
+        case 0: // left mouse button
+            mwManualRecoverCards();
+            break;
+        case 2: // right mouse button
+            mwManualFullRecovery();
+            break;
+        default:
+            log("[NOTE] Event unrecognized");
+    }
+    event.preventDefault();
+}
+
+// Requires existing users array. Some stats objects are pre-filled with the
+// names and they keep them always.
 function initWorlds(startingResources = null)   // TODO add resources as argument, so we can finally remove the old resources array
 {
     // Init only once
@@ -1546,13 +1579,30 @@ function fillElementWithPlot(element)
     plotResourcesAsBubbles(element.id);
 }
 
+function unrender()
+{
+    try
+    {
+        let p = document.getElementById(bubblePlotId);
+        if (p) { p.remove(); }
+        let t = document.getElementById(tableId);
+        if (t) { t.remove(); }
+    }
+    catch(e)
+    {
+        // We don't really care if this fails at the moment, but it might help
+        // identify bugs.
+        console.warn("[WARNING] Exc. in unrender():", e);
+    }
+}
+
 /**
 * Renders the table with the counts.
 */
 // TODO take data to-be displayed as input?
-function render()
+function render(force = false)
 {
-    if (isNewMessage(MSG_OFFSET) === false)
+    if (force === false && isNewMessage(MSG_OFFSET) === false)
     {
         log("Skip display update");
         return;
@@ -1581,11 +1631,11 @@ function render()
     }
 
     // Display table
-    let existingTbl = document.getElementById("explorer-tbl");
+    let existingTbl = document.getElementById(tableId);
     try { if (existingTbl) { existingTbl.remove(); } }
     catch (e) { console.warn("had an issue deleting the table", e); }
     let tbl = document.createElement("table");
-    tbl.id = "explorer-tbl";
+    tbl.id = tableId;
 
     tbl.setAttribute("cellspacing", 0);
     tbl.setAttribute("cellpadding", 0);
@@ -1616,12 +1666,13 @@ function render()
     }
 
 //    playerHeaderCell.addEventListener("click", exportCurrentMW, false);
-    playerHeaderCell.addEventListener("click", mwManualRecoverCards);
+    playerHeaderCell.addEventListener("click", mwManualFullRecovery, false);
 
     // Create bubble plot data
     // TODO
 
     let tblBody = tbl.createTBody();
+    tblBody.addEventListener("click", mwManualRecoverCards, false);
     // Row per player
     for (let i = 0; i < players.length; i++) {
         const player = players[i];
@@ -2150,7 +2201,7 @@ function parseStealFromOtherPlayers(pElement)
     if (!players.includes(stealingPlayer) || !players.includes(targetPlayer))
     {
         log("[ERROR] Failed to steal. Invalid parse of players:",
-                    stealingPlayer, targetPlayer, resources);
+                    stealingPlayer, targetPlayer);
         alertIf(5);
         return;
     }
@@ -2180,7 +2231,33 @@ function parseWin(element)
     return true;
 }
 
-// The parser, parseInitialGotMessage() is not included in this list. We call use it one at the start, not regularly.
+// (!) Returns name of the player who's turn it is (not true/false like the
+// other parsers). Returns null if no player found. This is useful to keep the
+// order of occurence constant.
+function parseTurnName(element)
+{
+    // Include only snippets that identify current user by name
+    const txt = element.textContent;
+    if (  txt.includes(tradeOfferSnippet)
+       || txt.includes(yearOfPlentySnippet)
+       || txt.includes(builtSnippet)
+       || txt.includes(boughtSnippet)
+       || txt.includes(rolledSnippet))
+    {
+        const actor = txt.substring(0, txt.indexOf(" "));
+        const html = element.innerHTML;
+        const colStr = "color:";
+        const start = html.indexOf(colStr) + colStr.length;
+        const stop = html.indexOf("\"", start + 1);
+        const colour = html.substring(start, stop);
+        return [actor, colour];
+    }
+    return [null, null];
+}
+
+// The parser, parseInitialGotMessage() is not included in this list. We call
+// use it one at the start, not regularly. The parseTurnName() parse is also not
+// included. Used for recovery. // TODO Use during regular startup?
 let ALL_PARSERS = [
     parseGotMessage,
     parseTradeOffer,
@@ -2198,16 +2275,19 @@ let ALL_PARSERS = [
     parseWin,
 ];
 
+function getNewMessages()
+{
+    const allMessages = getAllMessages();
+    const newMessages = allMessages.slice(MSG_OFFSET);
+    MSG_OFFSET = allMessages.length;
+    return newMessages;
+}
+
 /**
  * Parses the latest messages and re-renders the table.
  */
 function parseLatestMessages() {
-    let allMessages = getAllMessages();
-    let newMessages = allMessages.slice(MSG_OFFSET);
-
-    // Set offset before parsing so that failing parsers do not loop endlessly
-    let newOffset = allMessages.length;
-    MSG_OFFSET = newOffset;
+    let newMessages = getNewMessages();
 
     newMessages.forEach((msg, idx) =>
     {
@@ -2218,7 +2298,7 @@ function parseLatestMessages() {
             return parser(msg);
         });
         if (configLogWorldCount === true)
-            console.log("[NOTE] Word count:", manyWorlds.length);
+            console.log("[NOTE] MW count:", manyWorlds.length);
     });
 
     if (manyWorlds.length === 0)
@@ -2229,7 +2309,7 @@ function parseLatestMessages() {
         return;
     }
 
-    render(manyWorlds);
+    render();
 }
 
 /**
@@ -2247,12 +2327,85 @@ function comeMrTallyManTallinitialResource() {
     log("Correcting MSG_OFFSET from", MSG_OFFSET, "to", correctedOffset);
     MSG_OFFSET = correctedOffset;
 
-    render(manyWorlds);
+    render();
+}
+
+// Assumes playerUsername has been set. Rotates that player to last position.
+function adjustPlayersByUsername()
+{
+    // Determine our own name
+    if (configFixedPlayerName || !playerUsername)
+    {
+        if (!configFixedPlayerName)
+        {
+            log("[WARNING] Username not found. Using fixed name.");
+        }
+        playerUsername = configPlayerName;
+    }
+
+    // Rotate 'players' so that we are in 4th position
+    const ourPosition = players.indexOf(playerUsername);
+    const rotation = players.length - ourPosition - 1;
+    if (ourPosition < 0)
+    {
+        console.error("[ERROR] Username not part of players");
+        alertIf(32);
+        debugger;
+        return;
+    }
+    const unrotatedCopy = deepCopy(players);
+    for (let i = 0; i < players.length; ++i)
+    {
+        players[(i + rotation) % players.length] = unrotatedCopy[i];
+    }
+    for (const p of players)
+    {
+        log("[NOTE] Found player:", p);
+    }
+    log("[NOTE] You are:", playerUsername);
+}
+
+// Do the job of recognizeUsers() but rewrite it so that it works mid game for
+// recovery. Must stop main loop before running this so they dont interfere.
+function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
+{
+    players = [];   // Start clean
+    player_colors = {};
+    // NOTE If we make sure not to read initial placement messages, we can set
+    //      MSG_OFFEST to 0, too. Those can appear out-of-player-order, and we
+    //      imply the order from messages.
+    //MSG_OFFSET = 0;
+    const left = () => playerCount - players.length;
+
+    // We abuse intervals to construct while(!ready){ foo(); sleep(5s); }
+    let recoverInterval = setInterval(() =>
+    {
+        if (left() === 0)   // Aka. Leaving while loop
+        {
+            clearInterval(recoverInterval);
+            adjustPlayersByUsername(); // Assumes the username was not changed
+            then(); // Continue after "while" loop
+        }
+        log(`[NOTE] Searchin for ${left()} player names`);
+        const newMsg = getNewMessages();
+        for (msg of newMsg)
+        {
+            const [name, colour] = parseTurnName(msg);
+            if (name === null) continue;
+            if (!players.includes(name))
+            {
+                players.push(name);
+                player_colors[name] = colour;
+                log("Recoverd player", name, "with colour", colour);
+            }
+        }
+    }, 5000);   // Aka. sleep(5s)
 }
 
 /**
-* Once initial settlements are placed, determine the players.
-*/
+ * Once initial settlements are placed, determine the players.
+ */
+// TODO I think at this point recoverUsers is simpler. reokace with recoverUsers().
 function recognizeUsers() {
     let placementMessages = getAllMessages().filter(
         msg => msg.textContent.includes(placeInitialSettlementSnippet));
@@ -2291,36 +2444,7 @@ function recognizeUsers() {
 //            log("Skip re-recognizing existing user", username);
         }
     }
-
-    // Determine our own name
-    if (configFixedPlayerName || !playerUsername)
-    {
-        if (!configFixedPlayerName)
-        {
-            log("[WARNING] Username not found. Using fixed name.");
-        }
-        playerUsername = configPlayerName;
-    }
-
-    // Rotate 'players' so that we are in 4th position
-    const ourPosition = players.indexOf(playerUsername);
-    const rotation = players.length - ourPosition - 1;
-    if (ourPosition < 0)
-    {
-        console.error("[ERROR] Username not part of players");
-        alertIf(32);
-        debugger;
-    }
-    const unrotatedCopy = deepCopy(players);
-    for (let i = 0; i < players.length; ++i)
-    {
-        players[(i + rotation) % players.length] = unrotatedCopy[i];
-    }
-    for (const p of players)
-    {
-        log("[NOTE] Found player:", p);
-    }
-    log("[NOTE] You are:", playerUsername);
+    adjustPlayersByUsername();
 }
 
 let findPlayerInterval;
@@ -2347,6 +2471,7 @@ function findPlayerName()
 
 function getAllMessages() {
     if (!logElement) {
+        alertIf(41);
         throw Error("Log element hasn't been found yet.");
     }
     return collectionToArray(logElement.children);
@@ -2383,7 +2508,7 @@ function waitForInitialPlacement() {
             recognizeUsers();
             comeMrTallyManTallinitialResource();
             deleteDiscordSigns();
-            render(manyWorlds);
+            render();
 
             restartMainLoop();
         }
