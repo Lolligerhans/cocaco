@@ -2219,7 +2219,7 @@ function parseWin(element)
     // TODO This includes player names (!). Use longer snippet.
     if (element.textContent.includes(winSnippet))
     {
-        clearInterval(mainLoopInterval);
+        stopMainLoop();
         log("[INFO] End of Game");
         return false;
 
@@ -2227,6 +2227,10 @@ function parseWin(element)
         // re-discovering the gamelog-text element of the just-finished
         // game. startTracker() would do this.
 //        startTracker();
+
+        // By adding findTranscription() as callback, we wait for
+        // player to be found (again), i.e., game to be left.
+        findPlayerName(findTranscription);
     }
     return true;
 }
@@ -2448,7 +2452,7 @@ function recognizeUsers() {
 }
 
 let findPlayerInterval;
-function findPlayerName()
+function findPlayerName(then = null)
 {
     log("[NOTE] START searching profile name");
     findPlayerInterval = setInterval(() =>
@@ -2461,6 +2465,9 @@ function findPlayerName()
 
             let e = document.getElementById("header_navigation_store");
             if (e !== null) e.textContent = atob("VHJhY2tlciBPSw==");
+
+            if (then !== null)
+                then();
         }
         else
         {
@@ -2505,7 +2512,7 @@ function waitForInitialPlacement() {
             log("[NOTE] Start tracking");
 
             // Init
-            recognizeUsers();
+            recognizeUsers(); // TODO Consilidate with recoverUsers
             comeMrTallyManTallinitialResource();
             deleteDiscordSigns();
             render();
