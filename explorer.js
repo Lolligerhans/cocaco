@@ -2411,6 +2411,9 @@ function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
  */
 // TODO I think at this point recoverUsers is simpler. reokace with recoverUsers().
 function recognizeUsers() {
+    players = [];
+    player_colors = {}; // Not technically necessary because used as map (dict)
+    log("[NOTE] Cleared players. Recognizing...");
     let placementMessages = getAllMessages().filter(
         msg => msg.textContent.includes(placeInitialSettlementSnippet));
     for (let msg of placementMessages)
@@ -2503,6 +2506,12 @@ function restartMainLoop()
 * Wait for players to place initial settlements so we can determine who the players are.
 */
 function waitForInitialPlacement() {
+    // Dummy-init stuff to render table before init phase has concluded
+    players = ["Awaiting", "First", "Roll"];
+    player_colors = {"Awaiting":"black", "First":"red", "Roll":"gold"};
+    initWorlds();   // Dunny init requiring 'players' array
+    render(true);   // Force render
+
     log("[NOTE] Waiting for first roll");
     // TODO reset initialPlacementMade before starting interval?
     let waitInterval = setInterval(() => {
