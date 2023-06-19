@@ -15,6 +15,7 @@ const configRefreshRate = 10000;
 // Hello
 //============================================================
 
+// TODO Use console.table
 console.log("[INFO]",
     "| configDoAlert:", configDoAlert,
     "| configPrintWorlds:", configPrintWorlds,
@@ -110,7 +111,6 @@ let wheat = "wheat";
 let brick = "brick";
 let sheep = "sheep";
 let resourceTypes = [wood, brick, sheep, wheat, ore];   // MW depends on this
-//let resourceTypes = [wood, ore, wheat, brick, sheep];
 
 // Players
 let players = [];   // MW depends on this
@@ -128,12 +128,8 @@ const bubblePlotId = "explorer-plt";
 const tableId = "explorer-tbl";
 
 // Message offset
-let MSG_OFFSET = 0;
+let MSG_OFFSET = -1;    // Reset to 0 when (re-)starting
 
-// Thefts - transactions from when the robber is placed and stolen resource is unknown
-let thefts = [];
-// Thefts - once the unknown resources are accounted for
-let solved_thefts = [];
 
 //============================================================
 // Helpers
@@ -593,6 +589,13 @@ function mwManualRecoverCards()
 {
     log("[NOTE] Starting manual card recovery");
     stopMainLoop();
+    // Confirm AFTER stopping main loop so that card counts can be timed
+    if (!confirm("Reset cards?"))
+    {
+        log("[NOTE] Aborting manual card recovery");
+        restartMainLoop();
+        return;
+    }
     // Set MSG_OFFSET to end just before the numbe rquerying starts. This way,
     // the game can continue while the user enters the number from that moment
     // in time (e.g., during other moves).
@@ -613,7 +616,11 @@ function mwManualFullRecovery()
 {
     log("[NOTE] Starting manual name recovery");
     const playerCount = Number(prompt("Player count (0 to abort):", 0));
-    if (playerCount === 0) return;
+    if (playerCount === 0)
+    {
+        log("[NOTE] Aborting manual name recovery");
+        return;
+    }
 
     stopMainLoop();
     unrender();
@@ -621,12 +628,14 @@ function mwManualFullRecovery()
     recoverUsers(playerCount, () => {
     initWorlds();
     render(true);
+    // Let user trigger card recovery when ready.
 //    mwManualRecoverCards(); // Starts main loop again
     });
 
     // End of action triggered by recovery click
 }
 
+// TODO This is currently not used anywhere. Use in future?
 function mwManualRecoveryDispatcher(event)
 {
     switch (e.button)
@@ -1494,22 +1503,6 @@ function deleteDiscordSigns() {
     log("Removed elements");
 }
 
-/**
- * Calculate the total lost quantity of a resource for a given player.
- * i.e. if 1 card was potentially stolen, return 1.
- */
-function calculateTheftForPlayerAndResource(player, resourceType) {
-    return thefts.map(theft => {
-        if (theft.who.stealingPlayer === player) {
-            return theft.what[resourceType] || 0;
-        }
-        if (theft.who.targetPlayer === player) {
-            return -theft.what[resourceType] || 0;
-        }
-        return 0;
-    }).reduce((a, b) => a + b, 0);
-}
-
 // <img src="/dist/images/settlement_blue.svg?v159" alt="settlement" class="lobby-chat-text-icon" width="20" height="20">
 function getStuffImage(whichSnippet) {
     const fullName = `<img src="dist/images/${imageNameSnippets[whichSnippet]}.svg" class="explorer-tbl-resource-icon" />`;
@@ -1551,7 +1544,7 @@ function renderPlayerCell(player) {
         <span class="explorer-tbl-unknown-stats">${unknownString}</span>`;
 }
 
-let messageNumberDone = 0;
+let messageNumberDone = -1;
 function isNewMessage(msgNumber) {
     if (msgNumber > messageNumberDone)
     {
@@ -2230,7 +2223,17 @@ function parseWin(element)
 
         // By adding findTranscription() as callback, we wait for
         // player to be found (again), i.e., game to be left.
-        findPlayerName(findTranscription);
+        const retryDelay = Number(prompt("Restart in minutes (0 to quit):",
+                                         1));
+        if (retryDelay > 0)
+        {
+            log("[NOTE] Restarting in", retryDelay, "seconds");
+            setTimeout(startTracker, 60000 * retryDelay);
+        }
+        else
+        {
+            log("[NOTE] Not restarting");
+        }
         return false;
     }
     return true;
@@ -2322,7 +2325,6 @@ function parseLatestMessages() {
 */
 function comeMrTallyManTallinitialResource() {
     let allMessages = getAllMessages();
-    MSG_OFFSET = allMessages.length;
 
     initWorlds();   // Requires existing users
     allMessages.forEach(parseInitialGotMessage);
@@ -2455,11 +2457,10 @@ function recognizeUsers() {
     adjustPlayersByUsername();
 }
 
-let findPlayerInterval;
 function findPlayerName(then = null)
 {
     log("[NOTE] START searching profile name");
-    findPlayerInterval = setInterval(() =>
+    let findPlayerInterval = setInterval(() =>
     {
         if (playerUsernameElement !== null)
         {
@@ -2475,7 +2476,7 @@ function findPlayerName(then = null)
         }
         else
         {
-            playerUsernameElement= document.getElementById("header_profile_username");
+            playerUsernameElement = document.getElementById("header_profile_username");
         }
     }, 2000);
 }
@@ -2508,6 +2509,7 @@ function restartMainLoop()
 */
 function waitForInitialPlacement() {
     // Dummy-init stuff to render table before init phase has concluded
+    MSG_OFFSET = 0;
     players = ["Awaiting", "First", "Roll"];
     player_colors = {"Awaiting":"black", "First":"red", "Roll":"gold"};
     initWorlds();   // Dunny init requiring 'players' array
@@ -2554,10 +2556,9 @@ function findTranscription() {
         if (logElement) {
 //            log("Found game-log-text element");
             clearInterval(findInterval);
-            clearInterval(findPlayerInterval);  // TODO these interval this are getting too messy (?)
-            waitForInitialPlacement();
+            waitForInitialPlacement();  // Resets MSG_OFFSET to 0
         } else {
-            if (playerUsernameElement=== null)
+            if (playerUsernameElement === null)
             { log("[NOTE] You can configure a fixed profile name in explorer.js"); }
             else
             { log("[NOTE] Waiting to start"); }
@@ -2568,8 +2569,8 @@ function findTranscription() {
 
 function startTracker()
 {
-    findPlayerName();
-    findTranscription();
+    findPlayerName(findTranscription);
 }
 
+// Global start of main()
 startTracker();

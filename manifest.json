@@ -4,7 +4,7 @@
     "manifest_version": 3,
     "author": "Lolligerhans",
     "description": "Correctly correlated Colonist card chance counting",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "host_permissions": [
         "https://colonist.io/*"
     ],
