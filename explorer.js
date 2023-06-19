@@ -2220,8 +2220,8 @@ function parseWin(element)
     if (element.textContent.includes(winSnippet))
     {
         stopMainLoop();
+        unrender();
         log("[INFO] End of Game");
-        return false;
 
         // TODO find a way to start again without immediately
         // re-discovering the gamelog-text element of the just-finished
@@ -2231,6 +2231,7 @@ function parseWin(element)
         // By adding findTranscription() as callback, we wait for
         // player to be found (again), i.e., game to be left.
         findPlayerName(findTranscription);
+        return false;
     }
     return true;
 }
