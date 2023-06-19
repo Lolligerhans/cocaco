@@ -3,11 +3,8 @@
     "short_name": "Card Counter",
     "manifest_version": 3,
     "author": "Lolligerhans",
-    "description": "Counts resource cards on colonist.io",
-    "version": "0.0.2",
-    "icons": {
-        "64": "icon64.png"
-    },
+    "description": "Correctly correlated Colonist card chance counting",
+    "version": "1.0.0",
     "host_permissions": [
         "https://colonist.io/*"
     ],
@@ -16,7 +13,7 @@
           "matches": ["https://colonist.io/*"],
           "css": ["styles.css"],
           "run_at": "document_idle",
-          "js": ["explorer.js", "plot.js", "plotly-2.20.0.min.js"]
+          "js": ["explorer.js", "plot.js", "plotly-2.24.1.min.js"]
         }
       ]
 }
