@@ -2346,6 +2346,10 @@ function parseLatestMessages() {
             console.log("[NOTE] MW count:", manyWorlds.length);
     });
 
+    // Skip rest if a parseWin stopped the mainLoopInterval parsed
+    if (!isActiveMainLoop())
+        return;
+
     if (manyWorlds.length === 0)
     {
         console.error("[ERROR] No world left");
