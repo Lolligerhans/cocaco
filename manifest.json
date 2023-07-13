@@ -4,16 +4,27 @@
     "manifest_version": 3,
     "author": "Lolligerhans",
     "description": "Correctly correlated Colonist card chance counting",
-    "version": "1.1.0",
+    "version": "1.2.0",
+    "icons": {
+        "512": "assets/catan2.jpg"
+    },
     "host_permissions": [
         "https://colonist.io/*"
     ],
-    "content_scripts": [
+    "content_scripts":
+    [
         {
-          "matches": ["https://colonist.io/*"],
-          "css": ["styles.css"],
-          "run_at": "document_idle",
-          "js": ["explorer.js", "plot.js", "plotly-2.24.1.min.js"]
+            "matches": ["https://colonist.io/*"],
+            "css": ["styles.css"],
+            "run_at": "document_idle",
+            "js": ["explorer.js", "plot.js", "plotly-2.24.1.min.js"]
         }
-      ]
+    ] ,
+    "web_accessible_resources":
+    [
+        {
+            "resources": ["assets/*.jpg"],
+            "matches": ["https://colonist.io/*"]
+        }
+    ]
 }

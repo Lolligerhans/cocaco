@@ -10,6 +10,7 @@ const configPlotBubbles = true;
 const configLogMessages = false;
 const configLogWorldCount = false;
 const configRefreshRate = 10000;
+const configOwnIcons = true;
 
 //============================================================
 // Hello
@@ -75,7 +76,7 @@ function log2(...args)
     logs(...args);
 }
 
-let mainLoopInterval;
+let mainLoopInterval = 0;
 let playerUsername;
 let playerUsernameElement = null;
 
@@ -122,6 +123,19 @@ const imageNameSnippets =
     wheat: "card_grain", ore: "card_ore", "road": "road_red",
     "settlement": "settlement_red", "devcard": "card_devcardback",
     "city": "city_red"
+};
+
+const assets =
+{
+    wood: "assets/wood31.jpg",
+    brick: "assets/brick24.jpg",
+    sheep: "assets/sheep1.jpg",
+    wheat: "assets/wheat2.jpg",
+    ore: "assets/ore27.jpg",
+    "road": "assets/street10.jpg",
+    "settlement": "assets/settle7.jpg",
+    "devcard": "assets/dev4.jpg",
+    "city": "assets/city23.jpg"
 };
 
 const bubblePlotId = "explorer-plt";
@@ -584,16 +598,18 @@ function mwCardRecovery(counts)
 
 // Recovers MW state from unknown cards. Player array is used and assumed
 // correct.
-// TODO Add option for player recovery
+// TODO If mainLoop is not active before, it makes no sense to reset anything.
+//      For now we just disallow this case because I can't think of a use case.
 function mwManualRecoverCards()
 {
     log("[NOTE] Starting manual card recovery");
-    stopMainLoop();
+    const activeBefore = stopMainLoop();
     // Confirm AFTER stopping main loop so that card counts can be timed
-    if (!confirm("Reset cards?"))
+    if (!activeBefore || !confirm("Reset cards?"))
     {
-        log("[NOTE] Aborting manual card recovery");
-        restartMainLoop();
+        log(`[NOTE] Aborting manual card recovery (${activeBefore ? "unconfirmed" : "inactive"})`);
+        if (activeBefore)
+            restartMainLoop();
         return;
     }
     // Set MSG_OFFSET to end just before the numbe rquerying starts. This way,
@@ -1130,14 +1146,14 @@ function worldTest()
     // Set dummy players array for tests
     players = ["A", "B", "C", "D"];
 
-    // Test 1: Tempo-causal inference.
+    // Test 1: Correlation
     //  1) Both A and B have a rod and get stolen from once by C
     //  2) i.e., C stole 2 unknown road materials
     //  3) D steals the resource C initially took from A (by stealing inbetween
     //     C's steals)
     //  4) Revealing D's card reveals A's card: the two cards match to form A's
     //     starting road
-    // If tempo-causal inference was missing, revealing D's card would not
+    // If correlation was missing, revealing D's card would not
     // collapse the hand of A: If we ignore order of stealing, any card
     // D revelas could have been obtained from the alternative source B.
     log("----------------- MW Test 1 --------------------");
@@ -1503,8 +1519,22 @@ function deleteDiscordSigns() {
     log("Removed elements");
 }
 
+function getOwnStuffImage(whichSnippet)
+{
+    const path = assets[whichSnippet];
+    if (!configOwnIcons || path === undefined)
+    {
+        return getStuffImage(whichSnippet);
+    }
+    const url = browser.runtime.getURL(path);
+    // TODO Create new CSS class for our own assets
+    const elem = `<img src="${url}" class="explorer-tbl-resource-icon" />`;
+    return elem;
+}
+
 // <img src="/dist/images/settlement_blue.svg?v159" alt="settlement" class="lobby-chat-text-icon" width="20" height="20">
-function getStuffImage(whichSnippet) {
+function getStuffImage(whichSnippet)
+{
     const fullName = `<img src="dist/images/${imageNameSnippets[whichSnippet]}.svg" class="explorer-tbl-resource-icon" />`;
     return fullName;
 
@@ -1648,14 +1678,21 @@ function render(force = false)
         const numberString = total > 0
                            ? `${total}`
                            : "";
-        resourceHeaderCell.innerHTML = numberString + getStuffImage(resourceType);
+        resourceHeaderCell.innerHTML = numberString + getOwnStuffImage(resourceType);
+        if (i === 0)
+        {
+            let e = document.getElementById("testwood");
+            if (e)
+                log("e.src:", e.src);
+//            e.src = "chrome://ColonistCardCounter/wood1.jpg";
+        }
     }
     let i = resourceTypes.length + 1;
     for (const [i, v] of Object.keys(mwBuilds).entries())
     {
         let headerCell = headerRow.insertCell(i + 1 + resourceTypes.length);
         headerCell.className = "explorer-tbl-cell";
-        headerCell.innerHTML = getStuffImage(v);
+        headerCell.innerHTML = getOwnStuffImage(v);
     }
 
 //    playerHeaderCell.addEventListener("click", exportCurrentMW, false);
@@ -2493,9 +2530,17 @@ function collectionToArray(collection) {
     return Array.prototype.slice.call(collection);
 }
 
+function isActiveMainLoop()
+{
+    return mainLoopInterval !== 0;
+}
+
 function stopMainLoop()
 {
     clearInterval(mainLoopInterval);
+    const ret = mainLoopInterval !== 0;
+    mainLoopInterval = 0;
+    return ret;
 }
 
 function restartMainLoop()
