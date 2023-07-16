@@ -605,9 +605,9 @@ function mwManualRecoverCards()
     log("[NOTE] Starting manual card recovery");
     const activeBefore = stopMainLoop();
     // Confirm AFTER stopping main loop so that card counts can be timed
-    if (!activeBefore || !confirm("Reset cards?"))
+    if (!confirm(`Reset cards (${activeBefore ? "active" : "inactive"})?`))
     {
-        log(`[NOTE] Aborting manual card recovery (${activeBefore ? "unconfirmed" : "inactive"})`);
+        log("[NOTE] Aborting manual card recovery");
         if (activeBefore)
             restartMainLoop();
         return;
@@ -632,7 +632,7 @@ function mwManualFullRecovery()
 {
     log("[NOTE] Starting manual name recovery");
     const playerCount = Number(prompt("Player count (0 to abort):", 0));
-    if (playerCount === 0)
+    if (playerCount < 1 || 4 < playerCount)
     {
         log("[NOTE] Aborting manual name recovery");
         return;
@@ -643,7 +643,7 @@ function mwManualFullRecovery()
     // We use callback to emulate while(!ready){ foo(); sleep(5s); }
     recoverUsers(playerCount, () => {
     initWorlds();
-    render(true);
+    render(true);   // Allow user to start manual card recovery
     // Let user trigger card recovery when ready.
 //    mwManualRecoverCards(); // Starts main loop again
     });
@@ -2262,7 +2262,7 @@ function parseWin(element)
         // player to be found (again), i.e., game to be left.
         const retryDelay = Number(prompt("Restart in minutes (0 to quit):",
                                          1));
-        if (retryDelay > 0)
+        if (retryDelay !== null && retryDelay > 0)
         {
             log("[NOTE] Restarting in", retryDelay, "seconds");
             setTimeout(startTracker, 60000 * retryDelay);
