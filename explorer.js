@@ -2252,25 +2252,6 @@ function parseWin(element)
         stopMainLoop();
         unrender();
         log("[INFO] End of Game");
-
-        // TODO find a way to start again without immediately
-        // re-discovering the gamelog-text element of the just-finished
-        // game. startTracker() would do this.
-//        startTracker();
-
-        // By adding findTranscription() as callback, we wait for
-        // player to be found (again), i.e., game to be left.
-        const retryDelay = Number(prompt("Restart in minutes (0 to quit):",
-                                         1));
-        if (retryDelay !== null && retryDelay > 0)
-        {
-            log("[NOTE] Restarting in", retryDelay, "seconds");
-            setTimeout(startTracker, 60000 * retryDelay);
-        }
-        else
-        {
-            log("[NOTE] Not restarting");
-        }
         return false;
     }
     return true;
