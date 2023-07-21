@@ -280,7 +280,7 @@ const sheep1 = 0x1 << (6 * 2);
 const wheat1 = 0x1 << (6 * 3);
 const ore1   = 0x1 << (6 * 4);
 const unknown1 = 0x1 << (6 * 5); // Assumes 64bit int
-// Overflow indicator bits for wood-ore. Not: unknown (!)
+// Overflow indicator bits for wood, ..., ore. Not for: unknown (!)
 const loverflow1 = 0x20820820; // == 0b 00100000 10000010 00001000 00100000
 const worldResourceIndexTable = {"wood":0, "brick":1, "sheep":2, "wheat":3, "ore":4, "unknown":5};
 // We reserve 9+1 bits for unknown resources (to allow higher values), rest has
@@ -1537,30 +1537,6 @@ function getStuffImage(whichSnippet)
 {
     const fullName = `<img src="dist/images/${imageNameSnippets[whichSnippet]}.svg" class="explorer-tbl-resource-icon" />`;
     return fullName;
-
-    /* TODO Remove this old version
-    switch (resourceType) {
-        case wheat:
-            img_name = "card_grain";
-            break;
-        case ore:
-            img_name = "card_ore";
-            break;
-        case sheep:
-            img_name = "card_wool";
-            break;
-        case brick:
-            img_name = "card_brick";
-            break;
-        case wood:
-            img_name = "card_lumber";
-            break;
-        case "road": im
-    }
-    if (!img_name.length) throw Error("Couldn't find resource image icon");
-    // TODO Not use colonist resources when used outside of colonist?
-    return `<img src="https://colonist.io/dist/images/${img_name}.svg" class="explorer-tbl-resource-icon" />`
-    */
 }
 
 function renderPlayerCell(player) {
@@ -2500,7 +2476,7 @@ function findPlayerName(then = null)
         {
             playerUsernameElement = document.getElementById("header_profile_username");
         }
-    }, 2000);
+    }, 1000);
 }
 
 function getAllMessages() {
@@ -2575,7 +2551,7 @@ function waitForInitialPlacement() {
 //                log("Initial placement done snippet not found");
             }
         }
-    }, 10000);
+    }, 1000);
 }
 
 /**
@@ -2594,7 +2570,7 @@ function findTranscription() {
             { log("[NOTE] Waiting to start"); }
             logElement = document.getElementById("game-log-text");
         }
-    }, 10000);
+    }, 1000);
 }
 
 function startTracker()
