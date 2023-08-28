@@ -9,36 +9,47 @@
 /* for test main.HTML */
 #explorer-plt
 {
-    /*width: 400px;*/
-    /*height: 400px;*/
+  /* Hight determined by plot.js ('divideSizes') */
     position: absolute;
-    top: 200px;
-
     border: none;
-/*    position: absolute;
-//    top: 0px;
-//    left: 0px;*/
     padding: 0px;
     z-index: 9998;
+    top: 319px;
 }
 
-#explorer-tbl {
+#explorer-tbl
+{
     position: absolute;
-    background-color: gray;
+    background-color: #ccc;
     z-index: 9999;
     top: 0;
     left: 0;
-    /*padding: 3px;*/
-    /*border: solid 1px #555;*/
+    /*! padding: 3px; */
+    border: solid 3px #555;
+    font-family: sans-serif;
+    white-space: pre;
+}
 
+#explorer-rob-tbl
+{
+    position: absolute;
+    background-color: #ccc;
+    z-index: 9999;
+    top: 197px;
+    left: 0px;
+    box-sizing: border-box;
+    /*! padding: 3px; */
+    border: solid 3px #555;
+    white-space: pre;
+    font-family: monospace;
 }
 
 .explorer-tbl-header {
     border: none;
-    font-family: sans-serif;
+    text-align: left;
 }
 
-.explorer-tbl-header .explorer-tbl-cell {
+.explorer-tbl-header,.explorer-tbl-cell {
     padding: 4px 4px 2px; /* default override cell padding */
     border: none;
 }
@@ -46,12 +57,21 @@
 .explorer-tbl-row {
     /*border: solid 1px #555;*/
     height: 1.5em;
+    text-align: left;
+    vertical-align: center;
 }
+
+
 
 .explorer-tbl-row:nth-child(2n-1) { background-color: #eeeeee; }
 .explorer-tbl-row:nth-child(2n) { background-color: #f9f9f9; }
+.explorer-tbl-total-row
+{
+    /* background inherit from explorer-tbl */
+}
 
-.explorer-tbl-cell {
+.explorer-tbl-cell,.explorer-tbl-total-cell
+{
     border: none;
     box-sizing: unset;
     color: black;
@@ -60,18 +80,28 @@
     padding: 0px 4px;
     text-align: center;
     line-height: 1.2em;
-    vertical-align: top;
 }
 
-.explorer-tbl-player-col-cell {
+.explorer-tbl-total-cell
+{
+    background-color: #ccc;
+}
+
+.explorer-tbl-player-col-cell,.explorer-rob-tbl-player-col-cell
+{
     border: none;
-    display: inline-flex;
+    /*! display: inline-flex; */
     padding: 0;
     line-height: 1.5em;
 }
 
+.explorer-rob-tbl-player-col-cell
+{
+    text-align: right !important;
+}
+
 .explorer-tbl-player-col-cell-color {
-    width: 8;
+    /*width: 8px;*/
     background-color: #000;
     display: inline-block;
 }
@@ -79,6 +109,7 @@
 .explorer-tbl-player-name {
     font-weight: bold;
     margin: 0px 8px 0 4px;
+    white-space: pre;
 }
 
 .explorer-tbl-unknown-stats
@@ -88,8 +119,8 @@
 }
 
 .explorer-tbl-player-col-header {
-    font-weight: 600;
-    text-transform: uppercase;
+    font-weight: bold;
+    /* text-transform: uppercase; */
     border: none;
     padding-left: 8px; /* width of cell-color + margin-left of player-name */
     font-size: 85%;

@@ -9,7 +9,7 @@
 const configSampleCount = 100;
 const configPlotTests = true;
 
-const divideSizes = 1;
+const divideSizes = 1.2
 
 //============================================================
 //
@@ -387,7 +387,7 @@ function plotResourcesAsBubbles(idToPlotInto)
     const layout = {
         margin: {t: 20, b: 20, l: 20, r: 20},
         showlegend: false,
-        height: 400 / divideSizes,
+        height: 300 / divideSizes,
         width: 400 / divideSizes,
         xaxis:
         {

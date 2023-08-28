@@ -3,6 +3,7 @@
 //============================================================
 const configDoAlert = true;
 const configPrintWorlds = false;   // Activate console logging of MW state
+const configPrintRobs = false;  // Activate console log for robs
 const configRunManyWorldsTest = false;    // Run test and quit. Not a full unit test.
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
@@ -140,6 +141,7 @@ const assets =
 
 const bubblePlotId = "explorer-plt";
 const tableId = "explorer-tbl";
+const robTableId = "explorer-rob-tbl";
 
 // Message offset
 let MSG_OFFSET = -1;    // Reset to 0 when (re-)starting
@@ -643,9 +645,10 @@ function mwManualFullRecovery()
     // We use callback to emulate while(!ready){ foo(); sleep(5s); }
     recoverUsers(playerCount, () => {
     initWorlds();
+    initRobs(); // Init as well in case the users array changed
     render(true);   // Allow user to start manual card recovery
-    // Let user trigger card recovery when ready.
-//    mwManualRecoverCards(); // Starts main loop again
+    // Let user trigger card recovery like this when ready:
+    //  mwManualRecoverCards(); // Starts main loop again
     });
 
     // End of action triggered by recovery click
@@ -1501,6 +1504,136 @@ if (configRunManyWorldsTest === true)
 }
 
 //============================================================
+// Robs
+//============================================================
+
+let robs = {};       // robs = { "player1": {"player2":1, "player2":0, ... }, "player2" : {}, ... }
+let robsTaken = {};  // robsTaken = {"player1":4, "player2":0, ...}
+let robsLost = {};   // Like robsTaken
+let robsTotal = -100;  // Scalar
+
+function printRobs()
+{
+    if (configPrintRobs !== true) return;
+    log("robs:", robs);
+    log("robsTaken:", robsTaken);
+    log("robsLost:", robsLost);
+    log("robsTotal:", robsTotal);
+}
+
+function initRobs()
+{
+    if (players.length < 2) alertIf(47);
+    robs = {};
+    robsTaken = {};
+    robsLost = {};
+    robsTotal = 0;
+    for (const player of players)
+    {
+        robs[player] = {};
+        for (const p of players) { robs[player][p] = 0; }
+        robsTaken[player] = 0;
+        robsLost[player] = 0;
+    }
+    printRobs();
+}
+
+function addRob(thief, victim)
+{
+    robs[thief][victim] += 1;
+    robsTaken[thief] += 1;
+    robsLost[victim] += 1;
+    robsTotal += 1;
+    printRobs();
+}
+
+function generateRobTable()
+{
+    let existingTbl = document.getElementById(robTableId);
+    try { if (existingTbl) { existingTbl.remove(); } }
+    catch (e) { console.warn("had an issue deleting the rob table", e); }
+    let robTable = document.createElement("table");
+    robTable.id = robTableId;
+
+    // TODO effect?
+    robTable.setAttribute("cellspacing", 0);
+    robTable.setAttribute("cellpadding", 0);
+
+    // Player name and total steal count header cells
+    let header = robTable.createTHead();
+    header.className = "explorer-tbl-header";
+    let headerRow = header.insertRow(0);
+    let playerHeaderCell = headerRow.insertCell(0);
+    playerHeaderCell.className = "explorer-tbl-player-col-header";
+    playerHeaderCell.innerHTML = "Criminals";
+    let i = 0;
+    for (i = 0; i < players.length; i++)
+    {
+        let playerHeaderCell = headerRow.insertCell(i + 1);
+        playerHeaderCell.className = "explorer-tbl-cell";
+        playerHeaderCell.innerHTML = `<div class="explorer-tbl-player-name" style="background-color:${player_colors[players[i]]}">  </div>`;
+    }
+    i = players.length;
+    let totalHeaderCell = headerRow.insertCell(i + 1);
+    totalHeaderCell.className = "explorer-tbl-total-cell";
+    totalHeaderCell.innerHTML = `<div class="explorer-tbl-player-name">Taken</div>`;
+
+    // Rows for player i robbing player j. And one last cell for rob total
+    let tblBody = robTable.createTBody();
+    for (i = 0; i < players.length; i++)
+    {
+        const thief = players[i];
+        let row = tblBody.insertRow(i);
+        row.className = "explorer-tbl-row";
+        let playerRowCell = row.insertCell(0);
+        playerRowCell.className = "explorer-rob-tbl-player-col-cell";   // Same as for resource table
+        playerRowCell.innerHTML = renderPlayerCell(thief, true);
+        for (let j = 0; j < players.length; ++j)
+        {
+//            if (j === i) continue;
+            const victim = players[j];
+            let robCount = robs[thief][victim];
+            if (robCount === undefined) { alertIf(43); robCount = 0; }
+            let cell = row.insertCell(j + 1);
+            cell.className = "explorer-tbl-cell";   // Same as for resource table
+            cell.innerHTML = robCount === 0 ? "" : `${robCount}`;
+        }
+        let j = players.length;
+        let cell = row.insertCell(j + 1);
+        let taken = robsTaken[thief];
+        if (taken === undefined) { alertIf(44); taken = 0; }
+        cell.className = "explorer-tbl-cell";
+        cell.innerHTML = taken === 0 ? "" : `<span style="color:${player_colors[thief]}">${taken}</span>`;
+    }
+
+    // Final row for lost totals and steal totals
+    i = players.length;
+    let row = tblBody.insertRow(i);
+    row.className="explorer-tbl-total-row";
+    let totalRowCell = row.insertCell(0)
+    totalRowCell.className = "explorer-tbl-cell";
+    totalRowCell.innerHTML = "Lost";
+    for (let j = 0; j < players.length; ++j)
+    {
+        const victim = players[j];
+        let lostCount = robsLost[victim];
+        if (lostCount === undefined) { alertIf(45); lostCount = 0; }
+        let cell = row.insertCell(j + 1);
+        cell.className = "explorer-tbl-cell";
+        cell.innerHTML = lostCount === 0 ? "" : `<span style="color:${player_colors[victim]}">${lostCount}</span>`;
+    }
+    let j = players.length;
+    let cell = row.insertCell(j + 1);
+    let robTotal = robsTotal;
+    cell.className = "explorer-tbl-total-cell";
+    cell.innerHTML = robsTotal === 0 ? "" : `${robsTotal}`;
+
+    robTable.addEventListener("click", unrender, false);
+    return robTable;
+}
+
+
+//============================================================
 
 // First, delete the discord signs
 function deleteDiscordSigns() {
@@ -1512,8 +1645,8 @@ function deleteDiscordSigns() {
             allPageImages[i].remove();
         }
     }
-    ad_left = document.getElementById("in_game_ab_left");
-    ad_right = document.getElementById("in_game_ab_right");
+    ad_left = document.getElementById("remove_ad_in_game_left");
+    ad_right = document.getElementById("remove_ad_in_game_right");
     if (ad_left) { ad_left.remove(); }
     if (ad_right) { ad_right.remove(); }
     log("Removed elements");
@@ -1539,15 +1672,27 @@ function getStuffImage(whichSnippet)
     return fullName;
 }
 
-function renderPlayerCell(player) {
-    const gar = worldGuessAndRange[player]["unknown"];
-    const stealProb = Math.round(mwSteals[player]["unknown"] * 100);
-    const unknownString = gar[3] === 0
-                        ? ""
-                        : ` + ${gar[2]} (${Math.round(gar[1] * 100)}%) | ${stealProb}%`;
-    return `<div class="explorer-tbl-player-col-cell-color" style="background-color:${player_colors[player]}"></div>
-        <span class="explorer-tbl-player-name" style="color:${player_colors[player]}">${player}</span>
-        <span class="explorer-tbl-unknown-stats">${unknownString}</span>`;
+function renderPlayerCell(player, robs = false) {
+    if (robs === false)
+    {
+        const gar = worldGuessAndRange[player]["unknown"];
+        const stealProb = Math.round(mwSteals[player]["unknown"] * 100);
+        const unknownString = gar[3] === 0
+                            ? ""
+                            : ` + ${gar[2]} (${Math.round(gar[1] * 100)}%) | ${stealProb}%`;
+        return `<span class="explorer-tbl-player-col-cell-color" style="background-color:${player_colors[player]}"> </span>`
+            + `<span class="explorer-tbl-player-name" style="color:${player_colors[player]}">${player}</span>`
+            + `<span class="explorer-tbl-unknown-stats">${unknownString}</span>`;
+    }
+    else
+    {
+        const diff = robsTaken[player] - robsLost[player];
+        const diffString = diff === 0
+                         ? " (  )"
+                         : ` (${(diff < 0 ? "" : "+") + diff})`;
+        return `<span class="explorer-tbl-player-name" style="color:${player_colors[player]}">${player}${diffString}</span>`
+            + `<span class="explorer-tbl-player-col-cell-color" style="background-color:${player_colors[player]}"> </span>`;
+    }
 }
 
 let messageNumberDone = -1;
@@ -1586,12 +1731,15 @@ function unrender()
         if (p) { p.remove(); }
         let t = document.getElementById(tableId);
         if (t) { t.remove(); }
+        let r = document.getElementById(robTableId);
+        if (r) { r.remove(); }
     }
     catch(e)
     {
         // We don't really care if this fails at the moment, but it might help
         // identify bugs.
-        console.warn("[WARNING] Exc. in unrender():", e);
+        console.warn("[WARNING] Exception in unrender():", e);
+        alertIf(46);
     }
 }
 
@@ -1644,6 +1792,7 @@ function render(force = false)
     header.className = "explorer-tbl-header";
     let headerRow = header.insertRow(0);
     let playerHeaderCell = headerRow.insertCell(0);
+    playerHeaderCell.addEventListener("click", mwManualFullRecovery, false);
     playerHeaderCell.innerHTML = "Guess (Pr)<br>Steal Pr";
     playerHeaderCell.className = "explorer-tbl-player-col-header";
     for (let i = 0; i < resourceTypes.length; i++) {
@@ -1671,27 +1820,21 @@ function render(force = false)
         headerCell.innerHTML = getOwnStuffImage(v);
     }
 
-//    playerHeaderCell.addEventListener("click", exportCurrentMW, false);
-    playerHeaderCell.addEventListener("click", mwManualFullRecovery, false);
-
-    // Create bubble plot data
-    // TODO
-
+    // One resource table row per player
     let tblBody = tbl.createTBody();
     tblBody.addEventListener("click", mwManualRecoverCards, false);
-    // Row per player
     for (let i = 0; i < players.length; i++) {
         const player = players[i];
         let row = tblBody.insertRow(i);
         row.className = "explorer-tbl-row";
         let playerRowCell = row.insertCell(0);
-        playerRowCell.className = "explorer-tbl-player-col-cell";
+        playerRowCell.className = "explorer-tbl-player-col-cell";   // Same as for rob table
         playerRowCell.innerHTML = renderPlayerCell(player);
         for (let j = 0; j < resourceTypes.length; j++)
         {
             const res = resourceTypes[j];
             let cell = row.insertCell(j + 1);
-            cell.className = "explorer-tbl-cell";
+            cell.className = "explorer-tbl-cell";   // Same as for rob table
             let resourceType = resourceTypes[j];
             const resCount = worldGuessAndRange[player][res][2]; // Guess
             const fraction = worldGuessAndRange[player][res][1]; // Fraction
@@ -1715,7 +1858,11 @@ function render(force = false)
         Object.keys(mwBuilds).forEach(addBuildFunc);
     }
 
+    // Display rob table
+    const robTable = generateRobTable();
+
     body.appendChild(tbl);
+    body.appendChild(robTable);
 
     tbl.setAttribute("border", "2"); // (?)
 
@@ -2156,7 +2303,10 @@ function parseStealIncludingYou(pElement)
 
     let stolenResourceType = findSingularResourceImageInElement(pElement);
 
-    // ManyWorlds version (treating it as a trade)
+    // Robs update
+    addRob(stealingPlayer, targetPlayer);
+
+    // ManyWorlds update (treating it as a trade)
     logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
     transformExchange(targetPlayer, stealingPlayer, // source, target
         generateSingularSlice(worldResourceIndex(stolenResourceType)));
@@ -2212,7 +2362,10 @@ function parseStealFromOtherPlayers(pElement)
         return;
     }
 
-    // ManyWorlds version
+    // Robs update
+    addRob(stealingPlayer, targetPlayer);
+
+    // ManyWorlds update
     logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
     branchSteal(targetPlayer, stealingPlayer);
     printWorlds();
@@ -2324,7 +2477,8 @@ function parseLatestMessages() {
 function comeMrTallyManTallinitialResource() {
     let allMessages = getAllMessages();
 
-    initWorlds();   // Requires existing users
+    initWorlds();   // Real init. Requires existing users array.
+    initRobs();     // Real init. Requires exisintg users array.
     allMessages.forEach(parseInitialGotMessage);
     printWorlds();
 
@@ -2355,7 +2509,6 @@ function adjustPlayersByUsername()
     {
         console.error("[ERROR] Username not part of players");
         alertIf(32);
-        debugger;
         return;
     }
     const unrotatedCopy = deepCopy(players);
@@ -2518,7 +2671,9 @@ function waitForInitialPlacement() {
     MSG_OFFSET = 0;
     players = ["Awaiting", "First", "Roll"];
     player_colors = {"Awaiting":"black", "First":"red", "Roll":"gold"};
-    initWorlds();   // Dunny init requiring 'players' array
+    // Dunny inits using the fake players and colors
+    initWorlds();   // Dummy init requiring 'players' array
+    initRobs();     // Dummy init
     render(true);   // Force render
 
     log("[NOTE] Waiting for first roll");
