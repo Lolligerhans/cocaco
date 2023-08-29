@@ -1594,14 +1594,21 @@ function generateRobTable()
             const victim = players[j];
             let robCount = robs[thief][victim];
             if (robCount === undefined) { alertIf(43); robCount = 0; }
+            const robAdvantage = robCount - robs[victim][thief];
+            const irrelevant = robCount === 0 && robAdvantage === 0;
+            const robColour = robAdvantage > 0 ? "#00a000"
+                            : robAdvantage < 0 ? "#a00000"
+                            :                    "#000000";
+            const style = `style="color:${robColour}"`;
             let cell = row.insertCell(j + 1);
             cell.className = "explorer-tbl-cell";   // Same as for resource table
-            cell.innerHTML = robCount === 0 ? "" : `${robCount}`;
+            cell.innerHTML = irrelevant ? "" : `<span ${style}>${robCount}</span>`;
         }
         let j = players.length;
         let cell = row.insertCell(j + 1);
         let taken = robsTaken[thief];
         if (taken === undefined) { alertIf(44); taken = 0; }
+        // Originally we wanted class 'explorer-tbl-total-cell' here but it looks terrible
         cell.className = "explorer-tbl-cell";
         cell.innerHTML = taken === 0 ? "" : `<span style="color:${player_colors[thief]}">${taken}</span>`;
     }
