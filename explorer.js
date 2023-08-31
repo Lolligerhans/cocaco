@@ -143,8 +143,11 @@ const bubblePlotId = "explorer-plt";
 const tableId = "explorer-tbl";
 const robTableId = "explorer-rob-tbl";
 
-// Message offset
 let MSG_OFFSET = -1;    // Reset to 0 when (re-)starting
+// Prevents activity toggle because tracker is in irregular state.
+//  - set to 'true' when starting player recovery
+//  - reset to 'false' when main loop is started.
+let startupFlag = true;
 
 
 //============================================================
@@ -641,6 +644,7 @@ function mwManualFullRecovery()
     }
 
     stopMainLoop();
+    startupFlag = true;
     unrender();
     // We use callback to emulate while(!ready){ foo(); sleep(5s); }
     recoverUsers(playerCount, () => {
@@ -673,13 +677,12 @@ function mwManualRecoveryDispatcher(event)
 
 // Requires existing users array. Some stats objects are pre-filled with the
 // names and they keep them always.
-function initWorlds(startingResources = null)   // TODO add resources as argument, so we can finally remove the old resources array
+function initWorlds(startingResources = null)
 {
     // Init only once
     if (manyWorlds.length !== 0)
     {
         console.warn("[WARNING] Initializing manyWorlds over non-empty manyWorlds array!");
-        log("[NOTE] Treating current global 'resources' variable as-is. Fine if inside a test", p(startingResources));
     }
 
     // TODO make worlds arrays (is that faster in JS? lol)
@@ -1635,27 +1638,59 @@ function generateRobTable()
     cell.className = "explorer-tbl-total-cell";
     cell.innerHTML = robsTotal === 0 ? "" : `${robsTotal}`;
 
-    robTable.addEventListener("click", unrender, false);
+    robTable.addEventListener("click", parseLatestMessages, false);
     return robTable;
 }
 
 
 //============================================================
+// Rendering
+//============================================================
+
+function activeToggle()
+{
+    if (startupFlag === true)
+    {
+        log("[NOTE] activeToggle() suppressed: startupFlag === true");
+        return;
+    }
+    if (isActiveMainLoop())
+    {
+        log("[NOTE] Now turned off");
+        const stoppedMainLoop = stopMainLoop();
+        if (stopMainLoop === false)
+        {
+            alertIf(48);
+        }
+        else
+        {
+            unrender();
+        }
+    }
+    else
+    {
+        log("[NOTE] Now turned on");
+        restartMainLoop();   // Force render immediately
+    }
+}
 
 // First, delete the discord signs
 function deleteDiscordSigns() {
-    let allPageImages = document.getElementsByTagName('img');
-    for(let i = 0; i < allPageImages.length; i++)
+//    let allPageImages = document.getElementsByTagName('img');
+//    for(let i = 0; i < allPageImages.length; i++)
+//    {
+//        if (allPageImages[i].src.includes("discord"))
+//        {
+//            allPageImages[i].remove();
+//        }
+//    }
+    const ids = [ "remove_ad_in_game_left", "remove_ad_in_game_right",
+                       "in_game_ab_right", "in_game_ab_left" ];
+    for (id of ids)
     {
-        if (allPageImages[i].src.includes("discord"))
-        {
-            allPageImages[i].remove();
-        }
+        let element = document.getElementById(id);
+        if (element) element.remove();
     }
-    ad_left = document.getElementById("remove_ad_in_game_left");
-    ad_right = document.getElementById("remove_ad_in_game_right");
-    if (ad_left) { ad_left.remove(); }
-    if (ad_right) { ad_right.remove(); }
     log("Removed elements");
 }
 
@@ -1702,6 +1737,7 @@ function renderPlayerCell(player, robs = false) {
     }
 }
 
+// Has the sideeffect of updating a checkpoint message number
 let messageNumberDone = -1;
 function isNewMessage(msgNumber) {
     if (msgNumber > messageNumberDone)
@@ -1734,12 +1770,9 @@ function unrender()
 {
     try
     {
-        let p = document.getElementById(bubblePlotId);
-        if (p) { p.remove(); }
-        let t = document.getElementById(tableId);
-        if (t) { t.remove(); }
-        let r = document.getElementById(robTableId);
-        if (r) { r.remove(); }
+        let p = document.getElementById(bubblePlotId); if (p) { p.remove(); }
+        let t = document.getElementById(tableId);      if (t) { t.remove(); }
+        let r = document.getElementById(robTableId);   if (r) { r.remove(); }
     }
     catch(e)
     {
@@ -1756,7 +1789,7 @@ function unrender()
 // TODO take data to-be displayed as input?
 function render(force = false)
 {
-    if (force === false && isNewMessage(MSG_OFFSET) === false)
+    if (force === false && !isNewMessage(MSG_OFFSET))
     {
         log("Skip display update");
         return;
@@ -1800,7 +1833,7 @@ function render(force = false)
     let headerRow = header.insertRow(0);
     let playerHeaderCell = headerRow.insertCell(0);
     playerHeaderCell.addEventListener("click", mwManualFullRecovery, false);
-    playerHeaderCell.innerHTML = "Guess (Pr)<br>Steal Pr";
+    playerHeaderCell.innerHTML = `${manyWorlds.length}`;
     playerHeaderCell.className = "explorer-tbl-player-col-header";
     for (let i = 0; i < resourceTypes.length; i++) {
         let resourceType = resourceTypes[i];
@@ -2656,6 +2689,7 @@ function isActiveMainLoop()
     return mainLoopInterval !== 0;
 }
 
+// Returns true if existing main loop interval was cleared, otherwise false
 function stopMainLoop()
 {
     clearInterval(mainLoopInterval);
@@ -2667,6 +2701,20 @@ function stopMainLoop()
 function restartMainLoop()
 {
     stopMainLoop(); // Sanitize
+    startupFlag = false;
+    // Bring table up to date and force-render immediately so we dont need to
+    // wait the first mainLoopInterval time before seeing it. Special case when
+    // the extra parseLatestMessages() parsed a win and clears stops the main
+    // loop. Detect by setting mainLoopInterval to a dummy value. Before it is
+    // actually started.
+    //
+    // This does NOT protect against caling restartMainLoop() to restart the
+    // main loop AFTER parsing the win previously (the main loop will idle).
+    mainLoopInterval = -1;
+    parseLatestMessages();
+    render(true);
+    if (mainLoopInterval === 0)
+        return; // Win was parsed, resetting the mainLoopInterval.
     mainLoopInterval = setInterval(parseLatestMessages, configRefreshRate);
 }
 
@@ -2694,7 +2742,6 @@ function waitForInitialPlacement() {
             // Init
             recognizeUsers(); // TODO Consilidate with recoverUsers
             comeMrTallyManTallinitialResource();
-            deleteDiscordSigns();
             render();
 
             restartMainLoop();
@@ -2724,6 +2771,8 @@ function findTranscription() {
         if (logElement) {
 //            log("Found game-log-text element");
             clearInterval(findInterval);
+            deleteDiscordSigns();
+            logElement.addEventListener("click", activeToggle, false);
             waitForInitialPlacement();  // Resets MSG_OFFSET to 0
         } else {
             if (playerUsernameElement === null)
