@@ -607,6 +607,15 @@ function mwCardRecovery(counts)
 //      For now we just disallow this case because I can't think of a use case.
 function mwManualRecoverCards()
 {
+    // TODO We want to suppress during startup but manual player recovery
+    //      leaves in startup mode. We want startup mode there to prevent
+    //      manual parser update.
+    //      Maybe do a FSM since it is getting complex
+//    if (startupFlag === true)
+//    {
+//        log("[NOTE] mwManualRecoverCards() suppressed: startupFlag === true");
+//        return;
+//    }
     log("[NOTE] Starting manual card recovery");
     const activeBefore = stopMainLoop();
     // Confirm AFTER stopping main loop so that card counts can be timed
@@ -635,6 +644,11 @@ function mwManualRecoverCards()
 // Waits 1 round to collect all player names, then needs card counts (?)
 function mwManualFullRecovery()
 {
+    if (startupFlag === true)
+    {
+        log("[NOTE] mwManualFullRecovery() suppressed: startupFlag === true");
+        return;
+    }
     log("[NOTE] Starting manual name recovery");
     const playerCount = Number(prompt("Player count (0 to abort):", 0));
     if (playerCount < 1 || 4 < playerCount)
@@ -1670,7 +1684,7 @@ function activeToggle()
     else
     {
         log("[NOTE] Now turned on");
-        restartMainLoop();   // Force render immediately
+        restartMainLoop();
     }
 }
 
@@ -2433,8 +2447,7 @@ function parseTurnName(element)
 {
     // Include only snippets that identify current user by name
     const txt = element.textContent;
-    if (  txt.includes(tradeOfferSnippet)
-       || txt.includes(yearOfPlentySnippet)
+    if (  txt.includes(yearOfPlentySnippet)
        || txt.includes(builtSnippet)
        || txt.includes(boughtSnippet)
        || txt.includes(rolledSnippet))
@@ -2482,6 +2495,11 @@ function getNewMessages()
  * Parses the latest messages and re-renders the table.
  */
 function parseLatestMessages() {
+    if (startupFlag === true)
+    {
+        alertIf(49);
+        return;
+    }
     let newMessages = getNewMessages();
 
     newMessages.forEach((msg, idx) =>
@@ -2575,7 +2593,7 @@ function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
     //MSG_OFFSET = 0;
     const left = () => playerCount - players.length;
 
-    // We abuse intervals to construct while(!ready){ foo(); sleep(5s); }
+    // We abuse intervals to construct while(!ready){ foo(); sleep(10s); }
     let recoverInterval = setInterval(() =>
     {
         if (left() === 0)   // Aka. Leaving while loop
@@ -2597,7 +2615,7 @@ function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
                 log("Recoverd player", name, "with colour", colour);
             }
         }
-    }, 5000);   // Aka. sleep(5s)
+    }, configRefreshRate);   // Aka. sleep(10s)
 }
 
 /**
