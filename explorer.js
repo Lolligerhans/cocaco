@@ -2433,7 +2433,6 @@ function parseWin(element)
     if (element.textContent.includes(winSnippet))
     {
         stopMainLoop();
-        unrender();
         log("[INFO] End of Game");
         return false;
     }
@@ -2518,6 +2517,7 @@ function parseLatestMessages() {
     if (!isActiveMainLoop())
         return;
 
+    // Abort if card tracking is broken
     if (manyWorlds.length === 0)
     {
         console.error("[ERROR] No world left");
