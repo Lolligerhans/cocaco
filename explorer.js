@@ -1947,6 +1947,22 @@ function computeInitialPhaseOffset(messages)
     return lastPlacementMessage + 1;
 }
 
+//============================================================
+
+function verifyPlayers(players_array, p1 = null, p2 = null)
+{
+    for (p of [p1, p2])
+    {
+        if (p === null) continue;
+        if (!players_array.includes(p))
+        {
+            log("[ERROR] Expected player", p);
+            alertIf(5);
+        }
+    }
+    return true;
+}
+
 /**
 * Process initial resource message after placing first settlement.
 */
@@ -1958,12 +1974,7 @@ function parseInitialGotMessage(pElement)
         return;
     }
     const player = textContent.replace(receivedInitialResourcesSnippet, "").split(" ")[0];
-    if (!players.includes(player))
-    {
-        console.error("[ERROR] Failed to identify player for initial resources");
-        alertIf(34);
-        return;
-    }
+    if (!verifyPlayers(players, player)) return true;
 
     // ManyWorlds version
     const initialResourceTypes = findAllResourceCardsInHtml(pElement.innerHTML);
@@ -1976,18 +1987,9 @@ function parseInitialGotMessage(pElement)
 function parseTradeOffer(element)
 {
     const txt = element.textContent;
-    if (!txt.includes(tradeOfferSnippet))
-    {
-        return true;
-    }
-
+    if (!txt.includes(tradeOfferSnippet)) return true;
     const player = txt.substring(0, txt.indexOf(" "));
-    if (!players.includes(player))
-    {
-        log("[ERROR] Failed to identify trader. | Got:", player);
-        alertIf(36);
-        return;
-    }
+    if (!verifyPlayers(players, player)) return true; // Sanity check
 
     const offerHtml = element.innerHTML.split(tradeOfferResSnippet)[0];
     const offer = findAllResourceCardsInHtml(offerHtml);
@@ -2002,20 +2004,11 @@ function parseTradeOffer(element)
 function parseYearOfPlenty(element)
 {
     let textContent = element.textContent;
-    if (!textContent.includes(yearOfPlentySnippet))
-    {
-        return true;
-    }
+    if (!textContent.includes(yearOfPlentySnippet)) return true;
 
     // Determine player
     let beneficiary = textContent.substring(0, textContent.indexOf(yearOfPlentySnippet));
-    if (!players.includes(beneficiary))
-    {
-        log("[ERROR] Failed to identify YOP beneficiary.",
-                    "| Got:", beneficiary, "| from textContent:", textContent);
-        alertIf(11);
-        return;
-    }
+    if (!verifyPlayers(players, beneficiary)) return true; // Sanity check
 
     // ManyWorlds version
     let obtainedResources = findAllResourceCardsInHtml(element.innerHTML);
@@ -2035,12 +2028,7 @@ function parseGotMessage(pElement) {
     if (textContent.includes(receivedResourcesSnippet))
     {
         const player = textContent.substring(0, textContent.indexOf(receivedResourcesSnippet));
-        if (!players.includes(player))
-        {
-            log("[ERROR] Failed to parse got-message player", player);
-            alertIf(14);
-            return;
-        }
+        if (!verifyPlayers(players, player)) return true; // Sanity check
 
         // ManyWorlds version
         let obtainedResources = findAllResourceCardsInHtml(pElement.innerHTML);
@@ -2060,19 +2048,13 @@ function parseGotMessage(pElement) {
  */
 function parseBuiltMessage(pElement) {
     let textContent = pElement.textContent;
-    if (!textContent.includes(builtSnippet)) {
-        return true;
-    }
+    if (!textContent.includes(builtSnippet)) return true;
     let images = collectionToArray(pElement.getElementsByTagName('img'));
     let player = textContent.split(" ")[0];
-    if (!players.includes(player))
-    {
-        log("[ERROR] Failed to parse building player", player, resources);
-        alertIf(15);
-        return;
-    }
+    if (!verifyPlayers(players, player)) return true; // Sanity check
     let buildResources = deepCopy(emptyResourcesByName);
     let building = false;
+    // TODO use predefined resource cost slices
     for (let img of images)
     {
         if (img.src.includes("road")) {
@@ -2118,17 +2100,10 @@ function parseBuiltMessage(pElement) {
  */
 function parseBoughtMessage(pElement) {
     let textContent = pElement.textContent;
-    if (!textContent.includes(boughtSnippet)) {
-        return true;
-    }
+    if (!textContent.includes(boughtSnippet)) return true;
     let images = collectionToArray(pElement.getElementsByTagName('img'));
     let player = textContent.split(" ")[0];
-    if (!players.includes(player))
-    {
-        // TODO common identify-player subroutine
-        console.error("[ERROR] Failed to parse player...", player, resources);
-        return;
-    }
+    if (!verifyPlayers(players, player)) return true; // Sanity check
 
     // ManyWorlds version
     let devCardResources = deepCopy(emptyResourcesByName);
@@ -2154,13 +2129,9 @@ function parseTradeBankMessage(pElement)
         return true;
     }
     let player = textContent.split(" ")[0];
-    if (!players.includes(player))
-    {
-        log("Failed to parse player...", player, resources);
-        alertIf(34);
-        return;
-    }
+    if (!verifyPlayers(players, player)) return true; // Sanity check
     // We have to split on the text, which isn't wrapped in tags, so we parse innerHTML, which prints the HTML and the text.
+    // FIXME Abandoned (?)
     let innerHTML = pElement.innerHTML;
     let gavebank = innerHTML.slice(innerHTML.indexOf(tradeBankGaveSnippet), innerHTML.indexOf(tradeBankTookSnippet)).split("<img");
     let andtook = innerHTML.slice(innerHTML.indexOf(tradeBankTookSnippet)).split("<img");
@@ -2207,15 +2178,7 @@ function parseMonopoly(element)
 
     // Identify thief
     const thief = textContent.substring(0, textContent.indexOf(" "));
-
-    // Sanity check
-    if (!players.includes(player))
-    {
-        log("[ERROR] Failed to identify thief for monopoly.",
-                    "| Got:", thief, "| from textContent:", textContent);
-        alertIf(10);
-        return;
-    }
+    if (!verifyPlayers(players, thief)) return true; // Sanity check
 
     // ManyWorlds version
     const stolenResource = findSingularResourceImageInElement(element);
@@ -2235,12 +2198,7 @@ function parseDiscardedMessage(pElement) {
         return true;
     }
     const player = textContent.substring(0, textContent.indexOf(discardedSnippet));
-    if (!players.includes(player))
-    {
-        log("[ERROR] Failed to parse discarding player |", player, resources);
-        alertIf(13);
-        return;
-    }
+    if (!verifyPlayers(players, player)) return true; // Sanity check
 
     // ManyWorlds version
     const discarded = findAllResourceCardsInHtml(pElement.innerHTML);
@@ -2265,10 +2223,7 @@ function parseTradeMessage(element)
 {
     // Identify trading messages
     let textContent = element.textContent;
-    if (!textContent.includes(tradeSnippet))
-    {
-        return true;
-    }
+    if (!textContent.includes(tradeSnippet)) return true;
 
     // Determine trading players
     let involvedPlayers = textContent.split(tradeSnippet);
@@ -2276,14 +2231,7 @@ function parseTradeMessage(element)
     let otherPlayer = involvedPlayers[1];
 
     // Sanity check
-    if (!players.includes(tradingPlayer) || !players.includes(otherPlayer))
-    {
-        log("[ERROR] Failed to parse trading players:",
-                    tradingPlayer, otherPlayer, "| in the text content:",
-                    textContent, "| given resource array:", resources);
-        alertIf(7);
-        return;
-    }
+    if (!verifyPlayers(players, tradingPlayer, otherPlayer)) return true;
 
     // Split HTML at colons to separate sending from receiving resources
     let split = element.innerHTML.split(tradeSplitSnippet);
@@ -2318,7 +2266,7 @@ function parseStealIncludingYou(pElement)
 
     // Detect desired message type
     // TODO Have a function matchPlayers(string) --> [involved, players]
-    let containsYou = textContent.includes("You") || textContent.includes("you");
+    let containsYou = textContent.indexOf("You ") === 0 || textContent.includes("from you");
     let containsStealSnippet = textContent.includes(stealingSnippet);
     if (!containsYou || !containsStealSnippet)  // (!)
     {
@@ -2338,30 +2286,21 @@ function parseStealIncludingYou(pElement)
     {        involvedPlayers[1] = playerUsername; }
     else
     {
-        console.error("[ERROR] Expected", playerUsername, "in known steal");
+        console.error("[ERROR] Expected \"[Yy]ou\" for", playerUsername, "in known steal");
         alertIf(33);
         return;
     }
 
-    // Sanity check
     let stealingPlayer = involvedPlayers[0];
     let targetPlayer = involvedPlayers[1];
-    log("Steal between", stealingPlayer, "and", targetPlayer);
-    if (!players.includes(stealingPlayer) || !players.includes(targetPlayer))
-    {
-        log("[ERROR] Failed to steal. Invalid parse of player(s):",
-                    stealingPlayer, "|", targetPlayer);
-        alertIf(3);
-        return;
-    }
-
+    if (!verifyPlayers(players, stealingPlayer, targetPlayer)) return true; // Sanity check
     let stolenResourceType = findSingularResourceImageInElement(pElement);
 
     // Robs update
+    logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
     addRob(stealingPlayer, targetPlayer);
 
     // ManyWorlds update (treating it as a trade)
-    logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
     transformExchange(targetPlayer, stealingPlayer, // source, target
         generateSingularSlice(worldResourceIndex(stolenResourceType)));
     printWorlds();
@@ -2380,7 +2319,7 @@ function parseStealFromOtherPlayers(pElement)
     let textContent = pElement.textContent;
 
     // Detect desired message type
-    let containsYou = textContent.includes("You") || textContent.includes("you");
+    let containsYou = textContent.indexOf("You ") === 0 || textContent.includes("from you");
     let containsStealSnippet = textContent.includes(stealingSnippet);
     if (containsYou || !containsStealSnippet)   // (!)
     {
@@ -2408,19 +2347,13 @@ function parseStealFromOtherPlayers(pElement)
     // Sanity check
     let stealingPlayer = involvedPlayers[0];
     let targetPlayer = involvedPlayers[1];
-    if (!players.includes(stealingPlayer) || !players.includes(targetPlayer))
-    {
-        log("[ERROR] Failed to steal. Invalid parse of players:",
-                    stealingPlayer, targetPlayer);
-        alertIf(5);
-        return;
-    }
+    if (!verifyPlayers(players, stealingPlayer, targetPlayer)) return true;
 
     // Robs update
+    logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
     addRob(stealingPlayer, targetPlayer);
 
     // ManyWorlds update
-    logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
     branchSteal(targetPlayer, stealingPlayer);
     printWorlds();
 
@@ -2505,10 +2438,7 @@ function parseLatestMessages() {
     {
         if (configLogMessages === true)
             console.log("[NOTE] Msg", MSG_OFFSET + idx, "|", msg.textContent);
-        ALL_PARSERS.every(parser =>
-        {
-            return parser(msg);
-        });
+        ALL_PARSERS.every(parser => { return parser(msg); });
         if (configLogWorldCount === true)
             console.log("[NOTE] MW count:", manyWorlds.length);
     });
