@@ -1,5 +1,12 @@
 // TODO
 //  - Try multi-category plot
+//  - Plot colour-coded histogram
+//    - https://plotly.com/python/colorscales/ (imshow as workaround)
+//    - bar plot relative mode + color interpolation (1 trace per roll)
+//      - https://stackoverflow.com/questions/45857682/interpolation-of-colors
+//      - https://plotly.com/javascript/bar-charts/
+
+// https://plotly.com/javascript/plotly-fundamentals/
 
 //============================================================
 // Config
@@ -17,14 +24,25 @@ const divideSizes = 1.2
 
 const testBubblePlotDivId = "testBubblePlotDivision";
 const testPlotDiv = "testPlotDiv";
+const testHistogramPlotDivId = "testHistogramPlotDiv";
 
 //============================================================
-//
+// Helpers
 //============================================================
 
 function randomFloat(min, max)
 {
     return Math.random() * (max - min) + min;
+}
+
+function randomInt(min, max)
+{
+    return Math.floor(randomFloat(min, max + 1));
+}
+
+function randomDie()
+{
+  return randomInt(1, 6);
 }
 
 function generateTraceFromMwDistribution(distribution, player, resource)
@@ -107,6 +125,10 @@ function generatePerCountBubbles(allPlayers, distribution, player, resource, tot
 
     return [x, y, size, opacity];
 }
+
+//============================================================
+// Scratchpad to test how plotting works
+//============================================================
 
 function plotTest()
 {
@@ -347,11 +369,95 @@ function bubbleTest()
     log("Done bubble test");
 }
 
+function histogramTest()
+{
+  const N = 20;
+  log("Starting histogram test");
+  let testRolls = new Array(N).fill(0);
+  testRolls = testRolls.map(() => {return randomDie() + randomDie();});
+  log("testRolls:", testRolls);
+
+  let x = testRolls;
+  let y = x.map(() => 1);
+  const col = [255, 102, 51];
+//  const cok = [0, 85, 0]; // Forest green
+//  const cok = [85, 51, 136]; // Half purple
+  const cok = [0, 0, 0]; // Black
+  const colo = x.map((v, i) => { const f = i / x.length;
+                                 return `rgb(${Math.floor(cok[0] * (1-f) + col[0] * f)},${Math.floor(cok[1] * (1-f) + col[1] * f)},${Math.floor(cok[2] * (1-f) + col[2] * f)})`; });
+  log("x:", x, "y:", y, "colo:", colo);
+  let trace =
+  {
+    type: 'bar',
+    x: x,
+    y: y,
+    marker:
+    {
+      color: colo,
+    },
+    width: x.map(() => 1),
+    hoverinfo: x.map((_, i) => i.toString()),
+//    histfunc: "count",
+    name: "dice rolls",
+    xbins:
+    {
+      start: 2,
+      end: 12,
+      size: 1,
+    },
+  };
+
+  var data = [trace];
+
+  const c = N / 36;
+  const layout =
+  {
+    hovermode: "closest",
+    margin: {t:15, b: 15, l:15, r: 15},
+    showlegend: false,
+    height: 292 / divideSizes,
+    width: 300 / divideSizes,
+    xaxis:
+    {
+      tickvals: [2,3,4,5,6,7,8,9,10,11,12],
+      autorage: false,
+    },
+    yaxis:
+    {
+      dtick: Math.ceil(6 * c / 4),
+      tick0: 0,
+    }
+  };
+
+  Plotly.newPlot(testHistogramPlotDivId, data, layout);
+
+  // -----------------------------
+
+  testLineX = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5];
+  testLineY = [c,1*c,2*c,3*c,4*c,5*c,6*c,5*c,4*c,3*c,2*c,1*c,c];
+//  testLineX = [2,7,12];
+//  testLineY = [c, 6*c, c];
+  let trace2 =
+  {
+    x: testLineX,
+    y: testLineY,
+    mode: "lines",
+    name: "expectation",
+    marker: { color: "#0a0" },
+    line: { width: 2, dash: "solid", shape: "hvh" },
+  };
+  Plotly.addTraces(testHistogramPlotDivId, trace2);
+}
+
+//============================================================
+// Plotters that fill an element by ID
+//============================================================
+
 // Plots current global ManyWorlds status variables into 'idToPlotInto'
 function plotResourcesAsBubbles(idToPlotInto)
 {
     let playerBubbles = [];
-    const totalResources = generateFullNamesFromWorld(manyWorlds);
+    const totalResources = generateFullNamesFromWorld(manyWorlds);   // FIXME what is happening here?
     for (let j = 0; j < players.length; ++j)
     {
         const player = players[j];
@@ -404,23 +510,86 @@ function plotResourcesAsBubbles(idToPlotInto)
         }
     };
 
-    const config =
-    {
-        displayModeBar: false
-    };
+    const config = { displayModeBar: false };
 
     Plotly.newPlot(idToPlotInto, playerBubbles, layout, config);
     log("Finished plotting current MW state into ID =", idToPlotInto);
 }
 
+function plotRollsAsHistogram(idToPlotInto)
+{
+  const ones = new Array(rolls.length).fill(1);
+  const c = [255, 102, 51]; // Base colour
+  const colo = rolls.map((_, i) =>
+  {
+    // Linearly interpolate towards base colour starting at black during
+    // progression in data (moves in the game).
+    const f = i / rolls.length;
+    return `rgb(${Math.ceil(c[0]*f)},${Math.ceil(c[1]*f)},${Math.ceil(c[2]*f)})`;
+  });
+  let trace =
+  {
+    type: "bar",
+    x: rolls,
+    y: ones,
+    width: ones,
+    marker: { color: colo },
+    name: "dice rolls", // Not shown
+    xbins:
+    {
+      start: 2,
+      end: 12,
+      size: 1,
+    },
+  };
+  let data = [trace];
+  const n = rolls.length / 36;
+  const layout =
+  {
+    margin: {t:15, b: 15, l:15, r: 15},
+    showlegend: false,
+    height: 292 / divideSizes,
+    width: 300 / divideSizes,
+    xaxis:
+    {
+      tickvals: [2,3,4,5,6,7,8,9,10,11,12],
+      autorage: false,
+    },
+    yaxis:
+    {
+      dtick: Math.ceil(6 * n / 4),
+      tick0: 0,
+    }
+  };
+  const config = { displayModeBar: false };
+  Plotly.newPlot(idToPlotInto, data, layout, config);
+  log("Finished plotting rolls histogram into ID = ", idToPlotInto);
+
+  // Add expectation line
+  ex = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5]; // Cover the bars at the ends
+  ey = [n,n,2*n,3*n,4*n,5*n,6*n,5*n,4*n,3*n,2*n,n,n];
+  let expTrace =
+  {
+    x: ex,
+    y: ey,
+    mode: "lines",
+    name: "expectation",   // Hidden
+    marker: { color: "#0a0" },
+    line: { width: 2, dash: "solid", shape: "hvh" },  // Also: shape=linear
+  };
+  Plotly.addTraces(idToPlotInto, expTrace);
+}
+
+//============================================================
+// ?
+//============================================================
+
 if (configPlotTests === true)
 {
     document.addEventListener('DOMContentLoaded', function()
     {
-        // TODO Only call if tes tplot divisions available
-        if (document.getElementById(testPlotDiv) !== null)
-            plotTest();
-        if (document.getElementById(testBubblePlotDivId) !== null)
-            bubbleTest();
+        if (document.getElementById(testPlotDiv                 ) !== null) plotTest();
+        if (document.getElementById(testBubblePlotDivId) !== null) bubbleTest();
+        if (document.getElementById(testHistogramPlotDivId) !== null) histogramTest();
     }, false);
 }

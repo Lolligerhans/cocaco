@@ -8,6 +8,7 @@ const configRunManyWorldsTest = false;    // Run test and quit. Not a full unit 
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
 const configPlotBubbles = true;
+const configPlotRolls = true;
 const configLogMessages = false;
 const configLogWorldCount = false;
 const configRefreshRate = 10000;
@@ -25,6 +26,7 @@ console.log("[INFO]",
     "| configFixedPlayerName:", configFixedPlayerName,
     "| configPlayerName:", configPlayerName,
     "| configPlotBubbles:", configPlotBubbles,
+    "| configPlotRolls:", configPlotRolls,
     "| configLogMessages:", configLogMessages,
     "| configLogWorldCount:", configLogWorldCount
 );
@@ -140,6 +142,7 @@ const assets =
 };
 
 const bubblePlotId = "explorer-plt";
+const rollsPlotId = "explorer-plt-rolls";
 const tableId = "explorer-tbl";
 const robTableId = "explorer-rob-tbl";
 
@@ -236,6 +239,26 @@ function findAllResourceCardsInHtml(html)
     }
 
     return cards;
+}
+
+// Sum values of child elements that are dice images
+function extractDiceSumOfChildren(element)
+{
+    let images = collectionToArray(element.getElementsByTagName("img"));
+    let diceTest = new RegExp("dice_\\d");
+    let total = images.reduce((sum, img) =>   // TODO Probably better as a for loop
+    {
+        // Alt text is "dice_6" when rolling a 6.
+        // Only images present are the dice images.
+        let altText = img.getAttribute("alt");
+        if (!altText) alertIf("No alt text in dice image");
+        if (!diceTest.test(altText)) return sum;   // Skip if not a dice image
+        let diceNum = Number(altText.slice(-1));
+        // Debugging only
+//        log(" Found dice:", diceNum);
+        return sum + diceNum;
+    } , 0);
+    return total;
 }
 
 //============================================================
@@ -1656,6 +1679,49 @@ function generateRobTable()
     return robTable;
 }
 
+//============================================================
+// Dice Rolls
+//============================================================
+
+// Save count of rolling the number N at 'rolls[N]'.
+// 'rolls[0]' is the roll total.
+// 'rolls[1]' is the max of any roll (use when encoding with colour)
+
+let rolls = [];
+
+function initRolls()
+{
+    // Raw rolls version
+    rolls = [];
+
+    // Histogram version
+//    rolls = new Array(12 + 1).fill(0);  // Add 1 because 1-based indexing
+}
+
+function addRoll(number)
+{
+    if (number < 2 || 12 < number)
+    {
+        alertIf("addRoll(): invalid number " + number);
+        return;
+    }
+
+    // Save raw rolls
+    rolls.push(number);
+
+    // Histogram version
+//    rolls[number] += 1;
+//    rolls[0] += 1;                                  // Update total rolls
+//    rolls[1] = Math.max(rolls[1], rolls[number]);   // Update Maximum
+
+    // Debugging
+//    log(rolls);
+}
+
+function fillRollPlot(element)
+{
+    plotRollsAsHistogram(element.id);
+}
 
 //============================================================
 // Rendering
@@ -1787,6 +1853,7 @@ function unrender()
         let p = document.getElementById(bubblePlotId); if (p) { p.remove(); }
         let t = document.getElementById(tableId);      if (t) { t.remove(); }
         let r = document.getElementById(robTableId);   if (r) { r.remove(); }
+        let d = document.getElementById(rollsPlotId);  if (d) { d.remove(); }
     }
     catch(e)
     {
@@ -1818,17 +1885,30 @@ function render(force = false)
     // Display
     let body = document.getElementsByTagName("body")[0];
 
-    // Display plot
+    // Display resource plot
     if (configPlotBubbles === true)
     {
         let existingPlot = document.getElementById(bubblePlotId);
         try { if (existingPlot) { existingPlot.remove(); } }
-        catch (e) { console.warn("had an issue deleting the plot", e); }
+        catch (e) { console.warn("had an issue deleting the bubble plot", e); }
         let plt = document.createElement("plot");
         plt.id = bubblePlotId;
 //        plt.class = "plot-window";
         body.appendChild(plt);
         fillElementWithPlot(plt);
+    }
+
+    // Dispaly rolls histogram
+    if (configPlotRolls === true)
+    {
+        let existingPlot = document.getElementById(rollsPlotId);
+        try { if (existingPlot) { existingPlot.remove(); } }
+        catch (e) { console.warn("had an issue deleting the rolls plot", e); }
+        // TODO I think we should not give an ID here because we set it below (?)
+        let plt = document.createElement("roll-plot");
+        plt.id = rollsPlotId;
+        body.appendChild(plt);
+        fillRollPlot(plt);
     }
 
     // Display table
@@ -2092,6 +2172,20 @@ function parseBuiltMessage(pElement) {
     mwTransformSpawn(player, asSlice);
     printWorlds();
 
+    return false;
+}
+
+function parseRolls(element)
+{
+    const textContent = element.textContent;
+    if (!textContent.includes(rolledSnippet)) return true;
+    const player = textContent.split(" ")[0];
+    if (!verifyPlayers(players, player)) return true; // Sanity check
+
+    const diceSum = extractDiceSumOfChildren(element);
+    log("[INFO] Player", player, "rolled a", diceSum);
+
+    addRoll(diceSum);
     return false;
 }
 
@@ -2401,6 +2495,7 @@ function parseTurnName(element)
 let ALL_PARSERS = [
     parseGotMessage,
     parseTradeOffer,
+    parseRolls,
 
     parseStealFromOtherPlayers, // TODO rename pair to stealKnwon vs. stealUnknown
     parseStealIncludingYou,
@@ -2467,6 +2562,7 @@ function comeMrTallyManTallinitialResource() {
 
     initWorlds();   // Real init. Requires existing users array.
     initRobs();     // Real init. Requires exisintg users array.
+    initRolls();
     allMessages.forEach(parseInitialGotMessage);
     printWorlds();
 
