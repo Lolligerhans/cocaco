@@ -1,16 +1,17 @@
 //============================================================
 // CONFIG
 //============================================================
+
 const configDoAlert = true;
-const configPrintWorlds = false;   // Activate console logging of MW state
-const configPrintRobs = false;  // Activate console log for robs
-const configRunManyWorldsTest = false;    // Run test and quit. Not a full unit test.
+const configPrintWorlds = false;
+const configLogWorldCount = false;
+const configPrintRobs = false;
+const configRunManyWorldsTest = false;  // Run test and quit. Not a full unit test.
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 const configPlotRolls = true;
 const configLogMessages = false;
-const configLogWorldCount = false;
 const configRefreshRate = 10000;
 const configOwnIcons = true;
 
@@ -1659,9 +1660,13 @@ function generateRobTable()
         let cell = row.insertCell(j + 1);
         let taken = robsTaken[thief];
         if (taken === undefined) { alertIf(44); taken = 0; }
+        const sevenStr = robsSeven[thief] ? robsSeven[thief].toString() : " ";
+        const knightsCount = taken - robsSeven[thief];
+        const knightStr = knightsCount ? `+${knightsCount.toString()}` : "  ";
+        log(thief, "taken:", taken, "seven:", robsSeven[thief]);
         // Originally we wanted class 'explorer-tbl-total-cell' here but it looks terrible
         cell.className = "explorer-tbl-cell";
-        cell.innerHTML = taken === 0 ? "" : `<span style="color:${player_colors[thief]}">${taken}</span>`;
+        cell.innerHTML = taken === 0 ? "" : `<span style="color:${player_colors[thief]}">${sevenStr}${knightStr}</span>`;
     }
 
     // Final row for lost totals and steal totals
@@ -1819,10 +1824,9 @@ function renderPlayerCell(player, robs = false) {
     }
     else
     {
-        const sevenStr = robsSeven[player] ? robsSeven[player].toString() : " ";
         const diff = robsTaken[player] - robsLost[player];
         const diffStr = diff ? (diff < 0 ? "" : "+") + diff : "  ";
-        const fullText = ` ${sevenStr}${diffStr}`;
+        const fullText = ` ${diffStr}`;
         return `<span class="explorer-tbl-player-name" style="color:${player_colors[player]}">${player}${fullText}</span>`
             + `<span class="explorer-tbl-player-col-cell-color" style="background-color:${player_colors[player]}"> </span>`;
     }
@@ -2198,6 +2202,9 @@ function parseRolls(element)
 
     addRoll(diceSum);
     if (diceSum === 7)
+        // FIXME If the player does not steal from their robber this number is
+        // misleading. We could track if a rob comes from a 7 or a robber by
+        // storing which happened the message before.
         addSeven(player);   // Affects seven counter but not rob stats
 
     return false;
