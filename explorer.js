@@ -1547,10 +1547,11 @@ if (configRunManyWorldsTest === true)
 // Robs
 //============================================================
 
-let robs = {};       // robs = { "player1": {"player2":1, "player2":0, ... }, "player2" : {}, ... }
-let robsTaken = {};  // robsTaken = {"player1":4, "player2":0, ...}
-let robsLost = {};   // Like robsTaken
-let robsTotal = -100;  // Scalar
+let robs = {};          // robs = { "player1": {"player2":1, "player2":0, ... }, "player2" : {}, ... }
+let robsTaken = {};     // robsTaken = {"player1":4, "player2":0, ...}
+let robsLost = {};      // Like robsTaken
+let robsTotal = -100;   // Scalar
+let robsSeven = {};     // Like robsTaken
 
 function printRobs()
 {
@@ -1559,6 +1560,7 @@ function printRobs()
     log("robsTaken:", robsTaken);
     log("robsLost:", robsLost);
     log("robsTotal:", robsTotal);
+    log("robsSeven:", robsSeven);
 }
 
 function initRobs()
@@ -1568,16 +1570,19 @@ function initRobs()
     robsTaken = {};
     robsLost = {};
     robsTotal = 0;
+    robsSeven = {};
     for (const player of players)
     {
         robs[player] = {};
         for (const p of players) { robs[player][p] = 0; }
         robsTaken[player] = 0;
         robsLost[player] = 0;
+        robsSeven[player] = 0;
     }
     printRobs();
 }
 
+// The just the robbing action. No matter if from 7 or knight
 function addRob(thief, victim)
 {
     robs[thief][victim] += 1;
@@ -1585,6 +1590,12 @@ function addRob(thief, victim)
     robsLost[victim] += 1;
     robsTotal += 1;
     printRobs();
+}
+
+// Adjust seven counter. Does not affect robs. Call addRob() separately.
+function addSeven(player)
+{
+    robsSeven[player] += 1;
 }
 
 function generateRobTable()
@@ -1627,7 +1638,7 @@ function generateRobTable()
         row.className = "explorer-tbl-row";
         let playerRowCell = row.insertCell(0);
         playerRowCell.className = "explorer-rob-tbl-player-col-cell";   // Same as for resource table
-        playerRowCell.innerHTML = renderPlayerCell(thief, true);
+        playerRowCell.innerHTML = renderPlayerCell(thief, true); // true -> add rob counts
         for (let j = 0; j < players.length; ++j)
         {
 //            if (j === i) continue;
@@ -1808,11 +1819,11 @@ function renderPlayerCell(player, robs = false) {
     }
     else
     {
+        const sevenStr = robsSeven[player] ? robsSeven[player].toString() : " ";
         const diff = robsTaken[player] - robsLost[player];
-        const diffString = diff === 0
-                         ? " (  )"
-                         : ` (${(diff < 0 ? "" : "+") + diff})`;
-        return `<span class="explorer-tbl-player-name" style="color:${player_colors[player]}">${player}${diffString}</span>`
+        const diffStr = diff ? (diff < 0 ? "" : "+") + diff : "  ";
+        const fullText = ` ${sevenStr}${diffStr}`;
+        return `<span class="explorer-tbl-player-name" style="color:${player_colors[player]}">${player}${fullText}</span>`
             + `<span class="explorer-tbl-player-col-cell-color" style="background-color:${player_colors[player]}"> </span>`;
     }
 }
@@ -2186,6 +2197,9 @@ function parseRolls(element)
     log("[INFO] Player", player, "rolled a", diceSum);
 
     addRoll(diceSum);
+    if (diceSum === 7)
+        addSeven(player);   // Affects seven counter but not rob stats
+
     return false;
 }
 
