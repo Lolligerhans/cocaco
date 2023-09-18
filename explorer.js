@@ -1663,7 +1663,6 @@ function generateRobTable()
         const sevenStr = robsSeven[thief] ? robsSeven[thief].toString() : " ";
         const knightsCount = taken - robsSeven[thief];
         const knightStr = knightsCount ? `+${knightsCount.toString()}` : "  ";
-        log(thief, "taken:", taken, "seven:", robsSeven[thief]);
         // Originally we wanted class 'explorer-tbl-total-cell' here but it looks terrible
         cell.className = "explorer-tbl-cell";
         cell.innerHTML = taken === 0 ? "" : `<span style="color:${player_colors[thief]}">${sevenStr}${knightStr}</span>`;
@@ -1704,14 +1703,12 @@ function generateRobTable()
 // 'rolls[1]' is the max of any roll (use when encoding with colour)
 
 let rolls = [];
+let rollsHistogram = [];
 
 function initRolls()
 {
-    // Raw rolls version
-    rolls = [];
-
-    // Histogram version
-//    rolls = new Array(12 + 1).fill(0);  // Add 1 because 1-based indexing
+    rolls = []; // Raw numbers in order
+    rollsHistogram = new Array(12 + 1).fill(0);  // Histogram (1-based)
 }
 
 function addRoll(number)
@@ -1726,12 +1723,12 @@ function addRoll(number)
     rolls.push(number);
 
     // Histogram version
-//    rolls[number] += 1;
-//    rolls[0] += 1;                                  // Update total rolls
-//    rolls[1] = Math.max(rolls[1], rolls[number]);   // Update Maximum
+    rollsHistogram[number] += 1;
+    rollsHistogram[0] += 1;
+    rollsHistogram[1] = Math.max(rollsHistogram[1], rollsHistogram[number]);
 
     // Debugging
-//    log(rolls);
+//    log(rolls, rollsHistogram);
 }
 
 function fillRollPlot(element)

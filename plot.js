@@ -5,6 +5,7 @@
 //    - bar plot relative mode + color interpolation (1 trace per roll)
 //      - https://stackoverflow.com/questions/45857682/interpolation-of-colors
 //      - https://plotly.com/javascript/bar-charts/
+//  - double axes: https://plotly.com/javascript/multiple-axes/
 
 // https://plotly.com/javascript/plotly-fundamentals/
 
@@ -371,11 +372,20 @@ function bubbleTest()
 
 function histogramTest()
 {
+  // DATA
   const N = 20;
+  const c = N / 36;
   log("Starting histogram test");
   let testRolls = new Array(N).fill(0);
   testRolls = testRolls.map(() => {return randomDie() + randomDie();});
-  log("testRolls:", testRolls);
+  testHist = new Array(13).fill(0);
+  for (let r of testRolls)
+  {
+    testHist[r] += 1;
+    testHist[0] += 1;
+    testHist[1] = Math.max(testHist[1], testHist[r]);
+  }
+  log("testRolls:", testRolls, "testHist:", testHist);
 
   let x = testRolls;
   let y = x.map(() => 1);
@@ -406,14 +416,21 @@ function histogramTest()
       size: 1,
     },
   };
+  // Expectation
+//  testLineX = [2,7,12];
+//  testLineY = [c, 6*c, c];
+  let testLineX = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5];
+  let testLineY = [c,1*c,2*c,3*c,4*c,5*c,6*c,5*c,4*c,3*c,2*c,1*c,c];
 
-  var data = [trace];
+  // Luck
+  let histPercent = testHist.slice(2).map((v, i, arr) => { return v / testLineY[i+1] - 1 });
+  let maxPercent = Math.max.apply(null, histPercent);
 
-  const c = N / 36;
+  // TRACES
   const layout =
   {
     hovermode: "closest",
-    margin: {t:15, b: 15, l:15, r: 15},
+    margin: {t:0, b: 15, l: 15, r: 20},
     showlegend: false,
     height: 292 / divideSizes,
     width: 300 / divideSizes,
@@ -426,17 +443,23 @@ function histogramTest()
     {
       dtick: Math.ceil(6 * c / 4),
       tick0: 0,
-    }
+    },
+    yaxis2:
+    {
+//      title: "luck",
+      overlaying: "y",
+      side: "right",
+      dtick: 1,
+      tick0: 0,
+      showgrid: false,
+      autorage: false,
+      range: [-1, Math.max(1,maxPercent)],
+    },
   };
 
-  Plotly.newPlot(testHistogramPlotDivId, data, layout);
 
-  // -----------------------------
+  // expectation -----------------------------
 
-  testLineX = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5];
-  testLineY = [c,1*c,2*c,3*c,4*c,5*c,6*c,5*c,4*c,3*c,2*c,1*c,c];
-//  testLineX = [2,7,12];
-//  testLineY = [c, 6*c, c];
   let trace2 =
   {
     x: testLineX,
@@ -444,9 +467,42 @@ function histogramTest()
     mode: "lines",
     name: "expectation",
     marker: { color: "#0a0" },
-    line: { width: 2, dash: "solid", shape: "hvh" },
+    line: { width: 3, dash: "solid", shape: "hvh" },
   };
-  Plotly.addTraces(testHistogramPlotDivId, trace2);
+
+  // relative over draw -----------------------------
+
+  let trace3 =
+  {
+    type: 'bar',
+    x: testLineX.slice(1,13),
+    y: histPercent,
+    yaxis: "y2",
+//    mode: "lines",
+    width: 0.01,
+    name: "luck",
+//    base: histPercent.map(x => {return x < 0 ? x : 0}),
+    marker:
+    {
+      color: "#0000",
+//      dash: "+ots",
+      line: { color: "#69f", width: 3, },
+    },
+  };
+  trace4 =
+  {
+    x: [1.5, 12.5],
+    y: [0, 0],
+    yaxis: "y2",
+    mode: "lines",
+    name: "luck",  // Name from trace
+    marker: { color: "#69f" },
+    line: { width: 1, dash: "line" },
+  };
+  log("testLineY", testLineY);
+  log("testHist:", testHist);
+  log("histPercent:", histPercent);
+  Plotly.newPlot(testHistogramPlotDivId, [trace, trace2, trace3, trace4], layout);
 }
 
 //============================================================
@@ -491,7 +547,7 @@ function plotResourcesAsBubbles(idToPlotInto)
     }
 
     const layout = {
-        margin: {t: 20, b: 20, l: 20, r: 20},
+        margin: {t: 0, b: 15, l: 10, r: 0},
         showlegend: false,
         height: 300 / divideSizes,
         width: 400 / divideSizes,
@@ -513,11 +569,12 @@ function plotResourcesAsBubbles(idToPlotInto)
     const config = { displayModeBar: false };
 
     Plotly.newPlot(idToPlotInto, playerBubbles, layout, config);
-    log("Finished plotting current MW state into ID =", idToPlotInto);
+    log("Finished plotting MW resources into ID =", idToPlotInto);
 }
 
 function plotRollsAsHistogram(idToPlotInto)
 {
+  // Rolls
   const ones = new Array(rolls.length).fill(1);
   const c = [255, 102, 51]; // Base colour
   const colo = rolls.map((_, i) =>
@@ -527,7 +584,20 @@ function plotRollsAsHistogram(idToPlotInto)
     const f = i / rolls.length;
     return `rgb(${Math.ceil(c[0]*f)},${Math.ceil(c[1]*f)},${Math.ceil(c[2]*f)})`;
   });
-  let trace =
+
+  const n = rolls.length / 36;
+
+  // Expectation
+  const ex = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5]; // Cover the bars at the ends
+  const ey = [n,n,2*n,3*n,4*n,5*n,6*n,5*n,4*n,3*n,2*n,n,n];
+
+  // Luck
+  const luck = rollsHistogram.slice(2).map((v, i, arr) => { return v / ey[i+1] - 1 });
+  const maxLuck = Math.max.apply(null, luck);
+
+  // -----------------------------------------------
+
+  let rollTrace =
   {
     type: "bar",
     x: rolls,
@@ -542,32 +612,6 @@ function plotRollsAsHistogram(idToPlotInto)
       size: 1,
     },
   };
-  let data = [trace];
-  const n = rolls.length / 36;
-  const layout =
-  {
-    margin: {t:15, b: 15, l:15, r: 15},
-    showlegend: false,
-    height: 292 / divideSizes,
-    width: 300 / divideSizes,
-    xaxis:
-    {
-      tickvals: [2,3,4,5,6,7,8,9,10,11,12],
-      autorage: false,
-    },
-    yaxis:
-    {
-      dtick: Math.ceil(6 * n / 4),
-      tick0: 0,
-    }
-  };
-  const config = { displayModeBar: false };
-  Plotly.newPlot(idToPlotInto, data, layout, config);
-  log("Finished plotting rolls histogram into ID = ", idToPlotInto);
-
-  // Add expectation line
-  ex = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5]; // Cover the bars at the ends
-  ey = [n,n,2*n,3*n,4*n,5*n,6*n,5*n,4*n,3*n,2*n,n,n];
   let expTrace =
   {
     x: ex,
@@ -575,9 +619,64 @@ function plotRollsAsHistogram(idToPlotInto)
     mode: "lines",
     name: "expectation",   // Hidden
     marker: { color: "#0a0" },
-    line: { width: 2, dash: "solid", shape: "hvh" },  // Also: shape=linear
+    line: { width: 3, dash: "solid", shape: "hvh" },  // Also: shape=linear
   };
-  Plotly.addTraces(idToPlotInto, expTrace);
+  let luckTrace =
+  {
+    type: 'bar',
+    x: ex.slice(1,13),
+    y: luck,
+    yaxis: "y2",
+    width: 0.01,
+    name: "luck",
+    marker:
+    {
+      line: { color: "#69f", width: 3, },
+    },
+  };
+  let zeroTrace =
+  {
+    x: [1.5, 12.5],
+    y: [0, 0],
+    yaxis: "y2",
+    mode: "lines",
+    name: "luck", // Give name of luckTrace because hovering over luckTrace does nothing
+    marker: { color: "#69f" },
+    line: { width: 1, dash: "line" },
+  };
+
+  const layout =
+  {
+    hovermode: "closest",
+    margin: {t:0, b: 15, l: 15, r: 20}, // ?
+    showlegend: false,
+    height: 300 / divideSizes,
+    width: 300 / divideSizes,
+    xaxis:
+    {
+      tickvals: [2,3,4,5,6,7,8,9,10,11,12],
+      autorage: false,
+    },
+    yaxis:  // Rolls bar chart + expectation
+    {
+      dtick: Math.ceil(6 * n / 4),
+      tick0: 0,
+    },
+    yaxis2: // Luck bar chart
+    {
+      overlaying: "y",
+      side: "right",
+      dtick: 1,
+      tick0: 0,
+      showgrid: false,
+      autorage: false,
+      range: [-1, Math.max(1,maxLuck)], // [-1, 1] ?
+    },
+  };
+
+  const config = { displayModeBar: false };
+  Plotly.newPlot(idToPlotInto, [rollTrace, expTrace, luckTrace, zeroTrace], layout, config);
+  log("Finished plotting rolls histogram into ID = ", idToPlotInto);
 }
 
 //============================================================
