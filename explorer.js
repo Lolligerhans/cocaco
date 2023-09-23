@@ -2,6 +2,13 @@
 // CONFIG
 //============================================================
 
+let stats = new Statistics({}, {});
+
+console.log(stats);
+console.log(Statistics);
+console.log(stats.binomialDistribution);
+console.log(stats.binomialDistribution(50, 1/6));
+
 const configDoAlert = true;
 const configPrintWorlds = false;
 const configLogWorldCount = false;

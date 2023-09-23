@@ -17,7 +17,7 @@
 const configSampleCount = 100;
 const configPlotTests = true;
 
-const divideSizes = 1.2
+const divideSizes = 1.2;
 
 //============================================================
 //
@@ -373,11 +373,15 @@ function bubbleTest()
 function histogramTest()
 {
   // DATA
-  const N = 20;
+  let N = 36;
+  const useFix = false;
+
+  if (useFix) N = 36;
   const c = N / 36;
   log("Starting histogram test");
   let testRolls = new Array(N).fill(0);
   testRolls = testRolls.map(() => {return randomDie() + randomDie();});
+  if (useFix) testRolls= [5,9,11,4,8,3,10,8,2,3,6,8,10,5,6,10,7,4,7,3,9,3,11,6,8,6,8,8,3,7,5,4,9,7,6,9];
   testHist = new Array(13).fill(0);
   for (let r of testRolls)
   {
@@ -417,20 +421,69 @@ function histogramTest()
     },
   };
   // Expectation
-//  testLineX = [2,7,12];
-//  testLineY = [c, 6*c, c];
-  let testLineX = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5];
-  let testLineY = [c,1*c,2*c,3*c,4*c,5*c,6*c,5*c,4*c,3*c,2*c,1*c,c];
+  const probability36 = [1,1,2,3,4,5,6,5,4,3,2,1,1];
+  const probability = probability36.map(x => x / 36);
+  const testLineX = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5];
+  const testLineY = probability36.map(x => c*x);  // Expectation
+//  let testLineY = [c,1*c,2*c,3*c,4*c,5*c,6*c,5*c,4*c,3*c,2*c,1*c,c];
 
   // Luck
+  let dist = [];
+  for (let i = 2; i <= 12; ++i)
+  {
+    dist[i-2] = stats.binomialDistribution(N, probability[i-1]);
+  }
+  log("dist:", dist);
+  let prob = (x, number) =>
+  {
+    log(`\n===== number=${number}, x=${x} ===== `);
+    if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+    // Generate total probability mass with density <= p(x). x \in [2,12].
+    let sum = 0;
+    const pr = dist[number-2][x];
+    log("probability:", pr);
+    for (const d of dist[number-2])
+    {
+      if (d <= pr+0.00000001)
+      {
+        sum += d;
+//        log(`numer=${number}, x=${x}, more likely: ${d}<=${pr} -> sum=${sum}`);
+      }
+    }
+    log("Total: sum=", sum);
+    return sum;
+  };
   let histPercent = testHist.slice(2).map((v, i, arr) => { return v / testLineY[i+1] - 1 });
   let maxPercent = Math.max.apply(null, histPercent);
+  log("===========================================");
+  const realLuck = testHist.slice(2).map((v,i,arr) =>
+  {
+    // Return probability of an event this rare or rarer
+    const res = prob(v, i+2); // Probability of this or a less likely event
+
+//    const luckNumber = Math.log(1/res);
+//    const luckNumber = 1/res; // Proportional to probability (?)
+//    const luckNumber = 1-res;
+//    const luckNumber = 1/res * probability[i+1];
+//    const luckNumber = 1/res * (v - testLineY[i+1]);  // Unstable (good?)
+    const luckNumber = -Math.log(res) * (v - testLineY[i+1]);
+//    const luckNumber = (1-res) * (v - testLineY[i+1]);
+
+    log(`count=${v}, number=${i+2}, luckNumber =`, luckNumber);
+    return luckNumber;
+  });
+  const add = (x,y)=>x+y;
+  const luckSum = realLuck.reduce((a,b)=>a+b);
+  logs(`realLuck: ${realLuck}`);
+  log(`Sum of luck: ${luckSum}`);
+  log("===========================================");
+  const maxRealLuck = Math.max.apply(null, realLuck);
 
   // TRACES
   const layout =
   {
     hovermode: "closest",
-    margin: {t:0, b: 15, l: 15, r: 20},
+    margin: {t:0, b: 15, l: 15, r: 25},
     showlegend: false,
     height: 292 / divideSizes,
     width: 300 / divideSizes,
@@ -449,11 +502,11 @@ function histogramTest()
 //      title: "luck",
       overlaying: "y",
       side: "right",
-      dtick: 1,
+//      dtick: 1,
       tick0: 0,
       showgrid: false,
-      autorage: false,
-      range: [-1, Math.max(1,maxPercent)],
+//      autorage: false,
+//      range: [-1, Math.max(1,maxPercent)],
     },
   };
 
@@ -472,6 +525,8 @@ function histogramTest()
 
   // relative over draw -----------------------------
 
+  // Old version where we just trace x / E(X) - 1
+  /*
   let trace3 =
   {
     type: 'bar',
@@ -489,19 +544,48 @@ function histogramTest()
       line: { color: "#69f", width: 3, },
     },
   };
+  */
+  let trace3 =
+  {
+    type: 'bar',
+    x: testLineX.slice(1,13),
+    y: realLuck,
+    yaxis: "y2",
+    width: 0.01,
+    name: "luck",
+//    base: histPercent.map(x => {return x < 0 ? x : 0}),
+    marker:
+    {
+      color: "#0000",
+//      dash: "dots",
+      line: { color: "#69f", width: 3},
+    },
+  };
   trace4 =
   {
     x: [1.5, 12.5],
     y: [0, 0],
     yaxis: "y2",
     mode: "lines",
-    name: "luck",  // Name from trace
+    name: "luck-neutral-reference",  // Name from trace
     marker: { color: "#69f" },
     line: { width: 1, dash: "line" },
   };
+  // Test version
+//  let realLuckTrace =
+//  {
+//    x: testLineX.slice(1,13),
+//    y: realLuck,
+//    type: 'scatter',
+//    mode: "lines",
+//    yaxis: "y2",
+//    marker: {size: 20, color: "red"},
+//    name: "realLuck",
+//  };
   log("testLineY", testLineY);
   log("testHist:", testHist);
   log("histPercent:", histPercent);
+  log("realLuck (testHist):", realLuck);
   Plotly.newPlot(testHistogramPlotDivId, [trace, trace2, trace3, trace4], layout);
 }
 
@@ -585,15 +669,50 @@ function plotRollsAsHistogram(idToPlotInto)
     return `rgb(${Math.ceil(c[0]*f)},${Math.ceil(c[1]*f)},${Math.ceil(c[2]*f)})`;
   });
 
+  const N = rolls.length;
   const n = rolls.length / 36;
 
   // Expectation
+  const probability36 = [1,1,2,3,4,5,6,5,4,3,2,1,1];
+  const probability = probability36.map(x => x / 36);
   const ex = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5]; // Cover the bars at the ends
-  const ey = [n,n,2*n,3*n,4*n,5*n,6*n,5*n,4*n,3*n,2*n,n,n];
+  const ey = probability.map(x => N*x); // Expectation
 
   // Luck
-  const luck = rollsHistogram.slice(2).map((v, i, arr) => { return v / ey[i+1] - 1 });
-  const maxLuck = Math.max.apply(null, luck);
+  let dist = [];
+  for (let i = 2; i <= 12; ++i)
+  {
+    dist[i-2] = stats.binomialDistribution(N, probability[i-1]);
+  }
+  let prob = (x, number) =>
+  {
+    if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+    // Generate total probability mass with density <= p(x). x \in [2,12].
+    let sum = 0;
+    const pr = dist[number-2][x];
+    for (const d of dist[number-2]) { if (d <= pr+0.00000001) sum += d; }
+    sum = Math.min(Math.max(sum, 0), 1);
+    return sum;
+  };
+  // Old version: Luck := x / E(X)
+//  const luck = rollsHistogram.slice(2).map((v, i, arr) => { return v / ey[i+1] - 1 });
+//  const maxLuck = Math.max.apply(null, luck);
+  const rarity = rollsHistogram.slice(2).map((v,i,arr) =>
+  {
+    // Return cumulative probability of an event this rare or rarer
+    return prob(v, i+2);
+  });
+  // Define luck
+  const realLuck = rollsHistogram.slice(2).map((v,i) =>
+  {
+    // DIfferent definitions:
+    const res = -Math.log(rarity[i]) * (v - ey[i+1]);
+//    const res = 1/rarity[i] * (v - ey[i+1]);  // Problem: Nonzero effect at 100% chance.
+//    const res = (1 - rarity[i]) * (v - ey[i+1]);  // Problem: 1% has same effect as 10% chance.
+
+//    log(`[DEBUG] count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
+    return res;
+  });
 
   // -----------------------------------------------
 
@@ -621,6 +740,14 @@ function plotRollsAsHistogram(idToPlotInto)
     marker: { color: "#0a0" },
     line: { width: 3, dash: "solid", shape: "hvh" },  // Also: shape=linear
   };
+  const luckColor = rarity.map(rar =>
+  {
+    const r = Math.ceil(255 * Math.cos(Math.PI * rar / 2));
+    const g = Math.ceil(255 * Math.sin(Math.PI * rar / 2));
+    const col = `rgb(${r}, ${g}, 0)`;
+    return col;
+  });
+  /*
   let luckTrace =
   {
     type: 'bar',
@@ -634,21 +761,35 @@ function plotRollsAsHistogram(idToPlotInto)
       line: { color: "#69f", width: 3, },
     },
   };
+  */
+  // TODO Make zero line colored like the luck bar
+  const zeroColor = [luckColor[0]].concat(luckColor).concat(luckColor.slice(-1));
   let zeroTrace =
   {
-    x: [1.5, 12.5],
-    y: [0, 0],
+    x: ex,
+    y: ex.map(x=>0),
     yaxis: "y2",
     mode: "lines",
     name: "luck", // Give name of luckTrace because hovering over luckTrace does nothing
-    marker: { color: "#69f" },
-    line: { width: 1, dash: "line" },
+    marker: { color: "#080" },
+//    color: zeroColor,
+    line: { width: 2, dash: "line" },
+  };
+  let realLuckTrace =
+  {
+    type: 'bar',
+    x: ex.slice(1,13),
+    y: realLuck,
+    yaxis: "y2",
+    width: 0.01,
+    marker: { line: {color: luckColor, width: 3, }, },
+    name: "realLuck",
   };
 
   const layout =
   {
     hovermode: "closest",
-    margin: {t:0, b: 15, l: 15, r: 20}, // ?
+    margin: {t:0, b: 15, l: 15, r: 25},
     showlegend: false,
     height: 300 / divideSizes,
     width: 300 / divideSizes,
@@ -666,16 +807,16 @@ function plotRollsAsHistogram(idToPlotInto)
     {
       overlaying: "y",
       side: "right",
-      dtick: 1,
+//      dtick: 1,
       tick0: 0,
       showgrid: false,
-      autorage: false,
-      range: [-1, Math.max(1,maxLuck)], // [-1, 1] ?
+//      autorage: false,
+//      range: [-1, Math.max(1,maxLuck)], // [-1, 1] ?
     },
   };
 
   const config = { displayModeBar: false };
-  Plotly.newPlot(idToPlotInto, [rollTrace, expTrace, luckTrace, zeroTrace], layout, config);
+  Plotly.newPlot(idToPlotInto, [rollTrace, expTrace, zeroTrace, realLuckTrace], layout, config);
   log("Finished plotting rolls histogram into ID = ", idToPlotInto);
 }
 

@@ -4,7 +4,7 @@
     "manifest_version": 3,
     "author": "Lolligerhans",
     "description": "Correctly correlated Colonist card chance counter",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "icons":
     {
         "512": "assets/catan2.jpg"
@@ -18,7 +18,7 @@
             "matches": ["https://colonist.io/*"],
             "css": ["explorer-styles.css"],
             "run_at": "document_idle",
-            "js": ["explorer.js", "plot.js", "plotly-2.25.2.min.js"]
+            "js": ["statistics.js/statistics.min.js", "explorer.js", "plot.js", "plotly-2.25.2.min.js"]
         }
     ] ,
     "web_accessible_resources":

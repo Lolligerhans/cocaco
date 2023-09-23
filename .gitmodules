@@ -1,0 +1,3 @@
+[submodule "statistics.js"]
+	path = statistics.js
+	url = https://github.com/thisancog/statistics.js.git
