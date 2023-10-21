@@ -20,7 +20,7 @@ const configPlotBubbles = true;
 const configPlotRolls = true;
 const configLogMessages = false;
 const configRefreshRate = 10000;
-const configOwnIcons = true;
+const configOwnIcons = false;
 
 //============================================================
 // Hello

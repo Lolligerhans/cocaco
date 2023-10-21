@@ -1,7 +1,9 @@
-Downlaod Plotly:
+(!) The install script reads this file to download dependencies
 
-    https://cdn.plot.ly/plotly-2.25.2.min.js
+Downlaod Plotly for plotting graphs:
 
-Download statistics.js (https://github.com/thisancog/statistics.js):
-    
-    https://github.com/thisancog/statistics.js/blob/master/statistics.min.js
+    PLOTLY=https://cdn.plot.ly/plotly-2.25.2.min.js
+
+Download statistics.js to analyze dice rolls (https://github.com/thisancog/statistics.js) or just statistics.js/statistics.min.js:
+
+    STATS=https://raw.githubusercontent.com/thisancog/statistics.js/master/statistics.min.js
