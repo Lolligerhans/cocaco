@@ -373,7 +373,7 @@ function bubbleTest()
 function histogramTest()
 {
   // DATA
-  let N = 36;
+  let N = 36 + 18;
   const useFix = false;
 
   if (useFix) N = 36;
@@ -450,33 +450,87 @@ function histogramTest()
 //        log(`numer=${number}, x=${x}, more likely: ${d}<=${pr} -> sum=${sum}`);
       }
     }
-    log("Total: sum=", sum);
+    sum = Math.min(Math.max(sum, 0), 1);
+    log("Total (clamped): sum=", sum);
     return sum;
+  };
+  let probAdjust = (p) =>
+  {
+    const distrib = stats.binomialDistribution(11, p);
+    const sum = distrib.reduce((acc, val) => acc + val) - distrib[0];
+    return Math.min(Math.max(sum, 0), 1);
   };
   let histPercent = testHist.slice(2).map((v, i, arr) => { return v / testLineY[i+1] - 1 });
   let maxPercent = Math.max.apply(null, histPercent);
   log("===========================================");
+  let minChance = { number: 0, chance: 2.0 }; // Invalid initialization
+  let minAdjustedChance = { number: 0, chance: 2.0 }; // Invalid initialization
+  const chanceLevel = testHist.slice(2).map( (v,i) =>
+  {
+    let p = prob(v, i + 2);
+    if (p <= minChance.chance)
+    {
+      minChance.number = i + 2;
+      minChance.chance = p;
+      minAdjustedChance.number = i + 2;
+      minAdjustedChance.chance = probAdjust(p);
+    }
+    return p;
+  });
+  const adjustedChance = chanceLevel.map(p => probAdjust(p));
+  // TODO have local slicedHist = testHist.slice()
   const realLuck = testHist.slice(2).map((v,i,arr) =>
   {
     // Return probability of an event this rare or rarer
-    const res = prob(v, i+2); // Probability of this or a less likely event
+    const res = chanceLevel[i];
+    //        = prob(v, i+2); // Probability of this or a less likely event
 
 //    const luckNumber = Math.log(1/res);
 //    const luckNumber = 1/res; // Proportional to probability (?)
 //    const luckNumber = 1-res;
 //    const luckNumber = 1/res * probability[i+1];
 //    const luckNumber = 1/res * (v - testLineY[i+1]);  // Unstable (good?)
-    const luckNumber = -Math.log(res) * (v - testLineY[i+1]);
+//    const luckNumber = -Math.log(res) * (v - testLineY[i+1]);
+    //const luckNumber = (1 - 1/res) * (v - testLineY[i+1]);
+//    const luckNumber = (1/res - 1) * (v - testLineY[i+1]);
+
+      const luckNumber = (1/res - 1) * (v - testLineY[i+1]);
+
 //    const luckNumber = (1-res) * (v - testLineY[i+1]);
+//    const res = (1 / rarity[i] - 1) * (v - ey[i+1]);
+//    const res = 1/rarity[i] * (v - ey[i+1]);  // Problem: Nonzero effect at 100% chance.
+//    const res = (1 - rarity[i]) * (v - ey[i+1]);  // Problem: 1% has same effect as 10% chance.
+//    const res = -Math.log(rarity[i]) * (v - ey[i+1]);
 
     log(`count=${v}, number=${i+2}, luckNumber =`, luckNumber);
     return luckNumber;
   });
+  const adjustedRealLuck = testHist.slice(2).map((v,i,arr) =>
+  {
+    // Return probability of an event this rare or rarer
+    const res = adjustedChance[i];
+    const luckNumber = (1/res - 1) * (v - testLineY[i+1]);
+    return luckNumber;
+  });
+
+  // minChance.xoffset = minChance.number <= 7 ? (minChance.number - 3.5) * -30 / 2
+  //                                           : (minChance.number - 10.5) * -30/2;
+  // minChance.yoffset = (0.5 * (1-minChance.chance - 0.85) + 0.1 * (1-minChance.chance-0.85 > 0 ? 1 : -1)) * 7 * 30;
+  // minAdjustedChance.xoffset = minAdjustedChance.number <= 7 ? (minAdjustedChance.number - 3.5) * -30 / 2
+  //                                                           : (minAdjustedChance.number - 10.5) * -30/2;
+  // minAdjustedChance.yoffset = (0.5 * (1-minAdjustedChance.chance - 0.85) + 0.1 * (1-minAdjustedChance.chance-0.85 > 0 ? 1 : -1)) * 7 * 30;
+
+  minChance.xoffset = minChance.number <= 7 ? 11 : 2;
+  minChance.yoffset = 0.05;
+  minAdjustedChance.xoffset = minChance.xoffset;
+  minAdjustedChance.yoffset = 0.15;
+
   const add = (x,y)=>x+y;
   const luckSum = realLuck.reduce((a,b)=>a+b);
   logs(`realLuck: ${realLuck}`);
+  logs(`chanceLevel: ${chanceLevel}`);
+  logs(`1-minChance: ${minChance.number}: ${1-minChance.chance}`);
   log(`Sum of luck: ${luckSum}`);
-  log("===========================================");
   const maxRealLuck = Math.max.apply(null, realLuck);
 
   // TRACES
@@ -502,12 +556,88 @@ function histogramTest()
 //      title: "luck",
       overlaying: "y",
       side: "right",
+    //barmode: "overlay",
 //      dtick: 1,
       tick0: 0,
       showgrid: false,
+      //range: [-10,10],
 //      autorage: false,
 //      range: [-1, Math.max(1,maxPercent)],
     },
+    yaxis3:
+    {
+      zeroline: false,
+      overlaying: "y",
+      side: "left",
+      showgrid: false,
+      showticklabels: false,
+      autorange: false,
+      range: [1, 0],
+      //nticks: 0,
+      //tickvals: [1.0],
+    },
+    annotations:
+    [
+      {
+        x: minChance.number,
+        y: minChance.chance,
+        xref: 'x',
+        yref: 'y3',
+
+        ax: minChance.xoffset,
+        ay: minChance.yoffset,
+        axref: "x",
+        ayref: "y3",
+
+        text: `<b>${(minChance.chance * 100).toFixed(1)}%</b>`,
+        bgcolor: "midnightblue",
+        opacity: 0.8,
+        showarrow: true,
+        arrowhead: 6,
+        arrowsize: 1,
+        arrowwidth: 1,
+        arrowcolor: "darkblue",
+        font:
+        {
+          //family: "Courier New, monospace",
+          size: 12,
+          color: "white",
+          fontweight: "bold",
+        },
+        //align="center",
+        //bordercolor="#c7c7c7",
+        //borderwidth=2,
+        //borderpad=4,
+      },
+      {
+        // Position where arrow points
+        xref: "x",
+        yref: "y3",
+        x: minAdjustedChance.number,
+        y: minAdjustedChance.chance,
+
+        // Position of text
+        ax: minAdjustedChance.xoffset,
+        ay: minAdjustedChance.yoffset,
+        axref: "x",
+        ayref: "y3",
+
+        text: `<b>${(minAdjustedChance.chance * 100).toFixed(1)}%</b>`,
+        bgcolor: "red",
+        opacity: 0.8,
+        showarrow: true,
+        arrowhead: 6,
+        arrowsize: 1,
+        arrowwidth: 1,
+        arrowcolor: "darkred",
+        font:
+        {
+          size: 12,
+          color: "white",
+          fontweight: "bold",
+        },
+      },
+    ],
   };
 
 
@@ -558,7 +688,53 @@ function histogramTest()
     {
       color: "#0000",
 //      dash: "dots",
-      line: { color: "#69f", width: 3},
+      line: { color: "#69f", width: 3 },
+    },
+  };
+//  let trace3_ =
+//  {
+//    type: 'bar',
+//    x: testLineX.slice(1,13),
+//    y: adjustedRealLuck,
+//    yaxis: "y2",
+//    width: 0.01,
+//    name: "luck",
+////    base: histPercent.map(x => {return x < 0 ? x : 0}),
+//    marker:
+//    {
+//      color: "#0000",
+////      dash: "dots",
+//      line: { color: "#f96", width: 4 },
+//    },
+//  };
+  let trace3_1 =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: testLineX.slice(1,13),
+    y: chanceLevel,
+    yaxis: "y3",
+    name: "rarity level (%)",
+    marker:
+    {
+      color: "midnightblue",
+      size: 8,
+      line: { color: "white", width: 1 },
+    },
+  }
+  let trace3_2 =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: testLineX.slice(1,13),
+    y: adjustedChance,
+    yaxis: "y3",
+    name: "Adjusted rarity level",
+    marker:
+    {
+      color: "red",
+      size: 8,
+      line: { color: "white", width: 1 },
     },
   };
   trace4 =
@@ -585,8 +761,10 @@ function histogramTest()
   log("testLineY", testLineY);
   log("testHist:", testHist);
   log("histPercent:", histPercent);
+  log("maxPercent:", maxPercent);
   log("realLuck (testHist):", realLuck);
-  Plotly.newPlot(testHistogramPlotDivId, [trace, trace2, trace3, trace4], layout);
+  const config = { displayModeBar: false };
+  Plotly.newPlot(testHistogramPlotDivId, [trace, trace2, trace3, trace4, trace3_1, trace3_2], layout, config);
 }
 
 //============================================================
@@ -690,29 +868,56 @@ function plotRollsAsHistogram(idToPlotInto)
     // Generate total probability mass with density <= p(x). x \in [2,12].
     let sum = 0;
     const pr = dist[number-2][x];
+    // Add small epsilon for stability
     for (const d of dist[number-2]) { if (d <= pr+0.00000001) sum += d; }
     sum = Math.min(Math.max(sum, 0), 1);
     return sum;
   };
+  let probAdjust = (p) =>
+  {
+    const distrib = stats.binomialDistribution(11, p);
+    const sum = distrib.reduce((acc, val) => acc + val) - distrib[0];
+    return Math.min(Math.max(sum, 0), 1);
+  };
   // Old version: Luck := x / E(X)
 //  const luck = rollsHistogram.slice(2).map((v, i, arr) => { return v / ey[i+1] - 1 });
 //  const maxLuck = Math.max.apply(null, luck);
+  let minChance = { number: 7, chance: 0.9 }; // Arbitrary initialization
+  let minAdjustedChance = { number: 7, chance: probAdjust(0.9) }; // Arbitrary initialization
   const rarity = rollsHistogram.slice(2).map((v,i,arr) =>
   {
+    const p = prob(v, i + 2);
+    if (p <= minChance.chance)
+    {
+      minChance.number = i + 2;
+      minChance.chance = p;
+      minAdjustedChance.number = i + 2;
+      minAdjustedChance.chance = probAdjust(p);
+    }
+    return p;
     // Return cumulative probability of an event this rare or rarer
-    return prob(v, i+2);
   });
+  const adjustedRarity = rarity.map(p => probAdjust(p));
   // Define luck
   const realLuck = rollsHistogram.slice(2).map((v,i) =>
   {
-    // DIfferent definitions:
-    const res = -Math.log(rarity[i]) * (v - ey[i+1]);
-//    const res = 1/rarity[i] * (v - ey[i+1]);  // Problem: Nonzero effect at 100% chance.
-//    const res = (1 - rarity[i]) * (v - ey[i+1]);  // Problem: 1% has same effect as 10% chance.
+    // Alternative definitions: see 'histogramTest'
+    // For 25% probability, multiply the card gain by 3
+    // For 50% probability, multiply by 1
+    // For 75% probability, multiply by 1/3
+    const res = (1 / rarity[i] - 1) * (v - ey[i+1]);
 
 //    log(`[DEBUG] count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
     return res;
   });
+  const adjustedRealLuck = rollsHistogram.slice(2).map((v,i) =>
+  {
+    return (1 / adjustedRarity[i] - 1) * (v - ey[i+1]);
+  });
+  minChance.xoffset = minChance.number <= 7 ? 11 : 2;
+  minChance.yoffset = 0.05;
+  minAdjustedChance.xoffset = minChance.xoffset;
+  minAdjustedChance.yoffset = 0.15;
 
   // -----------------------------------------------
 
@@ -740,7 +945,7 @@ function plotRollsAsHistogram(idToPlotInto)
     marker: { color: "#0a0" },
     line: { width: 3, dash: "solid", shape: "hvh" },  // Also: shape=linear
   };
-  const luckColor = rarity.map(rar =>
+  const luckColor = adjustedRarity.map(rar =>
   {
     const r = Math.ceil(255 * Math.cos(Math.PI * rar / 2));
     const g = Math.ceil(255 * Math.sin(Math.PI * rar / 2));
@@ -785,6 +990,36 @@ function plotRollsAsHistogram(idToPlotInto)
     marker: { line: {color: luckColor, width: 3, }, },
     name: "realLuck",
   };
+  let rarityTrace =
+  {
+    type: "scatter",
+    mode: "markers",
+    x: ex.slice(1,13),
+    y: rarity,
+    yaxis: "y3",
+    name: "rarity",
+    marker:
+    {
+      color: "midnightblue",
+      size: 8,
+      line: { color: "white", width: 1 },
+    },
+  };
+  let adjustedRarityTrace =
+  {
+    type: "scatter",
+    mode: "markers",
+    x: ex.slice(1,13),
+    y: adjustedRarity,
+    yaxis: "y3",
+    name: "adjusted rarity",
+    marker:
+    {
+      color: "red",
+      size: 8,
+      line: { color: "white", width: 1 },
+    },
+  };
 
   const layout =
   {
@@ -813,10 +1048,80 @@ function plotRollsAsHistogram(idToPlotInto)
 //      autorage: false,
 //      range: [-1, Math.max(1,maxLuck)], // [-1, 1] ?
     },
+    yaxis3:
+    {
+      zeroline: false,
+      overlaying: "y",
+      side: "left",
+      showgrid: false,
+      showticklabels: false,
+      autorange: false,
+      range: [1, 0],
+      //autorange: "reversed",
+    },
+    annotations:
+    [
+      {
+        // Pointed at position
+        x: minChance.number,
+        y: minChance.chance,
+        xref: "x",
+        yref: "y3",
+
+        // Text position
+        ax: minChance.xoffset,
+        ay: minChance.yoffset,
+        axref: "x",
+        ayref: "y3",
+
+        text: `<b>${(minChance.chance * 100).toFixed(1)}%</b>`,
+        bgcolor: "midnightblue",
+        opacity: 0.8,
+        showarrow: true,
+        arrowhead: 6,
+        arrowsize: 1,
+        arrowwidth: 1,
+        arrowcolor: "darkblue",
+        font:
+        {
+          size: 12,
+          color: "white",
+          fontweight: "bold",
+        },
+      },
+      {
+        x: minAdjustedChance.number,
+        y: minAdjustedChance.chance,
+        xref: "x",
+        yref: "y3",
+
+        ax: minAdjustedChance.xoffset,
+        ay: minAdjustedChance.yoffset,
+        axref: "x",
+        ayref: "y3",
+
+        text: `<b>${(minAdjustedChance.chance * 100).toFixed(1)}%</b>`,
+        bgcolor: "red",
+        opacity: 0.8,
+        showarrow: true,
+        arrowhead: 6,
+        arrowsize: 1,
+        arrowwidth: 1,
+        arrowcolor: "darkred",
+        font:
+        {
+          size: 12,
+          color: "white",
+          fontweight: "bold",
+        },
+      },
+    ],
   };
 
   const config = { displayModeBar: false };
-  Plotly.newPlot(idToPlotInto, [rollTrace, expTrace, zeroTrace, realLuckTrace], layout, config);
+  const data = [ rollTrace, expTrace, zeroTrace, realLuckTrace, rarityTrace,
+                 adjustedRarityTrace ];
+  Plotly.newPlot(idToPlotInto, data, layout, config);
   log("Finished plotting rolls histogram into ID = ", idToPlotInto);
 }
 

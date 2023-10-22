@@ -58,3 +58,18 @@ command_download_js()
   #wait $(jobs -rp);
   echol "Done downloading $plotly_path and $stats_path"
 }
+
+command_pushall()
+{
+  declare force=""
+  set_args "--force" "$@"
+  [[ -v __force ]] && force="--force"
+  unset_args
+
+  choice="$(boolean_prompt "Are you sure you want to $force PUSH EVERYTHING?")"
+  [[ "$choice" == "n" ]] && abort "Abort: No changes"
+  git push $force origin &&
+  git push $force origin --tags &&
+  git push $force lolli &&
+  git push $force lolli --tags
+}
