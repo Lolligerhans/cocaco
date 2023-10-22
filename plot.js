@@ -764,7 +764,7 @@ function histogramTest()
   log("maxPercent:", maxPercent);
   log("realLuck (testHist):", realLuck);
   const config = { displayModeBar: false };
-  Plotly.newPlot(testHistogramPlotDivId, [trace, trace2, trace3, trace4, trace3_1, trace3_2], layout, config);
+  Plotly.newPlot(testHistogramPlotDivId, [trace, trace2, trace3, trace4, trace3_2, trace3_1], layout, config);
 }
 
 //============================================================
@@ -1119,8 +1119,8 @@ function plotRollsAsHistogram(idToPlotInto)
   };
 
   const config = { displayModeBar: false };
-  const data = [ rollTrace, expTrace, zeroTrace, realLuckTrace, rarityTrace,
-                 adjustedRarityTrace ];
+  const data = [ rollTrace, expTrace, zeroTrace, realLuckTrace,
+                 adjustedRarityTrace, rarityTrace ];
   Plotly.newPlot(idToPlotInto, data, layout, config);
   log("Finished plotting rolls histogram into ID = ", idToPlotInto);
 }
