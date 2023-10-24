@@ -73,3 +73,18 @@ command_pushall()
   git push $force lolli &&
   git push $force lolli --tags
 }
+
+command_symbols()
+{
+  declare showhelp="false"
+  set_args "--help" "$@"
+  [[ -v __help ]] && showhelp="true"
+  unset_args
+
+  if [[ "$showhelp" == true ]]; then
+    echo "$0 symbols: Show symbols plotly can use as markers"
+    return 0
+  fi
+
+  python3 symbols.py
+}

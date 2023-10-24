@@ -433,12 +433,35 @@ function histogramTest()
   {
     dist[i-2] = stats.binomialDistribution(N, probability[i-1]);
   }
+
+  const clampProb = p => Math.min(Math.max(p, 0), 1);
+  let lessMoreDist = [];
+  const precomputeMoreOrLess = (number) =>
+  {
+    if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+    // (!) Start loop at i=1 and inline i=0
+    let lessOrEqualAcc = dist[number-2][0];
+    let moreOrEqualAcc = 1;
+    lessMoreDist[number-2] = [];
+    lessMoreDist[number-2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+    for (let i = 1; i < N; ++i)
+    {
+      lessOrEqualAcc += dist[number-2][i    ];
+      moreOrEqualAcc -= dist[number-2][i - 1];
+      lessMoreDist[number-2][i] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+    }
+  };
+  // TODO symmetric: copy 2-6 to 12-8
+  for (let number = 2; number <= 12; ++number)
+    precomputeMoreOrLess(number);
+  log("Precomputed less or more distr:", lessMoreDist);
+
   log("dist:", dist);
   let prob = (x, number) =>
   {
     log(`\n===== number=${number}, x=${x} ===== `);
     if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
-    // Generate total probability mass with density <= p(x). x \in [2,12].
+    // Generate total probability mass with density <= p(x). x \in [0,N].
     let sum = 0;
     const pr = dist[number-2][x];
     log("probability:", pr);
@@ -477,6 +500,16 @@ function histogramTest()
     }
     return p;
   });
+
+  const lessMoreChance = testHist.slice(2).map( (v,i) => lessMoreDist[i][v] );
+  const lessChance = lessMoreChance.map( lm => lm[0] );
+  const lessStrict = lessChance.map( (p, i) => p - dist[i][testHist[i+2]] );
+  const moreChance = lessMoreChance.map( lm => lm[1] );
+  const moreStrict = moreChance.map( (p,i) => p - dist[i][testHist[i+2]] );
+  log("lessMoreChance:", lessMoreChance);
+  log("lessChance:", lessChance);
+  log("moreChance:", moreChance);
+
   const adjustedChance = chanceLevel.map(p => probAdjust(p));
   // TODO have local slicedHist = testHist.slice()
   const realLuck = testHist.slice(2).map((v,i,arr) =>
@@ -512,6 +545,14 @@ function histogramTest()
     const luckNumber = (1/res - 1) * (v - testLineY[i+1]);
     return luckNumber;
   });
+  const luckColor = adjustedChance.map(rar =>
+  {
+    const r = Math.ceil(255 * Math.cos(Math.PI * rar / 2));
+    const g = Math.ceil(255 * Math.sin(Math.PI * rar / 2));
+    const col = `rgb(${r}, ${g}, 0)`;
+    log("Generated color:", col);
+    return col;
+  });
 
   // minChance.xoffset = minChance.number <= 7 ? (minChance.number - 3.5) * -30 / 2
   //                                           : (minChance.number - 10.5) * -30/2;
@@ -520,7 +561,7 @@ function histogramTest()
   //                                                           : (minAdjustedChance.number - 10.5) * -30/2;
   // minAdjustedChance.yoffset = (0.5 * (1-minAdjustedChance.chance - 0.85) + 0.1 * (1-minAdjustedChance.chance-0.85 > 0 ? 1 : -1)) * 7 * 30;
 
-  minChance.xoffset = minChance.number <= 7 ? 11 : 2;
+  minChance.xoffset = minChance.number <= 7 ? 11 : 3;
   minChance.yoffset = 0.05;
   minAdjustedChance.xoffset = minChance.xoffset;
   minAdjustedChance.yoffset = 0.15;
@@ -528,6 +569,7 @@ function histogramTest()
   const add = (x,y)=>x+y;
   const luckSum = realLuck.reduce((a,b)=>a+b);
   logs(`realLuck: ${realLuck}`);
+  logs(`adjustedRealLuck: ${adjustedRealLuck}`);
   logs(`chanceLevel: ${chanceLevel}`);
   logs(`1-minChance: ${minChance.number}: ${1-minChance.chance}`);
   log(`Sum of luck: ${luckSum}`);
@@ -681,14 +723,17 @@ function histogramTest()
     x: testLineX.slice(1,13),
     y: realLuck,
     yaxis: "y2",
-    width: 0.01,
+    width: 0.2,
+//    color: luckColor,
     name: "luck",
 //    base: histPercent.map(x => {return x < 0 ? x : 0}),
     marker:
     {
-      color: "#0000",
+//      color: "green",
+//      color: "#69f",
+      color: luckColor,
 //      dash: "dots",
-      line: { color: "#69f", width: 3 },
+      //line: { color: "white", width: 3 },
     },
   };
 //  let trace3_ =
@@ -718,8 +763,8 @@ function histogramTest()
     marker:
     {
       color: "midnightblue",
-      size: 8,
-      line: { color: "white", width: 1 },
+      size: 9,
+      line: { color: "white", width: 2 },
     },
   }
   let trace3_2 =
@@ -733,11 +778,76 @@ function histogramTest()
     marker:
     {
       color: "red",
-      size: 8,
-      line: { color: "white", width: 1 },
+      size: 9,
+      line: { color: "white", width: 2 },
     },
   };
-  trace4 =
+  let trace3_less =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: testLineX.slice(1,13),
+    y: lessChance,
+    yaxis: "y3",
+    name: "P(X <= x)",
+    marker:
+    {
+      color: "lightgray",
+      size: 4,
+      line: { color: "black", width: 0.5 },
+      symbol: "triangle-down",
+      opacity: 1.0,
+    },
+  };
+  let trace3_less_strict =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: testLineX.slice(1,13),
+    y: lessStrict,
+    yaxis: "y3",
+    name: "P(X < x)",
+    marker:
+    {
+      color: "black",
+      size: 4,
+      line: { color: "lightgray", width: 0.5 },
+      symbol: "triangle-down",
+    },
+  };
+  let trace3_more =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: testLineX.slice(1,13),
+    y: moreChance,
+    yaxis: "y3",
+    name: "p(X >= x)",
+    marker:
+    {
+      color: "lightgray",
+      size: 4,
+      line: { color: "black", width: 0.5 },
+      symbol: "triangle-up",
+    },
+  };
+  let trace3_more_strict =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: testLineX.slice(1,13),
+    y: moreStrict,
+    yaxis: "y3",
+    name: "p(X > x)",
+    marker:
+    {
+      color: "black",
+      size: 4,
+      line: { color: "lightgray", width: 0.5 },
+      symbol: "triangle-up",
+    },
+  };
+  let trace4 =
   {
     x: [1.5, 12.5],
     y: [0, 0],
@@ -764,7 +874,13 @@ function histogramTest()
   log("maxPercent:", maxPercent);
   log("realLuck (testHist):", realLuck);
   const config = { displayModeBar: false };
-  Plotly.newPlot(testHistogramPlotDivId, [trace, trace2, trace3, trace4, trace3_2, trace3_1], layout, config);
+  const data =
+  [
+    trace, trace2,
+    trace3_less, trace3_less_strict, trace3_more, trace3_more_strict,
+    /*trace4,*/ trace3, trace3_2, trace3_1,
+  ];
+  Plotly.newPlot(testHistogramPlotDivId, data, layout, config);
 }
 
 //============================================================
@@ -856,16 +972,37 @@ function plotRollsAsHistogram(idToPlotInto)
   const ex = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5]; // Cover the bars at the ends
   const ey = probability.map(x => N*x); // Expectation
 
-  // Luck
+  // Precompute distributions
   let dist = [];
   for (let i = 2; i <= 12; ++i)
   {
     dist[i-2] = stats.binomialDistribution(N, probability[i-1]);
   }
+  const clampProb = p => Math.min(Math.max(p, 0), 1);
+  let lessMoreDist = [];
+  const precomputeMoreOrLess = (number) =>
+  {
+    if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+    // (!) Start loop at i=1 and inline i=0
+    let lessOrEqualAcc = dist[number-2][0];
+    let moreOrEqualAcc = 1;
+    lessMoreDist[number-2] = [];
+    lessMoreDist[number-2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+    for (let i = 1; i < N; ++i)
+    {
+      lessOrEqualAcc += dist[number-2][i    ];
+      moreOrEqualAcc -= dist[number-2][i - 1];
+      lessMoreDist[number-2][i] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+    }
+  };
+  // TODO symmetric: copy 2-6 to 12-8
+  for (let number = 2; number <= 12; ++number)
+    precomputeMoreOrLess(number);
+
   let prob = (x, number) =>
   {
     if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
-    // Generate total probability mass with density <= p(x). x \in [2,12].
+    // Generate total probability mass with density <= p(x). x \in [0,N].
     let sum = 0;
     const pr = dist[number-2][x];
     // Add small epsilon for stability
@@ -879,6 +1016,8 @@ function plotRollsAsHistogram(idToPlotInto)
     const sum = distrib.reduce((acc, val) => acc + val) - distrib[0];
     return Math.min(Math.max(sum, 0), 1);
   };
+
+  // Luck
   // Old version: Luck := x / E(X)
 //  const luck = rollsHistogram.slice(2).map((v, i, arr) => { return v / ey[i+1] - 1 });
 //  const maxLuck = Math.max.apply(null, luck);
@@ -897,6 +1036,13 @@ function plotRollsAsHistogram(idToPlotInto)
     return p;
     // Return cumulative probability of an event this rare or rarer
   });
+
+  const lessMoreChance = rollsHistogram.slice(2).map( (v,i) => lessMoreDist[i][v] );
+  const lessChance = lessMoreChance.map( lm => lm[0] );
+  const lessStrict = lessChance.map( (p, i) => p - dist[i][rollsHistogram[i+2]] );
+  const moreChance = lessMoreChance.map( lm => lm[1] );
+  const moreStrict = moreChance.map( (p,i) => p - dist[i][rollsHistogram[i+2]] );
+
   const adjustedRarity = rarity.map(p => probAdjust(p));
   // Define luck
   const realLuck = rollsHistogram.slice(2).map((v,i) =>
@@ -914,7 +1060,7 @@ function plotRollsAsHistogram(idToPlotInto)
   {
     return (1 / adjustedRarity[i] - 1) * (v - ey[i+1]);
   });
-  minChance.xoffset = minChance.number <= 7 ? 11 : 2;
+  minChance.xoffset = minChance.number <= 7 ? 11 : 3;
   minChance.yoffset = 0.05;
   minAdjustedChance.xoffset = minChance.xoffset;
   minAdjustedChance.yoffset = 0.15;
@@ -969,6 +1115,7 @@ function plotRollsAsHistogram(idToPlotInto)
   */
   // TODO Make zero line colored like the luck bar
   const zeroColor = [luckColor[0]].concat(luckColor).concat(luckColor.slice(-1));
+  /*
   let zeroTrace =
   {
     x: ex,
@@ -980,15 +1127,16 @@ function plotRollsAsHistogram(idToPlotInto)
 //    color: zeroColor,
     line: { width: 2, dash: "line" },
   };
+  */
   let realLuckTrace =
   {
     type: 'bar',
     x: ex.slice(1,13),
     y: realLuck,
     yaxis: "y2",
-    width: 0.01,
-    marker: { line: {color: luckColor, width: 3, }, },
-    name: "realLuck",
+    width: 0.2,
+    marker: { color: luckColor, },
+    name: "luck",
   };
   let rarityTrace =
   {
@@ -1001,8 +1149,8 @@ function plotRollsAsHistogram(idToPlotInto)
     marker:
     {
       color: "midnightblue",
-      size: 8,
-      line: { color: "white", width: 1 },
+      size: 9,
+      line: { color: "white", width: 2 },
     },
   };
   let adjustedRarityTrace =
@@ -1016,8 +1164,72 @@ function plotRollsAsHistogram(idToPlotInto)
     marker:
     {
       color: "red",
-      size: 8,
-      line: { color: "white", width: 1 },
+      size: 9,
+      line: { color: "white", width: 2 },
+    },
+  };
+  let lessTrace =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: ex.slice(1,13),
+    y: lessChance,
+    yaxis: "y3",
+    name: "P(X <= x)",
+    marker:
+    {
+      color: "lightgray",
+      size: 4,
+      line: { color: "black", width: 0.5 },
+      symbol: "triangle-down",
+    },
+  };
+  let lessTraceStrict =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: ex.slice(1,13),
+    y: lessStrict,
+    yaxis: "y3",
+    name: "P(X < x)",
+    marker:
+    {
+      color: "black",
+      size: 4,
+      line: { color: "lightgray", width: 0.5 },
+      symbol: "triangle-down",
+    },
+  };
+  let moreTrace =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: ex.slice(1,13),
+    y: moreChance,
+    yaxis: "y3",
+    name: "p(X >= x)",
+    marker:
+    {
+      color: "lightgray",
+      size: 4,
+      line: { color: "black", width: 0.5 },
+      symbol: "triangle-up",
+    },
+  };
+  let moreTraceStrict =
+  {
+    type: 'scatter',
+    mode: "markers",
+    x: ex.slice(1,13),
+    y: moreStrict,
+    yaxis: "y3",
+    name: "p(X > x)",
+    marker:
+    {
+      color: "black",
+      size: 4,
+      line: { color: "lightgray", width: 0.5 },
+      symbol: "triangle-up",
     },
   };
 
@@ -1119,8 +1331,13 @@ function plotRollsAsHistogram(idToPlotInto)
   };
 
   const config = { displayModeBar: false };
-  const data = [ rollTrace, expTrace, zeroTrace, realLuckTrace,
-                 adjustedRarityTrace, rarityTrace ];
+  const data =
+  [
+    rollTrace, expTrace,
+    /*zeroTrace,*/ realLuckTrace,
+    lessTrace, moreTrace, lessTraceStrict, moreTraceStrict,
+    adjustedRarityTrace, rarityTrace
+  ];
   Plotly.newPlot(idToPlotInto, data, layout, config);
   log("Finished plotting rolls histogram into ID = ", idToPlotInto);
 }
