@@ -102,6 +102,7 @@ let placeInitialSettlementSnippet = "placed a"; // Normal building uses the word
 let receivedInitialResourcesSnippet = "received starting resources";
 const tradeOfferSnippet = " wants to give ";
 const tradeOfferResSnippet = " for ";
+const tradeOfferCounterSnippet = " proposed counter offer to ";
 const yearOfPlentySnippet = " took from bank ";
 let receivedResourcesSnippet = " got ";
 let builtSnippet = " built a ";
@@ -2100,6 +2101,25 @@ function parseTradeOffer(element)
     return false;
 }
 
+function parseTradeOfferCounter(element)
+{
+  // "John1 proposed counter offer to John2 [wood][brick] for [sheep]"
+  const txt = element.textContent;
+  if (!txt.includes(tradeOfferCounterSnippet)) return true;
+
+  const player = txt.substring(0, txt.indexOf(" "));
+  if (!verifyPlayers(players, player)) return true;
+
+  const offerHtml = element.innerHTML.split(tradeOfferResSnippet)[0];
+  const offer = findAllResourceCardsInHtml(offerHtml);
+  const asSlice = generateWorldSlice(offer);
+  logs("[INFO] Trade counter offer:", player, "->", offer);
+  mwCollapseMin(player, asSlice);
+  printWorlds();
+
+  return false;
+}
+
 function parseYearOfPlenty(element)
 {
     let textContent = element.textContent;
@@ -2520,6 +2540,7 @@ function parseTurnName(element)
 let ALL_PARSERS = [
     parseGotMessage,
     parseTradeOffer,
+    parseTradeOfferCounter,
     parseRolls,
 
     parseStealFromOtherPlayers, // TODO rename pair to stealKnwon vs. stealUnknown

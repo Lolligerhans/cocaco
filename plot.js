@@ -1038,9 +1038,9 @@ function plotRollsAsHistogram(idToPlotInto)
   });
 
   const lessMoreChance = rollsHistogram.slice(2).map( (v,i) => lessMoreDist[i][v] );
-  const lessChance = lessMoreChance.map( lm => lm[0] );
-  const lessStrict = lessChance.map( (p, i) => p - dist[i][rollsHistogram[i+2]] );
-  const moreChance = lessMoreChance.map( lm => lm[1] );
+  const lessChance = lessMoreChance.map( x => x[0] );
+  const moreChance = lessMoreChance.map( x => x[1] );
+  const lessStrict = lessChance.map( (p,i) => p - dist[i][rollsHistogram[i+2]] );
   const moreStrict = moreChance.map( (p,i) => p - dist[i][rollsHistogram[i+2]] );
 
   const adjustedRarity = rarity.map(p => probAdjust(p));
