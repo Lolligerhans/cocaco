@@ -444,7 +444,7 @@ function histogramTest()
     let moreOrEqualAcc = 1;
     lessMoreDist[number-2] = [];
     lessMoreDist[number-2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
-    for (let i = 1; i < N; ++i)
+    for (let i = 1; i <= N; ++i)
     {
       lessOrEqualAcc += dist[number-2][i    ];
       moreOrEqualAcc -= dist[number-2][i - 1];
@@ -979,7 +979,7 @@ function plotRollsAsHistogram(idToPlotInto)
     dist[i-2] = stats.binomialDistribution(N, probability[i-1]);
   }
   const clampProb = p => Math.min(Math.max(p, 0), 1);
-  let lessMoreDist = [];
+  let lessMoreDist = [];  // <=, >=
   const precomputeMoreOrLess = (number) =>
   {
     if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
@@ -988,7 +988,7 @@ function plotRollsAsHistogram(idToPlotInto)
     let moreOrEqualAcc = 1;
     lessMoreDist[number-2] = [];
     lessMoreDist[number-2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
-    for (let i = 1; i < N; ++i)
+    for (let i = 1; i <= N; ++i)
     {
       lessOrEqualAcc += dist[number-2][i    ];
       moreOrEqualAcc -= dist[number-2][i - 1];

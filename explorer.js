@@ -1706,7 +1706,7 @@ function generateRobTable()
 // Dice Rolls
 //============================================================
 
-// Save count of rolling the number N at 'rolls[N]'.
+// Save count of rolling the number N at 'rolls[N]', N \in [2,12].
 // 'rolls[0]' is the roll total.
 // 'rolls[1]' is the max of any roll (use when encoding with colour)
 
