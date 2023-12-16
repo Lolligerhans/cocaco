@@ -932,7 +932,7 @@ function plotResourcesAsBubbles(idToPlotInto)
         xaxis:
         {
             tickvals: [1, 2, 3, 4, 5],
-            ticktext: resourceTypes,
+            ticktext: resourceTypes.map(res => resourceIcons[res]),
             autorange: false
         },
         yaxis:

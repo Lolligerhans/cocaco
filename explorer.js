@@ -22,6 +22,15 @@ const configLogMessages = false;
 const configRefreshRate = 10000;
 const configOwnIcons = false;
 
+const resourceIcons =
+{
+  "wood":"🪵",
+  "brick": "🧱",
+  "sheep": "🐑",
+  "wheat": "🌾",
+  "ore": "🪨",
+};
+
 //============================================================
 // Hello
 //============================================================
