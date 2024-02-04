@@ -1,58 +1,50 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# ╭──────────────────────╮
+# │ 🅅 ersion             │
+# ╰──────────────────────╯
+# version 0.0.0
+# ╭──────────────────────╮
+# │ 🛈 Info               │
+# ╰──────────────────────╯
+# Explorer runscript.
+#
+#     ./run.sh help
+# ╭──────────────────────╮
+# │ ⚙ Boilerplate        │
+# ╰──────────────────────╯
+declare -gr dotfiles="${DOTFILES:-"$HOME/dotfiles"}"; # TOKEN_DOTFILES_GLOBAL
+# 📎 TODO Remove one no longer needed
+declare -gr suppress_optionals_warning="true";
+# ☯ Every file prevents multi-loads itself using this global dict
+declare -gA _sourced_files=( ["runscript"]="" ); # Source only once
+# 🖈 If the runscript requires a specific location, set it here
+#declare -gr this_location="";
+source "$dotfiles/scripts/boilerplate.sh" "${BASH_SOURCE[0]}" "$@";
+# ✔ Ensure important boilerplate is present
+satisfy_version "$dotfiles/scripts/boilerplate.sh" "0.0.0";
+# ╭──────────────────────╮
+# │ 🛠Configuration      │
+# ╰──────────────────────╯
+#_run_config["versioning"]=0;
+#_run_config["log_loads"]=1;
+#_run_config["error_frames"]=2;
+# ╭──────────────────────╮
+# │ 🗀 Dependencies       │
+# ╰──────────────────────╯
+# Ensure versions even if included already
+load_version "$dotfiles/scripts/version.sh" "0.0.0";
+load_version "$dotfiles/scripts/fileinteracts.sh" "0.2.0";
+load_version "$dotfiles/scripts/setargs.sh" "0.0.0";
+load_version "$dotfiles/scripts/termcap.sh" "0.0.0";
+load_version "$dotfiles/scripts/userinteracts.sh" "0.1.0";
+load_version "$dotfiles/scripts/utils.sh" "3.0.1";
+# ╭──────────────────────╮
+# │ 🗺 Globals           │
+# ╰──────────────────────╯
+# ╭──────────────────────╮
+# │ ⌨  Commands          │
+# ╰──────────────────────╯
 
-################################################################################
-# Info
-################################################################################
-
-# Explorer main runscript. See commands.sh for commands.
-
-################################################################################
-# Boilerplate
-################################################################################
-
-# Identical to set -euETo pipefail
-# If a subcommand/source file is allowed to fail, reset +eu flags temporarily.
-set -o errexit -o nounset -o errtrace -o functrace -o pipefail;
-shopt -s inherit_errexit;
-
-# Store arguments as string for logging before changing IFS
-readonly -n script_args="${*}";
-
-IFS=$'\n\t';
-
-source ~/dotfiles/scripts/utils.sh; # Also used by error handling
-source ~/dotfiles/scripts/error_handling.sh;
-source ~/dotfiles/scripts/setargs.sh;
-
-# Catch-all error handling that prints problems to stderr when something bad
-# happens (requires set -e).
-trap 'report_error "${?}" "${LINENO}" "${BASH_SOURCE}" "${BASH_COMMAND}"'\
-  ERR INT ABRT KILL TERM HUP;
-
-# Move to parent directory for behaviour independent of working directory
-declare -gr caller_path="$(pwd -P)"
-cd "$(dirname "${BASH_SOURCE}")";
-declare -gr parent_path="$(pwd -P)"
-
-# Log script entry and exit to stdout
-function col() { if (($1)) ; then echo "$text_red"; else echo "$text_green"; fi; }
-errcho "[$text_blue${text_bold}LOG${text_normal}] $text_dim· →$text_normal \$(${text_bold}$text_italic$0${text_normal} ${script_args}) $text_dim@ $text_italic$parent_path$text_normal";
-trap 'ret="$?"; errcho "[$text_blue${text_bold}LOG${text_normal}] $(col "$ret")$text_bold$ret $text_dim←$text_normal \$(${text_bold}$text_italic$0${text_normal} ${script_args}) $text_dim@ $text_italic$parent_path$text_normal"'\
-  EXIT;
-
-################################################################################
-# Constants
-################################################################################
-
-################################################################################
-# Helpers
-################################################################################
-
-################################################################################
-# Predefined commands
-################################################################################
-
-# Default command (when no arguments are given)
 function command_default()
 {
   echow "This action downloads third party JavaScript from the internet"
@@ -60,44 +52,115 @@ function command_default()
   if [[ "$ok" == "n" ]]; then
     abort "Aborted by user"
   fi
-  c install;
+  subcommand install;
 }
 
-function command_debug()
+command_install()
 {
-  bash -vx "$0" "${@}";
-}
+  set_args "--skip-download --help" "$@"
+  eval "$get_args";
 
-# Print list of available commands
-function command_print_commands()
-{
-  if [ "$#" -eq 0 ]; then
-    declare -a all_commands=($(declare -F | sed -ne 's/^declare -f command_\(\w\+\)/\1/p'));
-    echo "${all_commands[*]}";
-  else
-    # Replace \n in case the user has changed IFS
-    command_print_commands | sed -e 's/ /\n/g' | grep --color=auto -e "$1" || true;
+  # Sanity check
+  if [[ "$(basename "$parent_path")" != "explorer" ]]; then
+    errchow "This should be run from within the explorer directory"
+    choice="$(boolean_prompt "Download files to `pwd -P`?")"
+    if [[ "$choice" == "n" ]]; then abort "Not installing"; fi
   fi
-  return 0;
-}
 
-################################################################################
-# Command dispatcher
-################################################################################
-
-# Custom commands
-source commands.sh;
-
-function c()
-{
-  # Call command from args
-  if (( $# > 0 )); then
-    "command_${1}" "${@:2}"; # Pass rest of the arguments to subcommand
+  # Download additional JS dependencies
+  if [[ "$skip_download" == "true" ]]; then
+    subcommand download_js "$@"
   else
-    command_default;
+    errchol "Skip: Downloading JS dependencies"
   fi
-  return "$?";
+
+  echo "$(cat << EOF
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ✓ Download dependencies                                                                    ┃
+┃ · Install "explorer" extension temporarily [1]. Explained in [2].                          ┃
+┃ · Activate the extension while browsing colonist.                                          ┃
+┃                                                                                            ┃
+┃ [1] about:debugging#/runtime/this-firefox                                                  ┃
+┃ [2] https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+EOF
+  )"
 }
 
-c "${@}";
-exit "$?";
+command_download_js()
+{
+  set_args "--clear --help" "$@"
+  eval "$get_args";
+
+  declare -r plotly_path="$(sed -n -e 's/^\s*PLOTLY=//p' doc/README)"
+  declare -r stats_path="$(sed -n -e 's/^\s*STATS=//p' doc/README)"
+  declare -r stats_dir="statistics.js";
+
+  ensure_directory "$stats_dir"
+
+  if [[ "$clear" == "true" ]]; then
+    rm -v "$(basename "$plotly_path")";
+    rm -v "$stats_dir/$(basename "$stats_path")";
+  fi
+
+  wget -c "$plotly_path"
+  wget -P "$stats_dir" -c "$stats_path"
+  #wait $(jobs -rp);
+  echok "Downloaded $plotly_path and $stats_path"
+}
+
+command_pushall()
+{
+  set_args "--force" "$@"
+  eval "$get_args";
+
+  declare force_flag="";
+  if [[ "$force" == "true" ]]; then
+    force_flag="--force";
+  fi
+
+  declare choice;
+  choice="$(boolean_prompt "Are you sure you want to $force_flag PUSH EVERYTHING?")"
+  [[ "$choice" == "n" ]] && abort "Abort: No changes"
+  git push $force_flag origin &&
+  git push $force_flag origin --tags &&
+  git push $force_flag lolli &&
+  git push $force_flag lolli --tags
+}
+
+command_symbols()
+{
+  set_args "--help" "$@";
+  eval "$get_args";
+
+  python3 symbols.py;
+}
+
+# ╭──────────────────────╮
+# │ 🖩 Utils              │
+# ╰──────────────────────╯
+# ╭──────────────────────╮
+# │ 𝑓 Functional         │
+# ╰──────────────────────╯
+# ╭──────────────────────╮
+# │ 🖹 Help strings       │
+# ╰──────────────────────╯
+declare -r install_help_string="Prepare for use
+DESCRIPTION
+  Downloads dependent JS files and outputs usage explanation.
+OPTIONS
+  --skip-download: Skip dependency download (just show message).";
+declare -r download_js_help_string="Download Js dependencies
+DESCRIPTION
+  Used by command 'install'.
+OPTIONS
+  --clear: Remove existing files before downloading.";
+declare -r symbold_help_string="Show symbols available in plotly";
+# ╭──────────────────────╮
+# │ ⚙ Boilerplate        │
+# ╰──────────────────────╯
+# ⌂ Transition to provided command
+subcommand "${@}";
+# ╭──────────────────────╮
+# │ 🕮  Documentation     │
+# ╰──────────────────────╯
