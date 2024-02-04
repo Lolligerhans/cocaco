@@ -2,6 +2,8 @@
 // CONFIG
 //============================================================
 
+const version_string="v1.9.7"; // TODO Query from browser
+
 let stats = new Statistics({}, {});
 
 console.log(stats);
@@ -49,7 +51,7 @@ console.log("[INFO]",
 );
 
 let e = document.getElementById("header_navigation_store");
-if (e !== null) e.textContent = atob("VHJhY2tlciBXQUlU");
+if (e !== null) e.textContent = "(" + version_string + ")";
 
 //============================================================
 // Utils
@@ -193,8 +195,8 @@ function alertIf(message)
 }
 
 // Strings contained in the resource image file names. Used also in regex so
-// keep simple.
-let resourceCardNames =
+// keep simple. Used to detect resource icons in log messages.
+const resourceCardNames =
 {
     wood: "card_lumber",
     brick: "card_brick",
@@ -249,11 +251,17 @@ function findAllResourceCardsInHtml(html)
         cards[res] = count;
     }
 
-    // Sanity check
+    // Sanity check: Expect a card unless placeholder is found
     if (foundAny == false)
     {
-        log("[ERROR] Expected some resource cards in html");
-        alertIf(9);
+        // "." might be a RegEx meta character but does not matter
+        let placeholderRegex = new RegExp("card_rescardback.svg");
+        const count = (html.match(placeholderRegex) || []).length;
+        if (count == 0)
+        {
+            log("[ERROR] Expected some resource cards in html");
+            alertIf(9);
+        }
     }
 
     return cards;
@@ -2759,7 +2767,7 @@ function findPlayerName(then = null)
             console.log("[NOTE] Found profile:", `"${playerUsername}"`);
 
             let e = document.getElementById("header_navigation_store");
-            if (e !== null) e.textContent = atob("VHJhY2tlciBPSw==");
+            if (e !== null) e.textContent = version_string;
 
             if (then !== null)
                 then();
@@ -2890,3 +2898,5 @@ function startTracker()
 
 // Global start of main()
 startTracker();
+
+// vim: shiftwidth=4:softtabstop=4:expandtab

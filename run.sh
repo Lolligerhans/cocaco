@@ -119,6 +119,7 @@ command_pushall()
     force_flag="--force";
   fi
 
+  command git s || errchow "Could not display commits";
   declare choice;
   choice="$(boolean_prompt "Are you sure you want to $force_flag PUSH EVERYTHING?")"
   [[ "$choice" == "n" ]] && abort "Abort: No changes"
