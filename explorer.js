@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.9.7"; // TODO Query from browser
+const version_string="v1.9.8"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -2840,7 +2840,8 @@ function waitForInitialPlacement() {
 
     log("[NOTE] Waiting for first roll");
     // TODO reset initialPlacementMade before starting interval?
-    let waitInterval = setInterval(() => {
+    let waitInterval = setInterval(() =>
+    {
         if (initialPlacementMade)
         {
             clearInterval(waitInterval);
@@ -2867,7 +2868,7 @@ function waitForInitialPlacement() {
 //                log("Initial placement done snippet not found");
             }
         }
-    }, 1000);
+    }, configRefreshRate);
 }
 
 /**
@@ -2888,7 +2889,7 @@ function findTranscription() {
             { log("[NOTE] Waiting to start"); }
             logElement = document.getElementById("game-log-text");
         }
-    }, 1000);
+    }, configRefreshRate);
 }
 
 function startTracker()
