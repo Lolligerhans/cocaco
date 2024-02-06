@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.9.8"; // TODO Query from browser
+const version_string="v1.9.9"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -150,6 +150,7 @@ const imageNameSnippets =
 
 const assets =
 {
+    // More at 408f1c219dc04fb8746541fed624e6d4026aaaac
     wood: "assets/wood31.jpg",
     brick: "assets/brick24.jpg",
     sheep: "assets/sheep1.jpg",
