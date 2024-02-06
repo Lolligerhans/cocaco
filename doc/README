@@ -1,4 +1,4 @@
-(!) The install script reads this file to download dependencies
+(!) The install script parses this file to download dependencies
 
 Downlaod Plotly for plotting graphs:
 

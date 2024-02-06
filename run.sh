@@ -2,13 +2,11 @@
 # ╭──────────────────────╮
 # │ 🅅 ersion             │
 # ╰──────────────────────╯
-# version 0.0.0
+# version 0.1.0
 # ╭──────────────────────╮
 # │ 🛈 Info               │
 # ╰──────────────────────╯
 # Explorer runscript.
-#
-#     ./run.sh help
 # ╭──────────────────────╮
 # │ ⚙ Boilerplate        │
 # ╰──────────────────────╯
@@ -41,15 +39,17 @@ load_version "$dotfiles/scripts/utils.sh" "3.0.1";
 # ╭──────────────────────╮
 # │ 🗺 Globals           │
 # ╰──────────────────────╯
+declare -r doc_readme="doc/README"; # Grep this file for download links
 # ╭──────────────────────╮
 # │ ⌨  Commands          │
 # ╰──────────────────────╯
 
 function command_default()
 {
-  echow "This action downloads third party JavaScript from the internet"
-  ok="$(boolean_prompt "Continue?")"
+  echou "Execute '$0 install' to install the explorer extension";
+  ok="$(boolean_prompt "Execute now?")"
   if [[ "$ok" == "n" ]]; then
+    subcommand help;
     abort "Aborted by user"
   fi
   subcommand install;
@@ -63,28 +63,34 @@ command_install()
   # Sanity check
   if [[ "$(basename "$parent_path")" != "explorer" ]]; then
     errchow "This should be run from within the explorer directory"
+    echou "You probably do not want to do this";
     choice="$(boolean_prompt "Download files to `pwd -P`?")"
-    if [[ "$choice" == "n" ]]; then abort "Not installing"; fi
+    if [[ "$choice" == "n" ]]; then
+      abort "Not installing";
+    fi
   fi
 
   # Download additional JS dependencies
   if [[ "$skip_download" == "true" ]]; then
-    subcommand download_js "$@"
+    echos "Downloading JS dependencies"
   else
-    errchol "Skip: Downloading JS dependencies"
+    subcommand download_js "$@"
   fi
 
-  echo "$(cat << EOF
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ✓ Download dependencies                                                                    ┃
-┃ · Install "explorer" extension temporarily [1]. Explained in [2].                          ┃
-┃ · Activate the extension while browsing colonist.                                          ┃
-┃                                                                                            ┃
-┃ [1] about:debugging#/runtime/this-firefox                                                  ┃
-┃ [2] https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-EOF
-  )"
+  declare -r g="${text_lightgreen}";
+  declare -r b="${text_lightblue}";
+  declare -r n="${text_normal}";
+  echo "$(cat <<- EOF
+		┏━${n}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${n}┓
+		┃ ${g}☑ Download dependencies                                                                    ${n}┃
+		┃ ${b}☐ Install "explorer" extension temporarily [1]. Explained in [2].                          ${n}┃
+		┃ ${b}☐ Activate the extension while browsing colonist.                                          ${n}┃
+		┃ ${n}                                                                                           ${n}┃
+		┃ ${n}[1] about:debugging#/runtime/this-firefox                                                  ${n}┃
+		┃ ${n}[2] https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ ${n}┃
+		┗━${n}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${n}┛
+		EOF
+    )";
 }
 
 command_download_js()
@@ -92,21 +98,23 @@ command_download_js()
   set_args "--clear --help" "$@"
   eval "$get_args";
 
-  declare -r plotly_path="$(sed -n -e 's/^\s*PLOTLY=//p' doc/README)"
-  declare -r stats_path="$(sed -n -e 's/^\s*STATS=//p' doc/README)"
-  declare -r stats_dir="statistics.js";
+  declare plotly_path;
+  declare stats_path;
+  plotly_path="$(sed -n -e 's/^\s*PLOTLY=//p' "${doc_readme}")";
+  stats_path="$(sed -n -e 's/^\s*STATS=//p' "${doc_readme}")";
+  declare -r stats_dir="statistics.js" plotly_path stats_path;
 
-  ensure_directory "$stats_dir"
+  ensure_directory "$stats_dir";
 
   if [[ "$clear" == "true" ]]; then
     rm -v "$(basename "$plotly_path")";
     rm -v "$stats_dir/$(basename "$stats_path")";
   fi
 
-  wget -c "$plotly_path"
-  wget -P "$stats_dir" -c "$stats_path"
+  wget --https-only                 -c "$plotly_path";
+  wget --https-only -P "$stats_dir" -c "$stats_path";
   #wait $(jobs -rp);
-  echok "Downloaded $plotly_path and $stats_path"
+  echok "Downloaded $plotly_path and $stats_path";
 }
 
 command_pushall()
@@ -151,7 +159,7 @@ DESCRIPTION
   Downloads dependent JS files and outputs usage explanation.
 OPTIONS
   --skip-download: Skip dependency download (just show message).";
-declare -r download_js_help_string="Download Js dependencies
+declare -r download_js_help_string="Download JS dependencies
 DESCRIPTION
   Used by command 'install'.
 OPTIONS
