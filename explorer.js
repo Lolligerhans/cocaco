@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.9.9"; // TODO Query from browser
+const version_string="v1.10.0"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -106,23 +106,26 @@ let logElement;
 let initialPlacementMade = false;
 //var initialPlacementDoneMessage = "Giving out starting resources";
 
-let initialPlacementDoneSnippet = "rolled";
-let placeInitialSettlementSnippet = "placed a"; // Normal building uses the word "built", not "placed"
 
-// Parser snippets
-let receivedInitialResourcesSnippet = "received starting resources";
+// Parser snippets that identify specific messages. The snippet itself might not
+// be unique, some parsers do additional testing.
+// TODO: Use an array like snippets["tradeOffer"], maybe sufficientSnippets/necessarySnippets
+const initialPlacementDoneSnippet = "rolled";
+const receivedInitialResourcesSnippet = "received starting resources";  // Used to determine which resources each player should get in the initial phase
+const sufficientInitialPhaseMessageSnippet = "received starting resources"; // Sufficient (not necessary) to identify messages from the initial phase
+const placeInitialSettlementSnippet = "placed a"; // Necessary (not sufficient) for detecting initial placement. Used to determine players
 const tradeOfferSnippet = " wants to give ";
 const tradeOfferResSnippet = " for ";
 const tradeOfferCounterSnippet = " proposed counter offer to ";
 const yearOfPlentySnippet = " took from bank ";
-let receivedResourcesSnippet = " got ";
-let builtSnippet = " built a ";
-let boughtSnippet = " bought ";
-let tradeBankGaveSnippet = "gave bank";
-let tradeBankTookSnippet = "and took";
+const receivedResourcesSnippet = " got ";
+const builtSnippet = " built a ";
+const boughtSnippet = " bought ";
+const tradeBankGaveSnippet = "gave bank";
+const tradeBankTookSnippet = "and took";
 const monoStoleSnippet = " stole "; // Contained
 const monoFromSnippet = "from"; // Not contained
-let discardedSnippet = " discarded ";
+const discardedSnippet = " discarded ";
 const tradeSnippet = " traded  for  with ";
 const tradeSplitSnippet = " for ";
 const stealingSnippet = " stole  from ";
@@ -1028,11 +1031,15 @@ function collapseMin(player, resourceIndex, count = 1)
 // Measure single resource of a player
 function collapseMax(player, resourceIndex, count = 0)
 {
+    log("collapseMax not implemented yet");
+    alertIf(50);
 }
 
 // Measure card-less players (when robber attempts fail)
 function collapseEmpty(player)
 {
+    log("collapseEmpty not implemented yet");
+    alertIf(51);
 }
 
 // Measure single resource of a player
@@ -2055,7 +2062,7 @@ function computeInitialPhaseOffset(messages)
         (msg, i) =>
         {
             let text = msg.textContent;
-            if (text.includes(placeInitialSettlementSnippet))
+            if (text.includes(sufficientInitialPhaseMessageSnippet))
             {
                 lastPlacementMessage = Math.max(lastPlacementMessage, i);
             }
