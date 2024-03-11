@@ -167,7 +167,7 @@ const rollsPlotId = "explorer-plt-rolls";
 const tableId = "explorer-tbl";
 const robTableId = "explorer-rob-tbl";
 
-let MSG_OFFSET = -1;    // Reset to 0 when (re-)starting
+let MSG_OFFSET = 0; // At one main loop step, parse messages with index >= MSG_OFFSET
 // Prevents activity toggle because tracker is in irregular state.
 //  - set to 'true' when starting player recovery
 //  - reset to 'false' when main loop is started.
@@ -2082,8 +2082,8 @@ function verifyPlayers(players_array, p1 = null, p2 = null)
 }
 
 /**
-* Process initial resource message after placing first settlement.
-*/
+ * Process initial resource message after placing first settlement.
+ */
 function parseInitialGotMessage(pElement)
 {
     const textContent = pElement.textContent;
@@ -2094,7 +2094,6 @@ function parseInitialGotMessage(pElement)
     const player = textContent.replace(receivedInitialResourcesSnippet, "").split(" ")[0];
     if (!verifyPlayers(players, player)) return true;
 
-    // ManyWorlds version
     const initialResourceTypes = findAllResourceCardsInHtml(pElement.innerHTML);
     const asSlice = generateWorldSlice(initialResourceTypes);
     logs("[INFO] First settlement resources:", player, "<-", initialResourceTypes);
@@ -2619,10 +2618,11 @@ function parseLatestMessages() {
 }
 
 /**
-* Log initial resource distributions.
-*/
-function comeMrTallyManTallinitialResource() {
-    let allMessages = getAllMessages();
+ * Parse all messages and distribute initial resources for each player.
+ */
+function comeMrTallyManTallinitialResource()
+{
+    const allMessages = getAllMessages();
 
     initWorlds();   // Real init. Requires existing users array.
     initRobs();     // Real init. Requires exisintg users array.
@@ -2827,11 +2827,19 @@ function restartMainLoop()
 }
 
 /**
-* Wait for players to place initial settlements so we can determine who the players are.
-*/
+ * Wait for players to place initial settlements so we can determine who the
+ * players are. Give them their respective starting resources.
+ *
+ * This part is implemented separately from normal tracking because the
+ * resource tracker must know all players from the start. After the initial
+ * starting phase, the tracker is initialized with all players, and their
+ * resources are added normally.
+ *
+ * The main loop is then started with MSG_OFFSET pointing to the first
+ * non-initial placement message.
+ */
 function waitForInitialPlacement() {
     // Dummy-init stuff to render table before init phase has concluded
-    MSG_OFFSET = 0;
     players = ["Awaiting", "First", "Roll"];
     player_colors = {"Awaiting":"black", "First":"red", "Roll":"gold"};
     // Dunny inits using the fake players and colors
@@ -2850,16 +2858,17 @@ function waitForInitialPlacement() {
 
             // Init
             recognizeUsers(); // TODO Consilidate with recoverUsers
-            comeMrTallyManTallinitialResource();
+            comeMrTallyManTallinitialResource(); // Sets MSG_OFFSET for main loop
             render();
 
             restartMainLoop();
         }
         else
         {
-            let messages = Array.prototype.slice.call(logElement.children).map(p => p.textContent);
+            const newMessages = getNewMessages().map(p => p.textContent);
+
             // Wait for a message with "roll"
-            if (messages.some( m => m.includes(initialPlacementDoneSnippet)) )
+            if (newMessages.some( m => m.includes(initialPlacementDoneSnippet)) )
             {
                 initialPlacementMade = true;
 //                log("Found initial placements done snippet");
@@ -2873,8 +2882,8 @@ function waitForInitialPlacement() {
 }
 
 /**
-* Find the transcription.
-*/
+ * Find the transcription.
+ */
 function findTranscription() {
     let findInterval = setInterval(() => {
         if (logElement) {
