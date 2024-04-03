@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.11.1"; // TODO Query from browser
+const version_string="v1.12.0"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -69,6 +69,20 @@ function fac(x)
 function choose(n, k)
 {
     return fac(n) / (fac(k) * fac(n-k));
+}
+
+// Use setInterval to emulate
+//      while ( f() ) { wait(time); }
+// TODO Use something like (but with setTimeout chain) to replace the setIntervals?
+function setDoInterval(f, time)
+{
+    if ( f() ) return;
+    let waitInterval = setInterval(() =>
+    {
+        // FIXME Does the timer start after completion? If the timer starts upon
+        //       invocation, there is a bug when f() takes longer than 'time'.
+        if ( f() ) clearInterval(waitInterval);
+    }, time);
 }
 
 //============================================================
@@ -289,6 +303,25 @@ function extractDiceSumOfChildren(element)
         return sum + diceNum;
     } , 0);
     return total;
+}
+
+const predicates =
+{
+    "<":
+    {
+        "f": (x) => { return (y) => y < x; },
+        "name": (x) => `< ${x}`,
+    },
+    ">":
+    {
+        "f": (x) => { return (y) => y > x; },
+        "name": (x) => `> ${x}`,
+    },
+    "!":
+    {
+        "f": (x) => { return (y) => y != x; },
+        "name": (x) => `!= ${x}`,
+    }
 }
 
 //============================================================
@@ -793,10 +826,9 @@ function initWorlds(startingResources = null)
     printWorlds();
 }
 
-// Transform worlds by significantly redicung the 'chance' of worlds violating
-// an exact guess. This allows us to incorporate explicit user information
-// without tracking it explicitly with a separate machanism.
-// (!) Branches in recovery mode, when using an unknown card to satisfy guess
+// Specializes mwTransformGuessPredicate() for the exact count case.
+// This specialization additionally handles recovery mode by using unknown cards
+// to reach the exact count when possible.
 function mwTransformGuessExact(playerName, resourceIndex, count)
 {
     const resourceName = resourceTypes[resourceIndex];
@@ -818,6 +850,7 @@ function mwTransformGuessExact(playerName, resourceIndex, count)
             // likelihood displayed will match the guess.
             world["chance"] *= factor;
         }
+
         // Boost matching recovery branches
         else if (0 < debt && debt <= unknownCount)
         {
@@ -837,6 +870,36 @@ function mwTransformGuessExact(playerName, resourceIndex, count)
 
     // When recovery branching generates new worlds, check for duplicates
     if (didBranch) removeDuplicateWorlds();
+
+    // Since we adjust chances in a one-sided way we need to make them sum to 1
+    normalizeManyWorlds();
+}
+
+// Transform worlds by significantly increasing the 'chance' of worlds where
+// a single resource count fulfils a unary predicate.
+// The effect is cosmetic only in the sense that the 'chance' is only used for
+// display purposes. It does not strictly rule out worlds. If the guess is
+// identified as impossible, changes revert automatically (up to numerics).
+// Does not meddle with unknown cards because it is unclear how to do so in the
+// general case.
+function mwTransformGuessPredicate(playerName, resourceIndex, predicate, name = "predicate")
+{
+    const resourceName = resourceTypes[resourceIndex];
+    const icon = resourceIcons[resourceName];
+    log(`[INFO] Guess: ${playerName}[${icon}] ${name}`);
+    const playerIdx = worldPlayerIndex(playerName);
+    const factor = 100; // Arbitrary large value
+
+    manyWorlds.forEach(world =>
+    {
+        const availableCount = getResourceCountOfSlice(world[playerIdx], resourceIndex);
+        if (predicate(availableCount))
+        {
+            // Regular effect: reduce chance of mismatching world, so the max
+            // likelihood displayed will match the guess.
+            world["chance"] *= factor;
+        }
+    });
 
     // Since we adjust chances in a one-sided way we need to make them sum to 1
     normalizeManyWorlds();
@@ -2071,8 +2134,30 @@ function render(force = false)
         const resourceName = resourceTypes[resourceIndex];
         const icon = resourceIcons[resourceName];
         const guessStr = prompt(`How many ${icon} has ${playerName}?`, defaultCount.toString());
-        const guessCount = parseInt(guessStr, 10);
-        mwTransformGuessExact(playerName, resourceIndex, guessCount);
+
+        // If guessStr starts with a digit, it has no operator
+        const startsWithDigit = guessStr.match(/^\d+/);
+        if (startsWithDigit)
+        {
+            const guessCount = parseInt(guessStr, 10);
+            mwTransformGuessExact(playerName, resourceIndex, guessCount);
+        }
+        else
+        {
+            const guessCount = parseInt(guessStr.slice(1), 10);
+            const operator = guessStr[0];
+            if (!Object.hasOwn(predicates, operator)) // Sanity check
+            {
+                log("[ERROR] Unknown operator: ", operator);
+                alertIf(52);
+            }
+            mwTransformGuessPredicate(
+                playerName, resourceIndex,
+                predicates[operator].f(guessCount), // Returns predicate lambda
+                predicates[operator].name(guessCount));
+            log(`[NOTE] Generating guess for ${playerName}[${icon}] ${operator} ${guessCount}`);
+        }
+
         render(true); // Show consequences of guess immediately
     };
 
