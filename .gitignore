@@ -1,4 +1,4 @@
 *.zip
-plotly-*.js
+plotly/
 wget-log
 msg.txt

@@ -23,8 +23,8 @@ satisfy_version "$dotfiles/scripts/boilerplate.sh" "0.0.0";
 # ╭──────────────────────╮
 # │ 🛠Configuration      │
 # ╰──────────────────────╯
-#_run_config["versioning"]=0;
-#_run_config["log_loads"]=1;
+_run_config["versioning"]=1;
+_run_config["log_loads"]=1;
 #_run_config["error_frames"]=2;
 # ╭──────────────────────╮
 # │ 🗀 Dependencies       │
@@ -44,6 +44,14 @@ declare -r doc_readme="doc/README"; # Grep this file for download links
 # │ ⌨  Commands          │
 # ╰──────────────────────╯
 
+# For testing/debugging
+function command_clear()
+{
+  rm -vrf plotly/ statistics.js/;
+  git submodule deinit --all;
+  echok "Cleared repository";
+}
+
 function command_default()
 {
   echou "Execute '$0 install' to install the explorer extension";
@@ -52,7 +60,35 @@ function command_default()
     subcommand help;
     abort "Aborted by user"
   fi
+
   subcommand install;
+}
+
+command_download_js()
+{
+  set_args "--clear --help" "$@"
+  eval "$get_args";
+
+  declare plotly_path plotly_hash;
+  plotly_path="$(sed -n -e 's/^\s*PLOTLY=//p' "${doc_readme}")";
+  plotly_hash="$(sed -n -e 's/^\s*PLOTLY_HASH=//p' "${doc_readme}")";
+  declare -r plotly_path plotly_hash plotly_dir="plotly/";
+
+  if [[ "$clear" == "true" ]]; then
+    rm -v "$(basename "$plotly_path")";
+  fi
+
+  wget --https-only -P "$plotly_dir/" -c "$plotly_path";
+  #wait $(jobs -rp);
+  if ! sha256sum -c <<< "$plotly_hash"; then
+    pushd "$plotly_dir";
+    mv -v "$(basename "$plotly_path")" "$(basename "$plotly_path").bad";
+    popd;
+    errchoe "Downloaded ${text_user}${plotly_path}${text_normal} does not match expected checksum";
+    abort "Failed to download $plotly_path";
+  fi
+
+  echok "Downloaded $plotly_path";
 }
 
 command_install()
@@ -60,7 +96,7 @@ command_install()
   set_args "--skip-download --help" "$@"
   eval "$get_args";
 
-  # Sanity check
+  # Sanity checks
   if [[ "$(basename "$parent_path")" != "explorer" ]]; then
     errchow "This should be run from within the explorer directory"
     echou "You probably do not want to do this";
@@ -69,52 +105,46 @@ command_install()
       abort "Not installing";
     fi
   fi
+  if [[ "$(git rev-parse --abbrev-ref HEAD)" != "master" ]]; then
+    echow "Instaling: Not in master branch";
+  fi
+  if [[ "$(git status --porcelain)" != "" ]]; then
+    echow "Installing: Uncommitted changes";
+  fi
+
+  # Make sure to have gitmodules loaded since it is easily forgotten
+  git submodule update --init --recursive;
+
+  # Validate git repository state
+  declare fsck_output;
+  fsck_output="$(git fsck)";
+  if [[ ! -z "$fsck_output" ]]; then
+    echon "Run 'git fsck' to diagnose, git gc --prune=now to clean";
+    abort "Git repository corrupted";
+  fi
 
   # Download additional JS dependencies
   if [[ "$skip_download" == "true" ]]; then
     echos "Downloading JS dependencies"
   else
-    subcommand download_js "$@"
+    subcommand download_js "$@";
   fi
 
   declare -r g="${text_lightgreen}";
   declare -r b="${text_lightblue}";
   declare -r n="${text_normal}";
+  declare -r d="${text_normal}${text_dim}";
   echo "$(cat <<- EOF
 		┏━${n}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${n}┓
 		┃ ${g}☑ Download dependencies                                                                    ${n}┃
 		┃ ${b}☐ Install "explorer" extension temporarily [1]. Explained in [2].                          ${n}┃
 		┃ ${b}☐ Activate the extension while browsing colonist.                                          ${n}┃
 		┃ ${n}                                                                                           ${n}┃
-		┃ ${n}[1] about:debugging#/runtime/this-firefox                                                  ${n}┃
-		┃ ${n}[2] https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ ${n}┃
+		┃ ${d}[1] about:debugging#/runtime/this-firefox                                                  ${n}┃
+		┃ ${d}[2] https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ ${n}┃
 		┗━${n}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${n}┛
 		EOF
     )";
-}
-
-command_download_js()
-{
-  set_args "--clear --help" "$@"
-  eval "$get_args";
-
-  declare plotly_path;
-  declare stats_path;
-  plotly_path="$(sed -n -e 's/^\s*PLOTLY=//p' "${doc_readme}")";
-  stats_path="$(sed -n -e 's/^\s*STATS=//p' "${doc_readme}")";
-  declare -r stats_dir="statistics.js" plotly_path stats_path;
-
-  ensure_directory "$stats_dir";
-
-  if [[ "$clear" == "true" ]]; then
-    rm -v "$(basename "$plotly_path")";
-    rm -v "$stats_dir/$(basename "$stats_path")";
-  fi
-
-  wget --https-only                 -c "$plotly_path";
-  wget --https-only -P "$stats_dir" -c "$stats_path";
-  #wait $(jobs -rp);
-  echok "Downloaded $plotly_path and $stats_path";
 }
 
 command_pushall()
@@ -145,6 +175,12 @@ command_symbols()
   python3 symbols.py;
 }
 
+command_uninstall()
+{
+  echou "To uninstall, delete the 'explorer' directory";
+  echon "rm -r '${parent_path_coloured}'";
+}
+
 # ╭──────────────────────╮
 # │ 🖩 Utils              │
 # ╰──────────────────────╯
@@ -154,16 +190,16 @@ command_symbols()
 # ╭──────────────────────╮
 # │ 🖹 Help strings       │
 # ╰──────────────────────╯
-declare -r install_help_string="Prepare for use
-DESCRIPTION
-  Downloads dependent JS files and outputs usage explanation.
-OPTIONS
-  --skip-download: Skip dependency download (just show message).";
 declare -r download_js_help_string="Download JS dependencies
 DESCRIPTION
-  Used by command 'install'.
+  Downloads plotly. Used by command 'install'.
 OPTIONS
   --clear: Remove existing files before downloading.";
+declare -r install_help_string="Prepare for use
+DESCRIPTION
+  Downloads submodules and standalone JS files. Outputs instructions for usage.
+OPTIONS
+  --skip-download: Skip dependency download (just show message).";
 declare -r symbold_help_string="Show symbols available in plotly";
 # ╭──────────────────────╮
 # │ ⚙ Boilerplate        │

@@ -3,7 +3,10 @@
 Downlaod Plotly for plotting graphs:
 
     PLOTLY=https://cdn.plot.ly/plotly-2.25.2.min.js
+    PLOTLY_HASH=0e6dbe14366344a30cc484ca897dc07ccda12a9000aa96ee1f81543e914cc3a3 plotly/plotly-2.25.2.min.js
 
-Download statistics.js to analyze dice rolls (https://github.com/thisancog/statistics.js) or just statistics.js/statistics.min.js:
+
+Note: statistics.js is now tracked a git submodule, manual download is not necessary anymore.
+Download statistics.js repo to analyze dice rolls (https://github.com/thisancog/statistics.js) or just statistics.js/statistics.min.js:
 
     STATS=https://raw.githubusercontent.com/thisancog/statistics.js/master/statistics.min.js

@@ -18,7 +18,7 @@
             "matches": ["https://colonist.io/*"],
             "css": ["explorer-styles.css"],
             "run_at": "document_idle",
-            "js": ["statistics.js/statistics.min.js", "explorer.js", "plot.js", "plotly-2.25.2.min.js"]
+            "js": ["statistics.js/statistics.min.js", "explorer.js", "plot.js", "plotly/plotly-2.25.2.min.js"]
         }
     ] ,
     "web_accessible_resources":
