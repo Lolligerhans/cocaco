@@ -22,7 +22,7 @@ source "$dotfiles/scripts/boilerplate.sh" "${BASH_SOURCE[0]}" "$@";
 # │ 🛠Configuration      │
 # ╰──────────────────────╯
 _run_config["versioning"]=1;
-_run_config["log_loads"]=1;
+_run_config["log_loads"]=0;
 #_run_config["error_frames"]=2;
 # ╭──────────────────────╮
 # │ 🗀 Dependencies       │
@@ -149,7 +149,7 @@ command_install()
 
 command_pushall()
 {
-  set_args "--force" "$@"
+  set_args "--force --help" "$@"
   eval "$get_args";
 
   declare force_flag="";
@@ -200,6 +200,11 @@ DESCRIPTION
   Downloads submodules and standalone JS files. Outputs instructions for usage.
 OPTIONS
   --skip-download: Skip dependency download (just show message).";
+declare -r pushall_help_string="Push branch to remotes
+DESCRIPTION
+  Push both origin and lolli remotes, each with and without --tags.
+OPTIONS
+  --force: Use git push --force";
 declare -r symbold_help_string="Show symbols available in plotly";
 # ╭──────────────────────╮
 # │ ⚙ Boilerplate        │
