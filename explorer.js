@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.11.0"; // TODO Query from browser
+const version_string="v1.11.1"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -465,18 +465,18 @@ function getResourceSumOfSlice(slice)
 // Fixes slice using unknown cards. If succeeds, result is free negative
 // values. If impossible, result has a negative value.
 //
-// Algorith to avoid intermediate zeros (we can only test for any-0):
+// Algorithm to avoid intermediate zeros (we can only test for any-zero-values):
 //  1) Start with U many unknown cards.
 //  2) Spawn 12 extra cards to every normal resource. Any 0 left =>
 //     unrecoverable. No change to unknown cards!
 //  3) From all normal resources with N cards, transfer min(12, N) cards to
 //     unknown cards. This gives back the ghost cards if possible.
-//  4) Despawn 5 * 19 unknown cards. If negative => unrecoverable. Unknon cards
+//  4) Despawn 5 * 12 unknown cards. If negative => unrecoverable. Unknon cards
 //     left:
 //
 //      U + (60 - replaced) - 60 === U - replaced
 //
-// Restrict to 12 cards to prevent normal resource overflow (19 + 12 == 31).
+// (!) Restrict to 12 cards to prevent normal resource overflow (19 + 12 == 31).
 function mwFixOrNegative(slice)
 {
     // Special case: No fix needed
@@ -796,27 +796,47 @@ function initWorlds(startingResources = null)
 // Transform worlds by significantly redicung the 'chance' of worlds violating
 // an exact guess. This allows us to incorporate explicit user information
 // without tracking it explicitly with a separate machanism.
+// (!) Branches in recovery mode, when using an unknown card to satisfy guess
 function mwTransformGuessExact(playerName, resourceIndex, count)
 {
     const resourceName = resourceTypes[resourceIndex];
     const icon = resourceIcons[resourceName];
     log(`[INFO] Guess (exact): ${playerName}[${icon}] = ${count}`);
     const playerIdx = worldPlayerIndex(playerName);
+    const factor = 100; // Arbitrary large value
+
+    let didBranch = false;
     manyWorlds.forEach(world =>
     {
-        if (    getResourceCountOfSlice(world[playerIdx], resourceIndex)
-            !== count)
+        const availableCount = getResourceCountOfSlice(world[playerIdx], resourceIndex);
+        const debt = count - availableCount;
+        const unknownCount = getResourceCountOfSlice(world[playerIdx], 5);
+        // Boost matching worlds
+        if (debt === 0)
         {
-            world["chance"] *= 0.01; // Arbitrary small value
-            //log("Reducing chance!");
-            //log(mwHumanReadableWorld(world));
+            // Regular effect: reduce chance of mismatching world, so the max
+            // likelihood displayed will match the guess.
+            world["chance"] *= factor;
         }
-        //else
-        //{
-        //    log("Keeping chance!");
-        //    log(mwHumanReadableWorld(world));
-        //}
+        // Boost matching recovery branches
+        else if (0 < debt && debt <= unknownCount)
+        {
+            let w = deepCopy(world);
+            const adjustment = ( generateSingularSlice(resourceIndex)
+                               - generateSingularSlice(5) )
+                             * debt;
+            w[playerIdx] = mwFixOrNegative(w[playerIdx] + adjustment);
+            if (!sliceHasNegative(w[playerIdx]))
+            {
+                w["chance"] *= factor;
+                manyWorlds.push(w);
+                didBranch = true;
+            }
+        }
     });
+
+    // When recovery branching generates new worlds, check for duplicates
+    if (didBranch) removeDuplicateWorlds();
 
     // Since we adjust chances in a one-sided way we need to make them sum to 1
     normalizeManyWorlds();
@@ -930,7 +950,7 @@ function branchSteal(victim, thief)
         // TODO Only in recovery mode
         // TODO Iterate in loop above?
         const u = getResourceCountOfSlice(world[victim], 5);
-        if (u > 0)
+        if (u > 0) // Add steal of 'unknown' card (index 5)
         {
             let w = deepCopy(world);
             const slice = generateSingularSlice(5);
@@ -948,6 +968,7 @@ function branchSteal(victim, thief)
 
 // Branches by moving, in all worlds, 0 to U from victims unknown cards to the
 // tolen resource. Where U is the number of unknown cards victim has.
+// This is a helper to allow monopolies in recovery mode.
 function mwBranchRecoveryMonopoly(victimIdx, thiefIdx, resourceIndex)
 {
     // Similar to branchSteal()
@@ -979,7 +1000,7 @@ function mwBranchRecoveryMonopoly(victimIdx, thiefIdx, resourceIndex)
     removeDuplicateWorlds();
 }
 
-// Transform worlds by monopoly (branches in recovery)
+// Transform worlds by monopoly (branches in recovery mode!)
 function transformMonopoly(thiefName, resourceIndex)
 {
     const thiefIdx = worldPlayerIndex(thiefName);
@@ -2047,7 +2068,9 @@ function render(force = false)
 
     const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
     {
-        const guessStr = prompt(`How many ${resourceTypes[resourceIndex]} did ${playerName} when invoking this message?`, defaultCount.toString());
+        const resourceName = resourceTypes[resourceIndex];
+        const icon = resourceIcons[resourceName];
+        const guessStr = prompt(`How many ${icon} has ${playerName}?`, defaultCount.toString());
         const guessCount = parseInt(guessStr, 10);
         mwTransformGuessExact(playerName, resourceIndex, guessCount);
         render(true); // Show consequences of guess immediately
