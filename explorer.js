@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.10.0"; // TODO Query from browser
+const version_string="v1.11.0"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -51,7 +51,7 @@ console.log("[INFO]",
 );
 
 let e = document.getElementById("header_navigation_store");
-if (e !== null) e.textContent = "(" + version_string + ")";
+if (e !== null) e.textContent = "(CoCaCo " + version_string + ")";
 
 //============================================================
 // Utils
@@ -294,6 +294,22 @@ function extractDiceSumOfChildren(element)
 //============================================================
 // ManyWorlds 0.0.1
 //============================================================
+
+// In the true resource state, ever player has a known, exact amount of each
+// resource.
+//
+// ManyWorlds stores all possible (global) resource states, each as an
+// individual 'world'. In every world, players have known, exact resource
+// counts. When uncertain events happen, we branch each world into all possible
+// alternatives. Then we keep track of multiple worlds. Once a world shows
+// a negative resource count, we delete it: it cannot be the correct state.
+//
+// Each world contains a single float per player, where resource counts are
+// crammed into the mantissa (sorry I did not know JS only had floats when
+// I went for this).
+//
+// The additional 'chance' field is for user display only. No
+// logic is based on the chance field.
 
 // TODO Use typed array
 
@@ -777,6 +793,35 @@ function initWorlds(startingResources = null)
     printWorlds();
 }
 
+// Transform worlds by significantly redicung the 'chance' of worlds violating
+// an exact guess. This allows us to incorporate explicit user information
+// without tracking it explicitly with a separate machanism.
+function mwTransformGuessExact(playerName, resourceIndex, count)
+{
+    const resourceName = resourceTypes[resourceIndex];
+    const icon = resourceIcons[resourceName];
+    log(`[INFO] Guess (exact): ${playerName}[${icon}] = ${count}`);
+    const playerIdx = worldPlayerIndex(playerName);
+    manyWorlds.forEach(world =>
+    {
+        if (    getResourceCountOfSlice(world[playerIdx], resourceIndex)
+            !== count)
+        {
+            world["chance"] *= 0.01; // Arbitrary small value
+            //log("Reducing chance!");
+            //log(mwHumanReadableWorld(world));
+        }
+        //else
+        //{
+        //    log("Keeping chance!");
+        //    log(mwHumanReadableWorld(world));
+        //}
+    });
+
+    // Since we adjust chances in a one-sided way we need to make them sum to 1
+    normalizeManyWorlds();
+}
+
 // Handle unilaterate resource changes like building, YOP, or city profits
 function mwTransformSpawn(playerName, resourceSlice)
 {
@@ -1090,7 +1135,7 @@ function removeDuplicateWorlds()
 // impossible worlds are filterd out. If the manyWorlds array is read out raw
 // (e.g., from a log), the values might not be normalized. Usually, the call to
 // mwUpdateStats() triggers normalization for display.
-function normalizeManyWorlds()
+function normalizeManyWorlds() // TODO prefix with 'mw'?
 {
     let sum = manyWorlds.reduce((sum, w) => sum + w["chance"], 0);
     manyWorlds.forEach(world =>
@@ -1977,6 +2022,7 @@ function render(force = false)
     for (let i = 0; i < resourceTypes.length; i++) {
         let resourceType = resourceTypes[i];
         let resourceHeaderCell = headerRow.insertCell(i + 1);
+        resourceHeaderCell.addEventListener("click", mwManualRecoverCards, false);
         resourceHeaderCell.className = "explorer-tbl-cell";
         const total = mwTotals[resourceType];
         const numberString = total > 0
@@ -1999,9 +2045,16 @@ function render(force = false)
         headerCell.innerHTML = getOwnStuffImage(v);
     }
 
+    const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
+    {
+        const guessStr = prompt(`How many ${resourceTypes[resourceIndex]} did ${playerName} when invoking this message?`, defaultCount.toString());
+        const guessCount = parseInt(guessStr, 10);
+        mwTransformGuessExact(playerName, resourceIndex, guessCount);
+        render(true); // Show consequences of guess immediately
+    };
+
     // One resource table row per player
     let tblBody = tbl.createTBody();
-    tblBody.addEventListener("click", mwManualRecoverCards, false);
     for (let i = 0; i < players.length; i++) {
         const player = players[i];
         let row = tblBody.insertRow(i);
@@ -2014,6 +2067,7 @@ function render(force = false)
             const res = resourceTypes[j];
             let cell = row.insertCell(j + 1);
             cell.className = "explorer-tbl-cell";   // Same as for rob table
+            cell.addEventListener("click", guessCardCountFunction.bind(null, player, j, worldGuessAndRange[player][res][2]), false);
             let resourceType = resourceTypes[j];
             const resCount = worldGuessAndRange[player][res][2]; // Guess
             const fraction = worldGuessAndRange[player][res][1]; // Fraction
@@ -2775,7 +2829,7 @@ function findPlayerName(then = null)
             console.log("[NOTE] Found profile:", `"${playerUsername}"`);
 
             let e = document.getElementById("header_navigation_store");
-            if (e !== null) e.textContent = version_string;
+            if (e !== null) e.textContent = "CoCaCo " + version_string;
 
             if (then !== null)
                 then();

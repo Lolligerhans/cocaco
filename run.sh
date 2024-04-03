@@ -18,8 +18,6 @@ declare -gA _sourced_files=( ["runscript"]="" ); # Source only once
 # 🖈 If the runscript requires a specific location, set it here
 #declare -gr this_location="";
 source "$dotfiles/scripts/boilerplate.sh" "${BASH_SOURCE[0]}" "$@";
-# ✔ Ensure important boilerplate is present
-satisfy_version "$dotfiles/scripts/boilerplate.sh" "0.0.0";
 # ╭──────────────────────╮
 # │ 🛠Configuration      │
 # ╰──────────────────────╯
@@ -29,6 +27,8 @@ _run_config["log_loads"]=1;
 # ╭──────────────────────╮
 # │ 🗀 Dependencies       │
 # ╰──────────────────────╯
+# ✔ Ensure important boilerplate is present
+satisfy_version "$dotfiles/scripts/boilerplate.sh" "0.0.0";
 # Ensure versions even if included already
 load_version "$dotfiles/scripts/version.sh" "0.0.0";
 load_version "$dotfiles/scripts/fileinteracts.sh" "0.2.0";
