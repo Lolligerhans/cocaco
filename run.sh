@@ -75,11 +75,16 @@ command_download_js()
   declare -r plotly_path plotly_hash plotly_dir="plotly/";
 
   if [[ "$clear" == "true" ]]; then
-    rm -v "$(basename "$plotly_path")";
+    rm -rv "$plotly_dir";
   fi
 
-  wget --https-only -P "$plotly_dir/" -c "$plotly_path";
-  #wait $(jobs -rp);
+  if [[ -f "${plotly_dir}/$(basename "$plotly_path")" ]]; then
+    echos "$(basename "$plotly_path") already exists";
+  else
+    wget --https-only -P "$plotly_dir/" -c "$plotly_path";
+    echok "Downloaded $plotly_path";
+  fi
+
   if ! sha256sum -c <<< "$plotly_hash"; then
     pushd "$plotly_dir";
     mv -v "$(basename "$plotly_path")" "$(basename "$plotly_path").bad";
@@ -87,8 +92,6 @@ command_download_js()
     errchoe "Downloaded ${text_user}${plotly_path}${text_normal} does not match expected checksum";
     abort "Failed to download $plotly_path";
   fi
-
-  echok "Downloaded $plotly_path";
 }
 
 command_install()
@@ -117,7 +120,7 @@ command_install()
 
   # Validate git repository state
   declare fsck_output;
-  fsck_output="$(git fsck)";
+  fsck_output="$(git fsck --no-dangling)";
   if [[ ! -z "$fsck_output" ]]; then
     echon "Run 'git fsck' to diagnose, git gc --prune=now to clean";
     abort "Git repository corrupted";
