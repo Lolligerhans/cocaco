@@ -1675,7 +1675,6 @@ function worldTest()
                   "D": {wood:0,brick:4,sheep:0,wheat:1,ore:0,unknown:1} };
     initWorlds(resources);
     log("Before anything"); printWorlds();
-    debugger;
     transformMonopoly("B", 2);
     log("After B monos the sheep. World should not be corrupt."); printWorlds();
     mwUpdateStats();
@@ -1695,6 +1694,53 @@ function worldTest()
         log("[NOTE] ManyWorlds test 8 (recovery mono) passed");
     }
 
+    // Test 9: Bayesian probability test
+    //  1) Start 2 players with a road each
+    //  2) Rob A → B
+    //  3) A third player robs B → C
+    //  4) A wood is revealed in the hand of C
+    //  5) ➜  The first rob should more likely have been a wood now (bayesian).
+    log("-------------------- MW TEST 9 (bayesian) --------------------------");
+    passedTest = true;
+    resources = { "A": {wood:1,brick:1,sheep:0,wheat:0,ore:0,unknown:0},
+                  "B": {wood:1,brick:1,sheep:0,wheat:0,ore:0,unknown:0},
+                  "C": {wood:0,brick:0,sheep:0,wheat:0,ore:0,unknown:0},
+                  "D": {wood:0,brick:0,sheep:0,wheat:0,ore:0,unknown:0}, };
+    initWorlds(resources);
+    log("Before anything"); mwUpdateStats(); printWorlds();
+    branchSteal("A", "B");
+    log("After B robs A"); mwUpdateStats(); printWorlds();
+    branchSteal("B", "C");
+    log("After C robs B"); mwUpdateStats(); printWorlds();
+    collapseExact("C", worldResourceIndex(wood), 1);
+    log("After wood revealed"); mwUpdateStats(); printWorlds();
+    if (manyWorlds.length !== 2) passed = false;
+    const isAbout = (x) => { return world => ((x-0.05) < world["chance"] && world["chance"] < (x+0.05)); };
+    if (isAbout(0.5)(manyWorlds[0]) || isAbout(0.5)(manyWorlds[1])) passed = false;
+    const anyOneThird = isAbout(0.33)(manyWorlds[0]) || isAbout(0.33)(manyWorlds[1]);
+    if (!anyOneThird) passed = false;
+    if (isAbout(0.66)(manyWorlds[0]))
+    {
+        // The likely thing is that since C got a wood, B should have gotten it
+        // too (so A does not have it anymore).
+        if (getResourceCountOfSlice(manyWorlds[0]["A"],
+             worldResourceIndex(wood)) !== 0) passed = false;
+    }
+    else // Make no assumption on ordering of the two worlds
+    {
+        if (getResourceCountOfSlice(manyWorlds[0]["A"],
+             worldResourceIndex(wood)) !== 1) passed = false;
+    }
+    if (!passedTest)
+    {
+        log("[ERROR] Failed ManyWorlds test 9: bayesian");
+        alertIf(43);
+        debugger;
+    }
+    else
+    {
+        log("[NOTE] ManyWorlds test 9 (bayesian) passed");
+    }
     debugger;
 }
 
