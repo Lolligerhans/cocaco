@@ -900,9 +900,6 @@ function mwTransformGuessPredicate(playerName, resourceIndex, predicate, name = 
             world["chance"] *= factor;
         }
     });
-
-    // Since we adjust chances in a one-sided way we need to make them sum to 1
-    normalizeManyWorlds();
 }
 
 // Handle unilaterate resource changes like building, YOP, or city profits
