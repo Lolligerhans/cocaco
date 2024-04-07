@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.12.0"; // TODO Query from browser
+const version_string="v1.13.0"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -683,6 +683,23 @@ function mwFixOrFalse(world, playerIdx)
     }
 }
 
+// Fixes world using unknown cards. Fix here means to ensure non-negative
+// values.
+// Returns [fixSucceeded, slice]. If the first element is true, then the
+// second element is the fixed slice. Else no guarantees.
+function mwFixOrFalseSlice(slice)
+{
+    // Skip fix attempt if not in recovery mode (i.e., no unknown cards)
+    if (getResourceCountOfSlice(slice, 5) === 0) // likely
+        return [!sliceHasNegative(slice), slice];
+
+    const fixAttempt = mwFixOrNegative(slice);
+    if (sliceHasNegative(fixAttempt))
+        return [false, null]; // Fix failed
+    else
+        return [true, fixAttempt]; // Fix succeeded
+}
+
 //------------------------------------------------------------
 // ManyWorlds interface
 //------------------------------------------------------------
@@ -902,6 +919,27 @@ function mwWeightGuessPredicate(playerName, resourceIndex, predicate, name = "pr
             // likelihood displayed will match the guess.
             world["chance"] *= factor;
         }
+    });
+}
+
+
+// Boost worlds where the player 'playerName' does not have the resources given
+// in 'resourceSlice'.
+// • resourceSlice: Typically one of the 'mwBuilds' slices
+// Recovery mode: Apply bonus if amount of unknown cards is too small. No
+// changes if sufficient unknown cards.
+function mwWeightGuessNotavailable(playerName, resourceSlice)
+{
+    const playerIdx = worldPlayerIndex(playerName);
+    const factor = 100; // Arbitrary large value
+    let didBranch = false;
+    let newWorlds = [] // Avoid appending to 'manyWorlds' while iterating
+    manyWorlds.forEach(world =>
+    {
+        const adjustedSlice = world[playerIdx] - resourceSlice;
+        const [worked, slice] = mwFixOrFalseSlice(adjustedSlice);
+        if (!worked)
+            world["chance"] *= factor;
     });
 }
 
@@ -2207,6 +2245,12 @@ function render(force = false)
 
         render(true); // Show consequences of guess immediately
     };
+    const guessHasNoBuilding = (playerName, buildingName) =>
+    {
+        mwWeightGuessNotavailable(playerName, mwBuilds[buildingName]);
+        log('[NOTE] Guessing that', playerName, 'has no', buildingName, 'in hand');
+        render(true);
+    };
 
     // One resource table row per player
     let tblBody = tbl.createTBody();
@@ -2237,6 +2281,7 @@ function render(force = false)
         {
             const chance = mwBuildsProb[player][b];
             let cell = row.insertCell(j);
+            cell.addEventListener("click", guessHasNoBuilding.bind(null, player, b), false);
             cell.className = "explorer-tbl-cell";
             cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
                            : chance > 0.999 ? "✔"
