@@ -826,10 +826,10 @@ function initWorlds(startingResources = null)
     printWorlds();
 }
 
-// Specializes mwTransformGuessPredicate() for the exact count case.
-// This specialization additionally handles recovery mode by using unknown cards
-// to reach the exact count when possible.
-function mwTransformGuessExact(playerName, resourceIndex, count)
+// Specializes mwWeightGuessPredicate() for the exact count case.
+// ❕ This specialization may branch in recovery mode by using unknown cards to
+// reach the exact count when possible.
+function mwWeightGuessExact(playerName, resourceIndex, count)
 {
     const resourceName = resourceTypes[resourceIndex];
     const icon = resourceIcons[resourceName];
@@ -838,6 +838,7 @@ function mwTransformGuessExact(playerName, resourceIndex, count)
     const factor = 100; // Arbitrary large value
 
     let didBranch = false;
+    let newWorlds = [] // Avoid appending to 'manyWorlds' while iterating
     manyWorlds.forEach(world =>
     {
         const availableCount = getResourceCountOfSlice(world[playerIdx], resourceIndex);
@@ -846,12 +847,10 @@ function mwTransformGuessExact(playerName, resourceIndex, count)
         // Boost matching worlds
         if (debt === 0)
         {
-            // Regular effect: reduce chance of mismatching world, so the max
-            // likelihood displayed will match the guess.
             world["chance"] *= factor;
         }
 
-        // Boost matching recovery branches
+        // Branch possible recoveries explicitly
         else if (0 < debt && debt <= unknownCount)
         {
             let w = deepCopy(world);
@@ -862,14 +861,18 @@ function mwTransformGuessExact(playerName, resourceIndex, count)
             if (!sliceHasNegative(w[playerIdx]))
             {
                 w["chance"] *= factor;
-                manyWorlds.push(w);
+                newWorlds.push(w);
                 didBranch = true;
             }
         }
     });
 
     // When recovery branching generates new worlds, check for duplicates
-    if (didBranch) removeDuplicateWorlds();
+    if (didBranch)
+    {
+        manyWorlds = manyWorlds.concat(newWorlds); // is there an in place version of this?
+        removeDuplicateWorlds();
+    }
 
     // Since we adjust chances in a one-sided way we need to make them sum to 1
     normalizeManyWorlds();
@@ -882,7 +885,7 @@ function mwTransformGuessExact(playerName, resourceIndex, count)
 // identified as impossible, changes revert automatically (up to numerics).
 // Does not meddle with unknown cards because it is unclear how to do so in the
 // general case.
-function mwTransformGuessPredicate(playerName, resourceIndex, predicate, name = "predicate")
+function mwWeightGuessPredicate(playerName, resourceIndex, predicate, name = "predicate")
 {
     const resourceName = resourceTypes[resourceIndex];
     const icon = resourceIcons[resourceName];
@@ -2172,6 +2175,7 @@ function render(force = false)
         headerCell.innerHTML = getOwnStuffImage(v);
     }
 
+    // TODO Is there performance problem defining lambdas each time?
     const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
     {
         const resourceName = resourceTypes[resourceIndex];
@@ -2183,7 +2187,7 @@ function render(force = false)
         if (startsWithDigit)
         {
             const guessCount = parseInt(guessStr, 10);
-            mwTransformGuessExact(playerName, resourceIndex, guessCount);
+            mwWeightGuessExact(playerName, resourceIndex, guessCount);
         }
         else
         {
@@ -2194,7 +2198,7 @@ function render(force = false)
                 log("[ERROR] Unknown operator: ", operator);
                 alertIf(52);
             }
-            mwTransformGuessPredicate(
+            mwWeightGuessPredicate(
                 playerName, resourceIndex,
                 predicates[operator].f(guessCount), // Returns predicate lambda
                 predicates[operator].name(guessCount));
@@ -2234,8 +2238,8 @@ function render(force = false)
             const chance = mwBuildsProb[player][b];
             let cell = row.insertCell(j);
             cell.className = "explorer-tbl-cell";
-            cell.innerHTML = chance < 0.001
-                           ? "" // Show nothing if very unlikely
+            cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
+                           : chance > 0.999 ? "✔"
                            : `<span style="font-weight:lighter">${Math.round(chance * 100)}%</span>`;
             ++j;
         };
