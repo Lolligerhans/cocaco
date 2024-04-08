@@ -207,7 +207,7 @@ function alertIf(message)
     }
     else
     {
-        log("[WARNING] Skipping alert(", message, ")");
+        console.error("Skipping alert(", message, ")");
     }
 }
 
@@ -759,7 +759,8 @@ function mwManualRecoverCards()
     restartMainLoop();
 }
 
-// Waits 1 round to collect all player names, then needs card counts (?)
+// Waits 1 round to collect all player names. Use mwManualRecoverCards() to
+// set unknown card counts, entering manyWorlds recovery mode.
 function mwManualFullRecovery()
 {
     if (startupFlag === true)
@@ -2888,6 +2889,7 @@ function comeMrTallyManTallinitialResource(after)
     let done = false;
     const poll = (andThen) =>
     {
+        log("Polling for initial placement");
         const newMessages = getNewMessages();
         for (const msg of newMessages)
         {
@@ -2908,10 +2910,7 @@ function comeMrTallyManTallinitialResource(after)
     printWorlds();
     const correctedOffset = computeInitialPhaseOffset(getAllMessages());
     MSG_OFFSET = correctedOffset;
-    log("Correcting MSG_OFFSET to", correctedOffset); // In practice
-        // should always be the same number since the same number of
-        // messages is displayed
-        // TODO When we think it works, remove the logging
+    log("Correcting MSG_OFFSET to 28 ===", correctedOffset); // Should be 28
     after();
     });
 }
@@ -2924,7 +2923,7 @@ function adjustPlayersByUsername()
     {
         if (!configFixedPlayerName)
         {
-            log("[WARNING] Username not found. Using fixed name.");
+            console.warning("Username not found. Using fixed name.");
         }
         playerUsername = configPlayerName;
     }
@@ -2934,7 +2933,7 @@ function adjustPlayersByUsername()
     const rotation = players.length - ourPosition - 1;
     if (ourPosition < 0)
     {
-        console.error("[ERROR] Username not part of players");
+        console.error("Username not part of players");
         alertIf(32);
         return;
     }
@@ -2950,9 +2949,13 @@ function adjustPlayersByUsername()
     log("[NOTE] You are:", playerUsername);
 }
 
-// Do the job of recognizeUsers() but rewrite it so that it works mid game for
-// recovery. Must stop main loop before running this so they dont interfere.
-// Advances MSG_OFFSET as usual.
+// Get new messages until 'playerCount' many player names were found. If
+// 'playerCount' is null, continue until the first roll instead. Must stop main
+// loop before running this so they dont interfere. Advances MSG_OFFSET as
+// usual.
+// At start of the game, set 'palyerCount' to null so the number is deduced.
+// When recovering from breaking log, or spectating, set 'playerCount' so the
+// function continues while parsing rolls.
 function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
 {
     players = [];   // Start clean
@@ -2961,28 +2964,44 @@ function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
     //      MSG_OFFEST to 0, too. Those can appear out-of-player-order, and we
     //      imply the order from messages.
     //MSG_OFFSET = 0;
-    const left = () => playerCount - players.length;
+    let foundRoll = false;
+    const foundAll = () =>
+    {
+        if (playerCount != null)
+            return playerCount - players.length === 0;
+        else
+            return foundRoll;
+    }
 
     // We abuse intervals to construct while(!ready){ foo(); sleep(10s); }
     let recoverInterval = setInterval(() =>
     {
-        if (left() === 0)   // Aka. Leaving while loop
+        if (foundAll())   // Aka. Leaving while loop
         {
             clearInterval(recoverInterval);
             adjustPlayersByUsername(); // Assumes the username was not changed
             then(); // Continue after "while" loop
         }
-        log(`[NOTE] Recovering ${left()} more players`);
-        const newMsg = getNewMessages();
-        for (msg of newMsg)
+        else
         {
-            const [name, colour] = parseTurnName(msg);
-            if (name === null) continue;
-            if (!players.includes(name))
+            log("[NOTE] Detecting player names...");
+            const newMsg = getNewMessages();
+            for (msg of newMsg)
             {
-                players.push(name);
-                player_colors[name] = colour;
-                log("Recoverd player", name, "with colour", colour);
+                if (msg.textContent.includes(rolledSnippet))
+                {
+                    foundRoll = true;
+                    break;
+                }
+                const [name, colour] = parseTurnName(msg);
+                if (name === null)
+                    continue;
+                if (!players.includes(name))
+                {
+                    players.push(name);
+                    player_colors[name] = colour;
+                    log("Recoverd player", name, "with colour", colour);
+                }
             }
         }
     }, configRefreshRate);   // Aka. sleep(10s)
@@ -3070,7 +3089,8 @@ function restartMainLoop()
  * The main loop is then started with MSG_OFFSET pointing to the first
  * non-initial placement message.
  */
-function waitForInitialPlacement() {
+function waitForInitialPlacement()
+{
     // Dummy-init stuff to render table before init phase has concluded
     players = ["Awaiting", "First", "Roll"];
     player_colors = {"Awaiting":"black", "First":"red", "Roll":"gold"};
@@ -3079,10 +3099,9 @@ function waitForInitialPlacement() {
     initRobs();     // Dummy init
     render(true);   // Force render
 
-    log("[NOTE] Waiting for initial placements");
-
     MSG_OFFSET = 0;
-    recoverUsers(4, () =>
+    recoverUsers(null, // Parse names until a roll occurs
+    () =>
     { // After-function because intervals return immediately
 
     initWorlds();   // Real init. Requires existing users array.
