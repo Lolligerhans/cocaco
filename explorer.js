@@ -117,7 +117,6 @@ let playerUsername;
 let playerUsernameElement = null;
 
 let logElement;
-let initialPlacementMade = false;
 //var initialPlacementDoneMessage = "Giving out starting resources";
 
 
@@ -2799,7 +2798,8 @@ function parseTurnName(element)
     if (  txt.includes(yearOfPlentySnippet)
        || txt.includes(builtSnippet)
        || txt.includes(boughtSnippet)
-       || txt.includes(rolledSnippet))
+       || txt.includes(rolledSnippet)
+       || txt.includes(placeInitialSettlementSnippet) )
     {
         const actor = txt.substring(0, txt.indexOf(" "));
         const html = element.innerHTML;
@@ -2880,22 +2880,40 @@ function parseLatestMessages() {
 
 /**
  * Parse all messages and distribute initial resources for each player.
+ * Does not wait for new messages; all initial placement messages must be
+ * present beforehand.
  */
-function comeMrTallyManTallinitialResource()
+function comeMrTallyManTallinitialResource(after)
 {
-    const allMessages = getAllMessages();
-
-    initWorlds();   // Real init. Requires existing users array.
-    initRobs();     // Real init. Requires exisintg users array.
-    initRolls();
-    allMessages.forEach(parseInitialGotMessage);
+    let done = false;
+    const poll = (andThen) =>
+    {
+        const newMessages = getNewMessages();
+        for (const msg of newMessages)
+        {
+            if (msg.textContent.includes(rolledSnippet))
+            {
+                done = true;
+                break; // Skip remaining messages in case game is longer.
+            }
+            parseInitialGotMessage(msg); // Finds resources and adds them
+        };
+        if (!done)
+            setTimeout(poll, configRefreshRate, andThen);
+        else
+            andThen();
+    };
+    poll(() =>
+    {
     printWorlds();
-
-    let correctedOffset = computeInitialPhaseOffset(allMessages);
-    log("Correcting MSG_OFFSET from", MSG_OFFSET, "to", correctedOffset);
+    const correctedOffset = computeInitialPhaseOffset(getAllMessages());
     MSG_OFFSET = correctedOffset;
-
-    render();
+    log("Correcting MSG_OFFSET to", correctedOffset); // In practice
+        // should always be the same number since the same number of
+        // messages is displayed
+        // TODO When we think it works, remove the logging
+    after();
+    });
 }
 
 // Assumes playerUsername has been set. Rotates that player to last position.
@@ -2934,6 +2952,7 @@ function adjustPlayersByUsername()
 
 // Do the job of recognizeUsers() but rewrite it so that it works mid game for
 // recovery. Must stop main loop before running this so they dont interfere.
+// Advances MSG_OFFSET as usual.
 function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
 {
     players = [];   // Start clean
@@ -2953,7 +2972,7 @@ function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
             adjustPlayersByUsername(); // Assumes the username was not changed
             then(); // Continue after "while" loop
         }
-        log(`[NOTE] Searchin for ${left()} player names`);
+        log(`[NOTE] Recovering ${left()} more players`);
         const newMsg = getNewMessages();
         for (msg of newMsg)
         {
@@ -2967,54 +2986,6 @@ function recoverUsers(playerCount, then)    // TODO JS can not pause at all?!
             }
         }
     }, configRefreshRate);   // Aka. sleep(10s)
-}
-
-/**
- * Once initial settlements are placed, determine the players.
- */
-// TODO I think at this point recoverUsers is simpler. reokace with recoverUsers().
-function recognizeUsers() {
-    players = [];
-    player_colors = {}; // Not technically necessary because used as map (dict)
-    log("[NOTE] Cleared players. Recognizing...");
-    let placementMessages = getAllMessages().filter(
-        msg => msg.textContent.includes(placeInitialSettlementSnippet));
-    for (let msg of placementMessages)
-    {
-        // Message starts with player name
-        msg_text = msg.textContent;
-        username = msg_text.replace(placeInitialSettlementSnippet, "").split(" ")[0];
-
-        if (!players.includes(username))
-        {
-            players.push(username);
-
-            // Check settle image for a colour
-            let images = collectionToArray(msg.getElementsByTagName("img"));
-            for (let image of images)
-            {
-                let str = image.src;
-                // Settlement is placed first, so we assume we find it before
-                // the road. Example HTML:
-                //  <img src="/dist/images/road_blue.svg?v159" alt="road" class="lobby-chat-text-icon" width="20" height="20">
-                let front = "settlement_";
-                let back = ".svg"; // Images are .svg currently
-                let colorName = str.substring(
-                    str.indexOf(front) + front.length,  // ?? For some reason no +1 needed
-                    str.indexOf(back)
-                );
-                // We assume that the colorName string is a valid colour word.
-                // Would not work for fancy colours.
-                player_colors[username] = colorName;
-            }
-        }
-        else
-        {
-            // User was seen before (this is the initial road placement msg)
-//            log("Skip re-recognizing existing user", username);
-        }
-    }
-    adjustPlayersByUsername();
 }
 
 function findPlayerName(then = null)
@@ -3108,38 +3079,25 @@ function waitForInitialPlacement() {
     initRobs();     // Dummy init
     render(true);   // Force render
 
-    log("[NOTE] Waiting for first roll");
-    // TODO reset initialPlacementMade before starting interval?
-    let waitInterval = setInterval(() =>
+    log("[NOTE] Waiting for initial placements");
+
+    MSG_OFFSET = 0;
+    recoverUsers(4, () =>
+    { // After-function because intervals return immediately
+
+    initWorlds();   // Real init. Requires existing users array.
+    initRobs();     // Real init. Requires exisintg users array.
+    initRolls();
+
+    // TODO DO not advance msg offset within
+    // comeMrTallyManTallinitialResource, do manually here instead
+    MSG_OFFSET = 0;
+    comeMrTallyManTallinitialResource(() => // Sets MSG_OFFSET for main loop
     {
-        if (initialPlacementMade)
-        {
-            clearInterval(waitInterval);
-            log("[NOTE] Start tracking");
-
-            // Init
-            recognizeUsers(); // TODO Consilidate with recoverUsers
-            comeMrTallyManTallinitialResource(); // Sets MSG_OFFSET for main loop
-            render();
-
-            restartMainLoop();
-        }
-        else
-        {
-            const newMessages = getNewMessages().map(p => p.textContent);
-
-            // Wait for a message with "roll"
-            if (newMessages.some( m => m.includes(initialPlacementDoneSnippet)) )
-            {
-                initialPlacementMade = true;
-//                log("Found initial placements done snippet");
-            }
-            else
-            {
-//                log("Initial placement done snippet not found");
-            }
-        }
-    }, configRefreshRate);
+    render();
+    restartMainLoop();
+    });
+    });
 }
 
 /**
