@@ -209,6 +209,7 @@ function alertIf(message)
     {
         console.error("Skipping alert(", message, ")");
     }
+    debugger;
 }
 
 // Strings contained in the resource image file names. Used also in regex so
