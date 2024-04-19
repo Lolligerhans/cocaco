@@ -2,7 +2,7 @@
 // CONFIG
 //============================================================
 
-const version_string="v1.13.0"; // TODO Query from browser
+const version_string="v1.13.1"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -2646,7 +2646,7 @@ function parseTradeMessage(element)
     // Determine trading players
     let involvedPlayers = textContent.split(tradeSnippet);
     let tradingPlayer = involvedPlayers[0];
-    let otherPlayer = involvedPlayers[1];
+    let otherPlayer = involvedPlayers[1].trim(); // Remove trailing space
 
     // Sanity check
     if (!verifyPlayers(players, tradingPlayer, otherPlayer)) return true;
