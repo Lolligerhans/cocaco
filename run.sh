@@ -10,7 +10,7 @@
 # ╭──────────────────────╮
 # │ ⚙ Boilerplate        │
 # ╰──────────────────────╯
-declare -gr dotfiles="${DOTFILES:-"$HOME/dotfiles"}"; # TOKEN_DOTFILES_GLOBAL
+declare -gr dotfiles="${DOTFILES:-"./dotfiles-copy"}"; # TOKEN_DOTFILES_GLOBAL
 # 📎 TODO Remove one no longer needed
 declare -gr suppress_optionals_warning="true";
 # ☯ Every file prevents multi-loads itself using this global dict
@@ -31,11 +31,11 @@ _run_config["log_loads"]=0;
 satisfy_version "$dotfiles/scripts/boilerplate.sh" "0.0.0";
 # Ensure versions even if included already
 load_version "$dotfiles/scripts/version.sh" "0.0.0";
-load_version "$dotfiles/scripts/fileinteracts.sh" "0.2.0";
+load_version "$dotfiles/scripts/fileinteracts.sh" "0.0.0";
 load_version "$dotfiles/scripts/setargs.sh" "0.0.0";
 load_version "$dotfiles/scripts/termcap.sh" "0.0.0";
-load_version "$dotfiles/scripts/userinteracts.sh" "0.1.0";
-load_version "$dotfiles/scripts/utils.sh" "3.0.1";
+load_version "$dotfiles/scripts/userinteracts.sh" "0.0.0";
+load_version "$dotfiles/scripts/utils.sh" "0.0.0";
 # ╭──────────────────────╮
 # │ 🗺 Globals           │
 # ╰──────────────────────╯

@@ -1,3 +1,6 @@
 [submodule "statistics.js"]
 	path = statistics.js
 	url = https://github.com/thisancog/statistics.js.git
+[submodule "dotfiles-copy"]
+	path = dotfiles-copy
+	url = https://github.com/Lolligerhans/dotfiles.git
