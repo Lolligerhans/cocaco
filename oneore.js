@@ -43,7 +43,6 @@ snippets:
 
 consoleCss: function(playerName)
 {
-
     return `background: ${twosheep.player_colours[playerName]}; padding: 3px; border-radius: 5px; font-weight: bold;`;
 },
 
@@ -258,7 +257,7 @@ restartTracker: function(done =
     {
         if (done[i].ok)
             continue;
-        console.info("🧭 (", i, ") Running function", done[i].funct.name);
+        console.info(`🧭 ( ${i} ) restartTracker:`, done[i].funct.name);
         // Assume we will succeed and remember for when we come back
         done[i].ok = true;
         // Use 'restartTracker' function as then parameter to setDoInterval().
@@ -269,7 +268,7 @@ restartTracker: function(done =
         // setDoInterval().
         return; // Continue in new setInterval
     }
-    console.info("🧭 'restartTracker' dispatcher completed");
+    console.info("🧭 ( ✔️  ) restartTracker' dispatcher completed");
 },
 
 // Reset observable state. For most things that is just to re-initialize all
@@ -304,16 +303,31 @@ resetState: function()
 findLogElement: function()
 {
     console.assert(!twosheep.logElement);
-    twosheep.logElement = document.getElementsByClassName("fadePanel")[2]
-    if (twosheep.logElement)
+    twosheep.logElement = document.getElementsByClassName("fadePanel")[2];
+    if (!twosheep.logElement)
     {
-        console.log("• Found logElement");
-        twosheep.logElement.addEventListener("click",
-            twosheepBoundToggle,
-            false);
-        return true;
+        return false;
     }
-    return false;
+    console.log("• Found logElement");
+    twosheep.logElement.addEventListener("click", twosheepToggle, false);
+
+    // Bank should always be found, but continue anyway since
+    // 'recoverCards'/'twosheepRecoverCards' is not reqired for normal function.
+    const bankElement = document.getElementById("bank");
+    console.assert(bankElement);
+    if (bankElement)
+        bankElement.addEventListener("click", twosheepRecoverCards, false);
+
+    // (Same as above)
+    const scoreElement = document.getElementById("score-panels");
+    console.assert(scoreElement);
+    if (scoreElement)
+        scoreElement.addEventListener("click", twosheepRecoverNames, false);
+
+    // TODO Do we want do bind twosheepRestart?
+
+
+    return true;
 },
 
 // Read player names from HTML document
@@ -325,9 +339,7 @@ findNames: function()
     for (e of document.getElementsByClassName("scoreName"))
         twosheep.players.push(e.textContent);
     console.assert(twosheep.players.length > 0);
-    twosheep.playerUsername = twosheep.players.at(0);
     //console.log(`• Found ${twosheep.players.length} players: `, twosheep.players);
-    //console.log("• Found playerUsername: ", twosheep.playerUsername);
     return true;
 },
 
@@ -348,43 +360,11 @@ waitForInitialPlacement: function()
     return false;
 },
 
-// Read the "rgb(153, 37, 31)" player colours from HTML document. This version
-// does neither read nor reset the MSG_OFFSET. In return, 'startTracker' ensures
-// that the required messages are already present. There i probably a better way
-// to do this.
-// TODO Long term replace this with whatever we end up doing for name recovery
-// verision, then reset the message offset in 'startTracker' AFTER calling this.
-// FIXME This does notwork when bot performs. Use findLogColours instead
-findColours: function()
-{
-    console.assert(twosheep.MSG_OFFSET >= 29); // Sanity check: waited for initial placements
-    console.assert(twosheep.players.length === 4); // Hardcoded message indices
-    twosheep.player_colours = {};
-    const msg_indices = [1, 4, 7, 10]; // 3*n + 1
-    const allMessages = twosheep.getAllMessages();
-    console.assert(allMessages.length > 10);
-    for (const i of msg_indices)
-    {
-        // Msg is a vanilla div. Then:
-        // div -> eventMessage -> playerName
-        const msg = allMessages[i];
-        const nameElement = msg.children[0].children[0];
-        console.assert(nameElement !== null);
-        const colour = nameElement.style.color;
-        const name   = nameElement.textContent;
-        twosheep.player_colours[name] = colour;
-        console.debug(`%c• Found player ${name} with colour ${colour}`, `🐦;background: black; color: ${colour};`);
-    }
-    console.assert(twosheep.players.length === Object.keys(twosheep.player_colours).length);
-    return true;
-},
-
-// Uses with 'setDoInverval' by startTracker.
+// Used with 'setDoInverval' by startTracker.
 // Reads log messages until all palyers in 'playerNames' are found by a <div>
 // with attribute class=playerName.
-// This works for bot messages, too, because the received messages always show
-// the name.
-
+// This works despite bot messages, because there are always non-bot messages
+// (recieve resources).
 // TODO could replace name finding as well?
 findLogColours: function(playerNames = twosheep.players)
 {
@@ -482,9 +462,11 @@ initializeTracker: function()
         // The update context runs the main loop once, triggering a render
         // update if needed
         twosheep.mainLoop.bind(twosheep, () => true),
-        twosheep.restartTracker.bind(twosheep),
-        twosheep.recoverCards.bind(twosheep),
-        twosheep.recoverNames.bind(twosheep),
+        twosheep.restartTracker.bind(twosheep), // Currently ignored by Render
+        null, // Card and name recovery
+        null, // …are in findLogElement.
+        //twosheep.recoverCards.bind(twosheep),
+        //twosheep.recoverNames.bind(twosheep),
         // Allowing our own icons as fallback
         configOwnIcons ? alternativeAssets : twosheep.icons
     );
@@ -540,7 +522,7 @@ stopMainLoop: function()
     twosheep.activeIndex += 1; // Tells old loop to stop
     // This timer end can produce a warning since 'stopMainLoop' is often
     // obsolete when called. It does no harm.
-    console.timeEnd("mainLoop");
+    if (configUseTimer) console.timeEnd("mainLoop");
 },
 
 // Start new main loop interval. It is given a closure with the current
@@ -609,7 +591,7 @@ mainLoop: function(continueIf)
     {
         //console.info("🧭", `Running main loop. Current index: ${twosheep.activeIndex}`);
     }
-    console.time("mainLoop");
+    if (configUseTimer) console.time("mainLoop");
 
     // Use array + index to allow build parser to find a road builder dev card
     // player earlier. Generally parsers should only use the current message.
@@ -643,12 +625,12 @@ mainLoop: function(continueIf)
         return true;
     }
 
-    console.time("render");
+    if (configUseTimer) console.time("render");
     twosheep.render.render(() => twosheep.MSG_OFFSET > twosheep.renderedOffset);
     twosheep.renderedOffset = twosheep.MSG_OFFSET;
 
-    console.timeEnd("render");
-    console.timeEnd("mainLoop");
+    if (configUseTimer) console.timeEnd("render");
+    if (configUseTimer) console.timeEnd("mainLoop");
 
     // Run indefinitely since there is no win message to be parsed
     return false; // Signal not completed to run again
@@ -668,7 +650,7 @@ recoverCards: function()
         log.debug("◦ Declining card recovery");
         if (wasRunning)
         {
-            //console.info("🧭 Re-entering main loop without card recovery");
+            //console.info("🩹 Re-entering main loop without card recovery");
             twosheep.startMainLoop();
         }
         return;
@@ -715,7 +697,9 @@ recoverNames: function()
     const wasRunning = twosheep.maxIndex >= twosheep.activeIndex;
     console.assert(twosheep.maxIndex <= twosheep.activeIndex, "impossible");
     twosheep.stopMainLoop();
-    if (!confirm(`Reset names and cards?`))
+
+    const playerCount = Number(prompt("💉 Reset to how many players?", 0));
+    if (playerCount === 0)
     {
         //console.debug("💉 Declining name recovery");
         if (wasRunning)
@@ -724,8 +708,6 @@ recoverNames: function()
         }
         return;
     }
-
-    const playerCount = Number(prompt("Player count:", 0));
     if (playerCount < 1 || 4 < playerCount)
     {
         console.error(`Cannot recover ${playerCount} players`);
@@ -734,10 +716,6 @@ recoverNames: function()
     console.log(`💉 Entering name recovery for ${playerCount} players`);
 
     twosheep.render.unrender();
-    // Allow findLogColours() to use all available messages. The other steps do
-    // not need the MSG_OFFSET (since they obtain no messages). 'recoverCards'
-    // will itself reset the MSG_OFFSET.
-    twosheep.MSG_OFFSET = 0;
     // We point out the difference to the default 'restartTracker' in comments
     twosheep.restartTracker
     ([
@@ -1055,7 +1033,7 @@ parsers:
         // If only the monopoly resource type is known transformMonopoly() is
         // used. Twosheep lists exact counts, so implement as trade, followed by
         // collapsing to 0 of the resource type left.
-        //*twosheep.worlds.transformMonopoly(thief, worldResourceIndex(stolenResource));
+        //twosheep.worlds.transformMonopoly(thief, worldResourceIndex(stolenResource));
 
         // Since twosheep tells the resources in detail, trade them over
         // individually, then collapse to 0 left over.
@@ -1085,17 +1063,6 @@ parsers:
             );
             twosheep.worlds.mwCollapseMax(trade.victim, collapseSlice);
         }
-        //for (let i = 0; i < trades.length; ++i)
-        //{
-        //    twosheep.worlds.transformTradeByName
-        //    (
-        //        trades[i].victim,
-        //        trades[i].thief,
-        //        trades[i].resources,
-        //        dummyDemand,
-        //    );
-        //    twosheep.worlds.mwCollapseMax(trades[i].victim, collapseSlice);
-        //}
 
         return true;
     },
@@ -1241,8 +1208,16 @@ parsers:
 
 }; // "namespace" twosheep
 
-// Prevent adding multiple event listeners. Not sure if needed, or the bind
-// expression could be used directly. (?)
-const twosheepBoundToggle = twosheep.toggleTracker.bind(twosheep);
+// We define bindings to the 'addEventListener' targets because that prevents
+// them from being added twice.
+
+// Hide/Show display elements (also stops
+const twosheepToggle = twosheep.toggleTracker.bind(twosheep);
+// Re-assign card counts
+const twosheepRecoverCards = twosheep.recoverCards.bind(twosheep);
+// Re-detect players, then wait for recoverCards
+const twosheepRecoverNames = twosheep.recoverNames.bind(twosheep);
+// Full reset (same as startup)
+const twosheepRestart = twosheep.restartTracker.bind(twosheep);
 
 // vim: shiftwidth=4:softtabstop=4:expandtab

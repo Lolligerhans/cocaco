@@ -15,8 +15,8 @@ class Render
         //haltCallback, // At log element currently
         //continueCallback, // At log element currently
         resetCallback, // Currently does nothing
-        recoverCardsCallback,
-        recoverNamesCallback,
+        recoverCardsCallback, // Goes in the card total cells
+        recoverNamesCallback, // Goes in the corner cell
         iconAssets // {"road": '<img src=...>', ...}
     )
     {
@@ -190,7 +190,7 @@ class Render
             if (startsWithDigit)
             {
                 const guessCount = parseInt(guessStr, 10);
-                this.mwWeightGuessExact(playerName, resourceIndex, guessCount);
+                this.manyWorlds.mwWeightGuessExact(playerName, resourceIndex, guessCount);
             }
             else
             {
@@ -201,7 +201,7 @@ class Render
                     log("[ERROR] Unknown operator: ", operator);
                     alertIf(52);
                 }
-                this.mwWeightGuessPredicate(
+                this.manyWorlds.mwWeightGuessPredicate(
                     playerName, resourceIndex,
                     predicates[operator].f(guessCount), // Returns predicate lambda
                     predicates[operator].name(guessCount));
@@ -214,7 +214,7 @@ class Render
         {
             this.manyWorlds.mwWeightGuessNotavailable(playerName, mw.mwBuilds[buildingName]);
             log('[NOTE] Guessing that', playerName, 'has no', buildingName, 'in hand');
-            render();
+            this.render();
         };
 
         //----------------------------------------------------------------------

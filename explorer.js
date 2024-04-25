@@ -4,7 +4,7 @@
 
 "use strict";
 
-const version_string="v2.0.1"; // TODO Query from browser
+const version_string="v2.1.0"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -26,6 +26,7 @@ const configPlotRolls = true;
 const configLogMessages = false;
 const configRefreshRate = 10000;
 const configOwnIcons = false;
+const configUseTimer = false;
 
 // The text symbols are for outputting only ;)
 const resourceIcons =
@@ -624,7 +625,7 @@ function parseInitialGotMessage(pElement)
     if (!verifyPlayers(players, player)) return true;
 
     const initialResourceTypes = findAllResourceCardsInHtml(pElement.innerHTML);
-    const asSlice = generateWorldSlice(initialResourceTypes);
+    const asSlice = mw.generateWorldSlice(initialResourceTypes);
     logs("[INFO] First settlement resources:", player, "<-", initialResourceTypes);
     if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
     trackerObject.mwTransformSpawn(player, asSlice);
@@ -639,7 +640,7 @@ function parseTradeOffer(element)
 
     const offerHtml = element.innerHTML.split(tradeOfferResSnippet)[0];
     const offer = findAllResourceCardsInHtml(offerHtml);
-    const asSlice = generateWorldSlice(offer);
+    const asSlice = mw.generateWorldSlice(offer);
     logs("[INFO] Trade offer:", player, "->", offer);
     trackerObject.mwCollapseMin(player, asSlice);
     trackerObject.printWorlds();
@@ -658,7 +659,7 @@ function parseTradeOfferCounter(element)
 
   const offerHtml = element.innerHTML.split(tradeOfferResSnippet)[0];
   const offer = findAllResourceCardsInHtml(offerHtml);
-  const asSlice = generateWorldSlice(offer);
+  const asSlice = mw.generateWorldSlice(offer);
   logs("[INFO] Trade counter offer:", player, "->", offer);
   trackerObject.mwCollapseMin(player, asSlice);
   trackerObject.printWorlds();
@@ -717,7 +718,7 @@ function parseBuiltMessage(pElement) {
     let images = collectionToArray(pElement.getElementsByTagName('img'));
     let player = textContent.split(" ")[0];
     if (!verifyPlayers(players, player)) return true; // Sanity check
-    let buildResources = deepCopy(emptyResourcesByName);
+    let buildResources = deepCopy(mw.emptyResourcesByNameWithU);
     let building = false;
     // TODO use predefined resource cost slices
     for (let img of images)
@@ -792,7 +793,7 @@ function parseBoughtMessage(pElement) {
 
     // ManyWorlds version
     // FIXME use structure cost array from mw
-    let devCardResources = deepCopy(emptyResourcesByName);
+    let devCardResources = deepCopy(mw.emptyResourcesByNameWithU);
     devCardResources[sheep] = -1;
     devCardResources[wheat] = -1;
     devCardResources[ore  ] = -1;
@@ -869,7 +870,7 @@ function parseMonopoly(element)
     // ManyWorlds version
     const stolenResource = findSingularResourceImageInElement(element);
     logs("[INFO] Monopoly:", thief, "<-", stolenResource);
-    trackerObject.transformMonopoly(thief, worldResourceIndex(stolenResource));
+    trackerObject.transformMonopoly(thief, mw.worldResourceIndex(stolenResource));
     trackerObject.printWorlds();
 
     return false;
@@ -988,7 +989,7 @@ function parseStealIncludingYou(pElement)
 
     // ManyWorlds update (treating it as a trade)
     trackerObject.transformExchange(targetPlayer, stealingPlayer, // source, target
-        mw.generateSingularSlice(worldResourceIndex(stolenResourceType)));
+        mw.generateSingularSlice(mw.worldResourceIndex(stolenResourceType)));
     trackerObject.printWorlds(); // TODO maybe print in the parser loop
 
     return false;
@@ -1179,7 +1180,7 @@ function comeMrTallyManTallinitialResource(after)
     };
     poll(() =>
     {
-    printWorlds();
+    trackerObject.printWorlds();
     const correctedOffset = computeInitialPhaseOffset(getAllMessages());
     MSG_OFFSET = correctedOffset;
     log("Correcting MSG_OFFSET to 28 ===", correctedOffset); // Should be 28
