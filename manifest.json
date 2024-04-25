@@ -4,28 +4,29 @@
     "manifest_version": 3,
     "author": "Lolligerhans",
     "description": "Correctly correlated Colonist card chance counter",
-    "version": "1.13.1",
+    "version": "2.0.0",
     "icons":
     {
         "512": "assets/catan2.jpg"
     },
     "host_permissions": [
-        "https://colonist.io/*"
+        "https://colonist.io/*",
+        "https://twosheep.io/*"
     ],
     "content_scripts":
     [
         {
-            "matches": ["https://colonist.io/*"],
+            "matches": ["https://colonist.io/*", "https://twosheep.io/*"],
             "css": ["explorer-styles.css"],
             "run_at": "document_idle",
-            "js": ["statistics.js/statistics.min.js", "explorer.js", "plot.js", "plotly/plotly-2.25.2.min.js"]
+            "js": ["statistics.js/statistics.min.js", "plotly/plotly-2.25.2.min.js", "manyworlds.js", "track.js", "render.js", "oneore.js", "plot.js", "explorer.js" ]
         }
     ] ,
     "web_accessible_resources":
     [
         {
             "resources": ["assets/*.jpg"],
-            "matches": ["https://colonist.io/*"]
+            "matches": [ "https://colonist.io/*", "https://twosheep.io/*"]
         }
     ]
 }

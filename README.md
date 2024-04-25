@@ -84,7 +84,7 @@ bernoulli trials. This puts blue into perspective of 11 numbers. About half of g
   - Up to 4 players (as sanity check)
   - Base game only (🪵 🧱 🐑 🌾 🪨, no special rules)
     - [C&K version](https://github.com/superferret1/explorer)
-  - Assumes cards are dropped on `7` when >= 8 total (relvant after monopoly when total is unknown)
+  - Assumes cards are dropped on `7` when >= 8 total (relevant after monopoly when total is unknown)
   - Assumes 19 total cards per resource (else might overflow)
 
 # Errors

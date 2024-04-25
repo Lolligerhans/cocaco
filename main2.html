@@ -4,7 +4,10 @@
 <html>
     <head>
         <link rel="stylesheet" href="explorer-styles.css">
-        <script src="statistics.js/statistics.min.js" type="text/javascript"></script>
+        <script src="statistics.js/statistics.min.js"></script>
+        <script src="manyworlds.js"></script>
+        <script src="manyworldsNew.js"></script>
+        <script src="oneore.js"></script>
         <script src="explorer.js"></script>
         <script src="data.js"></script>
         <script src="plot.js"></script>
@@ -13,6 +16,7 @@
 </html>
 
 <body>
+    <div> <button onclick="allTests()">Run worldTest()</button> </div>
     <div> <button onclick="histogramTest()">Run histogram test</button> </div>
     <div id="testHistogramPlotDiv" class="plot-window"></div>
 </body>

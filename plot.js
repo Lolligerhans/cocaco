@@ -888,20 +888,20 @@ function histogramTest()
 //============================================================
 
 // Plots current global ManyWorlds status variables into 'idToPlotInto'
-function plotResourcesAsBubbles(idToPlotInto)
+function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map)
 {
     let playerBubbles = [];
-    const totalResources = generateFullNamesFromWorld(manyWorlds);   // FIXME what is happening here?
-    for (let j = 0; j < players.length; ++j)
+    const totalResources = mw.generateFullNamesFromWorld(trackerObject);   // FIXME what is happening here?
+    for (let j = 0; j < trackerObject.playerNames.length; ++j)
     {
-        const player = players[j];
+        const player = trackerObject.playerNames[j];
         for (let i = 0; i < resourceTypes.length; ++i)
         {
             const res = resourceTypes[i];
             const [tx, ty, tsize, topacity]  // Trace
                 = generatePerCountBubbles(
-                    players,
-                    mwDistribution,
+                    trackerObject.playerNames,
+                    trackerObject.mwDistribution,
                     player,
                     res,
                     totalResources[res],
@@ -913,7 +913,7 @@ function plotResourcesAsBubbles(idToPlotInto)
                 x: tx,
                 name: player,
                 mode: "markers",
-                marker: { color: player_colors[player],
+                marker: { color: colour_map[player],
                           opacity: topacity,
                           sizemode: "area",
                           size: 20 / (divideSizes**2),
@@ -947,24 +947,26 @@ function plotResourcesAsBubbles(idToPlotInto)
     const config = { displayModeBar: false };
 
     Plotly.newPlot(idToPlotInto, playerBubbles, layout, config);
-    log("Finished plotting MW resources into ID =", idToPlotInto);
+    console.debug("🫧 Finished plotting MW resources into", `ID=${idToPlotInto}`);
 }
 
-function plotRollsAsHistogram(idToPlotInto)
+// Despite the similar name, trackerObject here is 'Track', above is
+// 'ManyWorlds' TODO Fix that
+function plotRollsAsHistogram(trackerObject, idToPlotInto)
 {
   // Rolls
-  const ones = new Array(rolls.length).fill(1);
+  const ones = new Array(trackerObject.rolls.length).fill(1);
   const c = [255, 102, 51]; // Base colour
-  const colo = rolls.map((_, i) =>
+  const colo = trackerObject.rolls.map((_, i) =>
   {
     // Linearly interpolate towards base colour starting at black during
     // progression in data (moves in the game).
-    const f = i / rolls.length;
+    const f = i / trackerObject.rolls.length;
     return `rgb(${Math.ceil(c[0]*f)},${Math.ceil(c[1]*f)},${Math.ceil(c[2]*f)})`;
   });
 
-  const N = rolls.length;
-  const n = rolls.length / 36;
+  const N = trackerObject.rolls.length;
+  const n = trackerObject.rolls.length / 36;
 
   // Expectation
   const probability36 = [1,1,2,3,4,5,6,5,4,3,2,1,1];
@@ -1023,7 +1025,7 @@ function plotRollsAsHistogram(idToPlotInto)
 //  const maxLuck = Math.max.apply(null, luck);
   let minChance = { number: 7, chance: 0.9 }; // Arbitrary initialization
   let minAdjustedChance = { number: 7, chance: probAdjust(0.9) }; // Arbitrary initialization
-  const rarity = rollsHistogram.slice(2).map((v,i,arr) =>
+  const rarity = trackerObject.rollsHistogram.slice(2).map((v,i,arr) =>
   {
     const p = prob(v, i + 2);
     if (p <= minChance.chance)
@@ -1037,15 +1039,15 @@ function plotRollsAsHistogram(idToPlotInto)
     // Return cumulative probability of an event this rare or rarer
   });
 
-  const lessMoreChance = rollsHistogram.slice(2).map( (v,i) => lessMoreDist[i][v] );
+  const lessMoreChance = trackerObject.rollsHistogram.slice(2).map( (v,i) => lessMoreDist[i][v] );
   const lessChance = lessMoreChance.map( x => x[0] );
   const moreChance = lessMoreChance.map( x => x[1] );
-  const lessStrict = lessChance.map( (p,i) => p - dist[i][rollsHistogram[i+2]] );
-  const moreStrict = moreChance.map( (p,i) => p - dist[i][rollsHistogram[i+2]] );
+  const lessStrict = lessChance.map( (p,i) => p - dist[i][trackerObject.rollsHistogram[i+2]] );
+  const moreStrict = moreChance.map( (p,i) => p - dist[i][trackerObject.rollsHistogram[i+2]] );
 
   const adjustedRarity = rarity.map(p => probAdjust(p));
   // Define luck
-  const realLuck = rollsHistogram.slice(2).map((v,i) =>
+  const realLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
   {
     // Alternative definitions: see 'histogramTest'
     // For 25% probability, multiply the card gain by 3
@@ -1056,7 +1058,7 @@ function plotRollsAsHistogram(idToPlotInto)
 //    log(`[DEBUG] count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
     return res;
   });
-  const adjustedRealLuck = rollsHistogram.slice(2).map((v,i) =>
+  const adjustedRealLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
   {
     return (1 / adjustedRarity[i] - 1) * (v - ey[i+1]);
   });
@@ -1070,7 +1072,7 @@ function plotRollsAsHistogram(idToPlotInto)
   let rollTrace =
   {
     type: "bar",
-    x: rolls,
+    x: trackerObject.rolls,
     y: ones,
     width: ones,
     marker: { color: colo },
@@ -1339,7 +1341,7 @@ function plotRollsAsHistogram(idToPlotInto)
     adjustedRarityTrace, rarityTrace
   ];
   Plotly.newPlot(idToPlotInto, data, layout, config);
-  log("Finished plotting rolls histogram into ID = ", idToPlotInto);
+  console.debug("📊 Finished plotting rolls histogram into", `ID=${idToPlotInto}`);
 }
 
 //============================================================

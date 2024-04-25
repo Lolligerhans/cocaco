@@ -11,8 +11,6 @@
 # │ ⚙ Boilerplate        │
 # ╰──────────────────────╯
 declare -gr dotfiles="${DOTFILES:-"./dotfiles-copy"}"; # TOKEN_DOTFILES_GLOBAL
-# 📎 TODO Remove one no longer needed
-declare -gr suppress_optionals_warning="true";
 # ☯ Every file prevents multi-loads itself using this global dict
 declare -gA _sourced_files=( ["runscript"]="" ); # Source only once
 # 🖈 If the runscript requires a specific location, set it here

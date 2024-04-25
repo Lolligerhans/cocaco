@@ -6,6 +6,10 @@
 }
 */
 
+/*
+ * This file is a mess. We could really need replacing it entirely.
+ */
+
 /* for test main.HTML */
 #explorer-plt
 {
@@ -14,7 +18,7 @@
     border: none;
     padding: 0px;
     z-index: 9998;
-    top: 196px;
+    top: 0px;
 }
 
 #explorer-plt-rolls
@@ -24,7 +28,7 @@
   padding: 0px;
   z-index: 9998;
   /*top: 550px; /* below resource plot */
-  top: 196px; /* next to resource plot */
+  top: 0px; /* next to resource plot */
   left: 315px;
 }
 
@@ -33,7 +37,7 @@
     position: absolute;
     background-color: #ccc;
     z-index: 9996;
-    top: 0;
+    top: 250px;
     left: 0;
     /*! padding: 3px; */
     border: solid 3px #555;
@@ -46,8 +50,8 @@
     position: absolute;
     background-color: #ccc;
     z-index: 9999;
-    top: 446px;
-    left: 0px;
+    top: 0px;
+    left: 565px;
     box-sizing: border-box;
     /*! padding: 3px; */
     border: solid 3px #555;
@@ -114,8 +118,8 @@
 
 .explorer-tbl-player-col-cell-color {
     /*width: 8px;*/
-    background-color: #000;
     display: inline-block;
+    font-family: monospace;
 }
 
 .explorer-tbl-player-name {
@@ -143,4 +147,27 @@
     height: 36px;
 }
 
-/*.explorer-tbl-build-icon*/
+/* Percentages added to numbers in the table */
+.table-percent
+{
+    font-size: 80%;
+    font-family: monospace;
+    font-weight: lighter;
+}
+
+.table-number
+{
+    font-size: 110%;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.table-number-chance
+{
+    font-style: italic;
+    vertical-align: super;
+    font-size: 70%;
+}
+
+/* vim: shiftwidth=4:softtabstop=4:expandtab
+ */
