@@ -4,14 +4,14 @@
 
 "use strict";
 
-const version_string="v2.0.0"; // TODO Query from browser
+const version_string="v2.0.1"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
-console.log(stats);
-console.log(Statistics);
-console.log(stats.binomialDistribution);
-console.log(stats.binomialDistribution(50, 1/6));
+//console.log(stats);
+//console.log(Statistics);
+//console.log(stats.binomialDistribution);
+//console.log(stats.binomialDistribution(50, 1/6));
 
 // Some are for colonist only. TODO Clean this up eventually.
 const configDoAlert = true;
@@ -133,7 +133,7 @@ function setDoInterval(repeat, time, then = null)
 {
     if ( repeat() )
     {
-        console.debug("◦ ending setDoInterval of", repeat.name);
+        //console.debug("◦ ending setDoInterval of", repeat.name);
         // Quit if successfull
         if (then !== null)
             then(); // We could consider passing the final, truthy output of

@@ -78,10 +78,10 @@ class Render
 
         if (!renderIf())
         {
-            console.debug("🖥 Skip display update");
+            //console.debug("🖥 Skip display update");
             return;
         }
-        console.debug("🖥 Updaing display...");
+        //console.debug("🖥 Updaing display...");
 
         // TODO Draw only once then only change text content later
 
@@ -270,7 +270,7 @@ class Render
 
         tbl.setAttribute("border", "2"); // (?)
 
-        console.debug("🖥 Updated display");
+        //console.debug("🖥 Updated display");
     }
 
     generateRobTable()

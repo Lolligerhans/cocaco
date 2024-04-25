@@ -345,7 +345,7 @@ class ManyWorlds
         world["chance"] = 1;
         this.manyWorlds = [world];
         console.debug("🌎 Starting MW recovery mode");
-        console.debug(this.manyWorlds);
+        //console.debug(this.manyWorlds);
         this.printWorlds();
     }
 
@@ -378,8 +378,8 @@ class ManyWorlds
         {
             this.worldGuessAndRange[name] = {};
         }
-        logs("[NOTE] Initialized resource tracking", (startingResources === null ?
-             "from no cards" : "from starting cards"));
+        //logs("[NOTE] Initialized resource tracking", (startingResources === null ?
+        //     "from no cards" : "from starting cards"));
         this.printWorlds();
     }
 

@@ -947,7 +947,7 @@ function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map)
     const config = { displayModeBar: false };
 
     Plotly.newPlot(idToPlotInto, playerBubbles, layout, config);
-    console.debug("🫧 Finished plotting MW resources into", `ID=${idToPlotInto}`);
+    //console.debug("🫧 Finished plotting MW resources into", `ID=${idToPlotInto}`);
 }
 
 // Despite the similar name, trackerObject here is 'Track', above is
@@ -1341,7 +1341,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     adjustedRarityTrace, rarityTrace
   ];
   Plotly.newPlot(idToPlotInto, data, layout, config);
-  console.debug("📊 Finished plotting rolls histogram into", `ID=${idToPlotInto}`);
+  //console.debug("📊 Finished plotting rolls histogram into", `ID=${idToPlotInto}`);
 }
 
 //============================================================
