@@ -351,7 +351,8 @@ class ManyWorlds
 
     // Requires existing users array. Some stats objects are pre-filled with the
     // names and they keep them always.
-    // @param startingResources: { "alice": {"wood": 5, ...}, ... }
+    // @param startingResources: { "alice": {"wood": 5, ...}, ... }, can handle
+    //                           U as well as noU.
     initWorlds(startingResources)
     {
         // Init only once

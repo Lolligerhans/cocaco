@@ -251,6 +251,7 @@ restartTracker: function(done =
     // Start the main loop with all states constructed and ready
     { "funct": twosheep.startMainLoop, "ok": false },
 ])
+// TODO This is exactly thesame as in Colony class. Make this pattern its own thing and share
 {
     // Iterate pairs with indices
     for (let i = 0; i < done.length; ++i)
@@ -275,10 +276,10 @@ restartTracker: function(done =
 // members. Keep the activeIndex because it may correspond to running intervals.
 resetState: function()
 {
-    //console.log("• Resetting twosheep state");
+    console.log("• Resetting twosheep state");
     // Deals with the active index to stop running main loops. If no main loop
     // is running that is also fine.
-    stopMainLoop();
+    twosheep.stopMainLoop();
     twosheep.logElement = null;
     twosheep.MSG_OFFSET = 0;
     twosheep.players = null;
@@ -339,7 +340,7 @@ findNames: function()
     for (e of document.getElementsByClassName("scoreName"))
         twosheep.players.push(e.textContent);
     console.assert(twosheep.players.length > 0);
-    //console.log(`• Found ${twosheep.players.length} players: `, twosheep.players);
+    console.log(`• Found ${twosheep.players.length} players: `, twosheep.players);
     return true;
 },
 
@@ -353,8 +354,8 @@ waitForInitialPlacement: function()
     if (twosheep.MSG_OFFSET >= 29) // TODO is too large
     {
         twosheep.MSG_OFFSET = twosheep.findFirstRollIndex(twosheep.getAllMessages());
-        //console.log("◦ Completed initial placement");
-        //console.info("◦ MSG_OFFSET === (", twosheep.MSG_OFFSET, ")");
+        console.log("◦ Completed initial placement");
+        console.info("◦ MSG_OFFSET === (", twosheep.MSG_OFFSET, ")");
         return true;
     }
     return false;
@@ -446,7 +447,7 @@ findIcons: function()
 // startup.
 initializeTracker: function()
 {
-    //console.log("◦ Initializing tracking");
+    console.log("◦ Initializing tracking");
     const noResources = twosheep.generateEmptyResourceList(twosheep.players);
 
     twosheep.worlds = new ManyWorlds();
@@ -498,7 +499,7 @@ findInitialResources: function()
         const resources = twosheep.extractResourcesFromLogMessage(msg.innerHTML);
         console.assert(name !== null);
         twosheep.worlds.mwTransformSpawn(name, mw.generateFullSliceFromNames(resources));
-        //console.log(`▶️ %c${name}%c ${resourcesAsUtf8(resources)}`, twosheep.consoleCss(name), "");
+        console.log(`▶️ %c${name}%c ${resourcesAsUtf8(resources)}`, twosheep.consoleCss(name), "");
         //console.debug(`• Set initial resources for ${name} to`, resources);
     }
 
@@ -567,7 +568,7 @@ toggleTracker: function()
     {
         twosheep.startMainLoop();
         // Main loop may or may not render on first pass
-        twosheep.render.render(); // TODO Maybe place before starting loop?
+        twosheep.render.render();
     }
 },
 
@@ -584,12 +585,12 @@ mainLoop: function(continueIf)
 {
     if (continueIf() === false)
     {
-        //console.info("🧭", `Leaving main loop. Current index: ${twosheep.activeIndex}`);
+        console.info("🧭", `Leaving main loop. Current index: ${twosheep.activeIndex}`);
         return true; // Signal completion to not run again
     }
     else
     {
-        //console.info("🧭", `Running main loop. Current index: ${twosheep.activeIndex}`);
+        console.info("🧭", `Running main loop. Current index: ${twosheep.activeIndex}`);
     }
     if (configUseTimer) console.time("mainLoop");
 
@@ -613,7 +614,7 @@ mainLoop: function(continueIf)
         });
     };
 
-    //console.log(`🌎 ${twosheep.worlds.manyWorlds.length}`);
+    console.log(`🌎 ${twosheep.worlds.manyWorlds.length}`);
 
     if (twosheep.worlds.manyWorlds.length == 0)
     {
@@ -643,14 +644,14 @@ recoverCards: function()
     const offsetAtStartTime = twosheep.getAllMessages().length;
     const wasRunning = twosheep.maxIndex >= twosheep.activeIndex;
     console.assert(twosheep.maxIndex <= twosheep.activeIndex, "is starts out equal and active index increases only");
-    stopMainLoop();
+    twosheep.stopMainLoop();
     // Confirm AFTER stopping main loop so that card counts can be timed
-    if (!confirm(`Reset cards?`))
+    if (!confirm(`🩹 Reset cards?`))
     {
-        log.debug("◦ Declining card recovery");
+        console.debug("🩹 Declining card recovery");
         if (wasRunning)
         {
-            //console.info("🩹 Re-entering main loop without card recovery");
+            console.info("🩹 Re-entering main loop without card recovery");
             twosheep.startMainLoop();
         }
         return;
@@ -729,8 +730,8 @@ recoverNames: function()
         // Not: 'findInitialResources'
         // Not: 'startMainLoop'
         // Additional render. If only to render the card recovery button.
-        { "funct": () => { twosheep.render.render.bind(twosheep.render);
-                           //console.info(`💉 Recovered players: ${twosheep.players}`);
+        { "funct": () => { twosheep.render.render.bind(twosheep.render); // FIXME I think this should be run immediately (?)
+                           console.info(`💉 Recovered players: ${twosheep.players}`);
                            //console.debug("💉 Waiting for card recovery");
                            return true;
                          }, "ok": false },
@@ -755,7 +756,7 @@ parsers:
 {
     always: function(msg, idx)
     {
-        //console.info(`👁 Message ${idx} »${msg.textContent}«`);
+        console.info(`👁 Message ${idx} »${msg.textContent}«`);
         //console.debug(`🔍 Message ${idx} object:`, msg);
         return false;
     },
@@ -821,7 +822,7 @@ parsers:
         console.assert(split.length == 3);
         const offer  = twosheep.extractResourcesFromLogMessage(split[1]);
         const demand = twosheep.extractResourcesFromLogMessage(split[2]);
-        //console.log(`%c${player}%c ➡️ ${resourcesAsUtf8(offer)} ⇄️ ${resourcesAsUtf8(demand)}`, twosheep.consoleCss(player), "");
+        console.log(`%c${player}%c ➡️ ${resourcesAsUtf8(offer)} ⇄️ ${resourcesAsUtf8(demand)}`, twosheep.consoleCss(player), "");
 
         const offerSlice = mw.generateWorldSlice(offer);
         twosheep.worlds.mwCollapseMin(player, offerSlice);
@@ -840,7 +841,7 @@ parsers:
         console.assert(split.length == 3);
         const offer  = twosheep.extractResourcesFromLogMessage(split[2]);
         const demand = twosheep.extractResourcesFromLogMessage(split[1]);
-        //console.log(`${resourcesAsUtf8(demand)} ⇄️ ${resourcesAsUtf8(offer)} ⬅️ %c${player}%c`, twosheep.consoleCss(player), "");
+        console.log(`${resourcesAsUtf8(demand)} ⇄️ ${resourcesAsUtf8(offer)} ⬅️ %c${player}%c`, twosheep.consoleCss(player), "");
         //console.debug("• Trade counter:", player, "<-", demand, "->", offer);
         const asSlice = mw.generateWorldSlice(offer);
 
@@ -859,8 +860,8 @@ parsers:
 
         const obtainedResources = twosheep.extractResourcesFromLogMessage(element.innerHTML);
         let asSlice = mw.generateWorldSlice(obtainedResources);
-        //console.log(`%c${player}%c ← ${resourcesAsUtf8(obtainedResources)}`, twosheep.consoleCss(player), "");
-        //console.log("Got resources:", player, "<-", obtainedResources);
+        console.log(`%c${player}%c ← ${resourcesAsUtf8(obtainedResources)}`, twosheep.consoleCss(player), "");
+        console.log("Got resources:", player, "<-", obtainedResources);
 
         twosheep.worlds.mwTransformSpawn(player, asSlice);
         twosheep.worlds.printWorlds();
@@ -899,12 +900,12 @@ parsers:
             if (  array[index - 1].textContent.includes(twosheep.snippets.built.roadBuilder)
                || array[index - 2].textContent.includes(twosheep.snippets.built.roadBuilder))
             {
-                //console.log(`🚧 🚧 ${player} (road builder)`);
+                console.log(`🚧 🚧 ${player} (road builder)`);
                 return true;
             }
         }
         const buildResources = mw.generateFullNamesFromSlice(mw.mwBuilds[building]);
-        //console.log(`${utf8Symbols[building]} %c${player}%c → ${resourcesAsUtf8(buildResources)}`, twosheep.consoleCss(player), "");
+        console.log(`${utf8Symbols[building]} %c${player}%c → ${resourcesAsUtf8(buildResources)}`, twosheep.consoleCss(player), "");
         //logs("[INFO] Built:", player, buildResources);
 
         const asSlice = -mw.mwBuilds[building];
@@ -925,7 +926,7 @@ parsers:
         if (!verifyPlayers(twosheep.players, player)) return false; // Sanity check
 
         const devCardResources = mw.generateFullNamesFromSlice(mw.mwBuilds.devcard);
-        //console.log(`🂠 %c${player}%c → ${resourcesAsUtf8(devCardResources)}`, twosheep.consoleCss(player), "");
+        console.log(`🂠 %c${player}%c → ${resourcesAsUtf8(devCardResources)}`, twosheep.consoleCss(player), "");
         //logs("[INFO] Baught dev card:", player, "->", devCardResources);
 
         const asSlice = -mw.mwBuilds.devcard;
@@ -948,8 +949,8 @@ parsers:
         const took = twosheep.extractResourcesFromLogMessage(innerHTML[1]);
         const giveSlice = mw.generateWorldSlice(gave);
         const takeSlice = mw.generateWorldSlice(took);
-        //console.log(`🏦 %c${player}%c ${resourcesAsUtf8(gave)} ↔ ${resourcesAsUtf8(took)}`, twosheep.consoleCss(player), "");
-        //console.info("• Bank trade:", player, gave, "->", took);
+        console.log(`🏦 %c${player}%c ${resourcesAsUtf8(gave)} ↔ ${resourcesAsUtf8(took)}`, twosheep.consoleCss(player), "");
+        console.info("• Bank trade:", player, gave, "->", took);
 
         twosheep.worlds.mwTransformSpawn(player, takeSlice - giveSlice);
         twosheep.worlds.printWorlds();
@@ -967,9 +968,9 @@ parsers:
         if (!textContent.includes(twosheep.snippets.monopoly.detect)) return false;
 
         // For debugging until they work.
-        //console.info("Exporting worlds in times of monopoly:");
+        console.info("Exporting worlds in times of monopoly:");
         //const w = twosheep.worlds.mwHumanReadableWorld();
-        //console.info(w);
+        console.info(w);
 
         const thief = textContent.substring(0, textContent.indexOf(" "));
         if (!verifyPlayers(twosheep.players, thief)) return false; // Sanity check
@@ -1023,10 +1024,10 @@ parsers:
         console.assert(stolenResource !== "none");
         const stolenResourceIndex = mw.worldResourceIndex(stolenResource);
         console.assert(0 <= stolenResourceIndex && stolenResourceIndex <= 4);
-        //console.log(`📈 %c${thief}%c ${resourceIcons[stolenResource]}`, twosheep.consoleCss(thief), "");
+        console.log(`📈 %c${thief}%c ${resourceIcons[stolenResource]}`, twosheep.consoleCss(thief), "");
         for (const trade of trades)
         {
-            //console.log(`📉 %c${trade.victim}%c ${resourcesAsUtf8(trade.resources)}`, twosheep.consoleCss(trade.victim), "");
+            console.log(`📉 %c${trade.victim}%c ${resourcesAsUtf8(trade.resources)}`, twosheep.consoleCss(trade.victim), "");
             //console.debug("◦", trade.resources, `from ${trade.victim}`);
         }
 
@@ -1078,7 +1079,7 @@ parsers:
         if (!player)
         {
             player = twosheep.extractBotActorFromLogMessage(element, twosheep.player_colours);
-            //console.log(`🤖 %c${player}%c (the bot discards)`, twosheep.consoleCss(player), "");
+            console.log(`🤖 %c${player}%c (the bot discards)`, twosheep.consoleCss(player), "");
             //console.debug(`◦ The bot discards for ${player}`);
         }
 
@@ -1086,7 +1087,7 @@ parsers:
 
         const discarded = twosheep.extractResourcesFromLogMessage(element.innerHTML);
         const discardedCardsAsSlie = mw.generateWorldSlice(discarded);
-        //console.log(`🗑 %c${player}%c → ${resourcesAsUtf8(discarded)}`, twosheep.consoleCss(player), "");
+        console.log(`🗑 %c${player}%c → ${resourcesAsUtf8(discarded)}`, twosheep.consoleCss(player), "");
         //logs("[INFO] Discarded:", player, "->", discarded);
 
         twosheep.worlds.mwCollapseMinTotal(player); // Total can be unknown to MW after monopoly
@@ -1122,7 +1123,7 @@ parsers:
         console.assert(split.length === 3);
         const offer = twosheep.extractResourcesFromLogMessage(split[1]);
         const demand = twosheep.extractResourcesFromLogMessage(split[2]);
-        //console.log(`%c${tradingPlayer}%c ${resourcesAsUtf8(offer)} ↔️ ${resourcesAsUtf8(demand)} ${otherPlayer}`, twosheep.consoleCss(tradingPlayer), "");
+        console.log(`%c${tradingPlayer}%c ${resourcesAsUtf8(offer)} ↔️ ${resourcesAsUtf8(demand)} ${otherPlayer}`, twosheep.consoleCss(tradingPlayer), "");
         //logs("[INFO] Trade:", offer, tradingPlayer, "--> | <--", otherPlayer, demand);
 
         twosheep.worlds.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
@@ -1151,7 +1152,7 @@ parsers:
                 element,
                 twosheep.player_colours
             );
-            //console.log(`🤖 %c${stealingPlayer}%c (the bot steals)`, twosheep.consoleCss(stealingPlayer), "");
+            console.log(`🤖 %c${stealingPlayer}%c (the bot steals)`, twosheep.consoleCss(stealingPlayer), "");
             //console.debug(`◦ The bot steals for ${stealingPlayer}`);
         }
         // Sanity checks
@@ -1169,15 +1170,15 @@ parsers:
         twosheep.tracker.addRob(stealingPlayer, targetPlayer);
         if (resources.unknown === 1)
         {
-            //console.log(`🥷 %c${stealingPlayer}%c ← 🂠 %c${targetPlayer}%c`, twosheep.consoleCss(stealingPlayer), "", twosheep.consoleCss(targetPlayer), "");
-            //console.info("• Steal (unknown):", targetPlayer, "->", stealingPlayer);
+            console.log(`🥷 %c${stealingPlayer}%c ← 🂠 %c${targetPlayer}%c`, twosheep.consoleCss(stealingPlayer), "", twosheep.consoleCss(targetPlayer), "");
+            console.info("• Steal (unknown):", targetPlayer, "->", stealingPlayer);
             twosheep.worlds.branchSteal(targetPlayer, stealingPlayer);
             twosheep.worlds.printWorlds();
         }
         else
         {
-            //console.log(`🥷 %c${stealingPlayer}%c ← ${resourcesAsUtf8(resources)} %c${targetPlayer}%c`, twosheep.consoleCss(stealingPlayer), "", twosheep.consoleCss(targetPlayer), "");
-            //console.info("• Steal (known):", targetPlayer, "->", stealingPlayer, "(", resources, ")");
+            console.log(`🥷 %c${stealingPlayer}%c ← ${resourcesAsUtf8(resources)} %c${targetPlayer}%c`, twosheep.consoleCss(stealingPlayer), "", twosheep.consoleCss(targetPlayer), "");
+            console.info("• Steal (known):", targetPlayer, "->", stealingPlayer, "(", resources, ")");
             twosheep.worlds.transformExchange(targetPlayer, stealingPlayer, asSlice);
         }
 
