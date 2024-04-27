@@ -24,7 +24,7 @@ const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 const configPlotRolls = true;
 const configLogMessages = false;
-const configRefreshRate = 10000;
+const configRefreshRate = 3000;
 const configOwnIcons = false;
 const configUseTimer = false;
 

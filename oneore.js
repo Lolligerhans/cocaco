@@ -19,7 +19,7 @@ let twosheep =
 // Constants
 // ============================================================================
 
-refreshRate: 10000, // In milliseconds
+refreshRate: 3000, // In milliseconds
 snippets:
 {
     // Detect resource icons in messages by these regex
