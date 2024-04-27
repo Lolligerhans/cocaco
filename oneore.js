@@ -280,18 +280,12 @@ resetState: function()
     // Deals with the active index to stop running main loops. If no main loop
     // is running that is also fine.
     twosheep.stopMainLoop();
+
     twosheep.logElement = null;
     twosheep.MSG_OFFSET = 0;
     twosheep.players = null;
     twosheep.player_colours = null;
     twosheep.icons = null;
-    // As exception, the indices are never reset. This is to prevent zombie main
-    // loop intervals continuing because we reset their stop signal. For a true
-    // reset, the user could replace their entire twosheep objects with a new
-    // one. Alternatively we could use nonces for activeIndex, but currently we
-    // do not.
-    //twosheep.activeIndex = 0; // (Not reset)
-    //twosheep.maxIndex = -1;   // (Not reset)
     twosheep.worlds = null;
     twosheep.tracker = null;
     twosheep.render = null;
@@ -967,9 +961,9 @@ parsers:
         const textContent = element.textContent;
         if (!textContent.includes(twosheep.snippets.monopoly.detect)) return false;
 
-        // For debugging until they work.
+        // Remove print eventually
         console.info("Exporting worlds in times of monopoly:");
-        //const w = twosheep.worlds.mwHumanReadableWorld();
+        const w = twosheep.worlds.mwHumanReadableWorld();
         console.info(w);
 
         const thief = textContent.substring(0, textContent.indexOf(" "));
