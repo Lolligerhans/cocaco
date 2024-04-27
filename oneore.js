@@ -517,7 +517,7 @@ stopMainLoop: function()
 {
     //console.debug(`◦ entering twosheep.stopMainLoop()`);
     // Dont show big stop message if no active loop
-    if (twosheep.maxIndex >= twosheep.activeIndex)
+    if (twosheep.isActiveMainLoop())
         console.info("🧭", `Stopping main loop ${twosheep.activeIndex}`);
     else
         console.debug("🧭 No active main loop to stop");
@@ -554,13 +554,18 @@ startMainLoop: function()
     return true;
 },
 
+isActiveMainLoop: function()
+{
+    return twosheep.maxIndex >= twosheep.activeIndex;
+},
+
 // Helper mainly to be addEventListener'd to some button. We don't name it
 // toggle main loop because unlike the main loop functions, this also unrenders
 // when turning off.
 toggleTracker: function()
 {
     //console.debug("◦ Entering twosheep.toggleTracker()");
-    if (twosheep.maxIndex >= twosheep.activeIndex)
+    if (twosheep.isActiveMainLoop())
     {
         twosheep.stopMainLoop();
         twosheep.render.unrender();
@@ -643,7 +648,7 @@ recoverCards: function()
 {
     //console.debug("🩹 Considering card recovery");
     const offsetAtStartTime = twosheep.getAllMessages().length;
-    const wasRunning = twosheep.maxIndex >= twosheep.activeIndex;
+    const wasRunning = twosheep.isActiveMainLoop();
     console.assert(twosheep.maxIndex <= twosheep.activeIndex, "is starts out equal and active index increases only");
     twosheep.stopMainLoop();
     // Confirm AFTER stopping main loop so that card counts can be timed
@@ -696,7 +701,7 @@ recoverCards: function()
 recoverNames: function()
 {
     //console.debug("💉 Considering name recovery");
-    const wasRunning = twosheep.maxIndex >= twosheep.activeIndex;
+    const wasRunning = twosheep.isActiveMainLoop();
     console.assert(twosheep.maxIndex <= twosheep.activeIndex, "impossible");
     twosheep.stopMainLoop();
 
