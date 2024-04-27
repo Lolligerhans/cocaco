@@ -259,15 +259,15 @@ class Colony
 
     restartTracker(tasks =
     [
-        { "funct": this.reset.bind(this),                                    "ok": false },
-        { "funct": this.findPlayerName.bind(this),                           "ok": false },
-        { "funct": this.findTranscription.bind(this),                        "ok": false },
-        { "funct": this.waitForInitialPlacement.bind(this),                  "ok": false },
-        { "funct": this.recoverUsers.bind(this),                             "ok": false },
-        { "funct": this.initializeTracker.bind(this),                        "ok": false },
-        { "funct": (() => { this.MSG_OFFSET = 0; return true; }).bind(this), "ok": false },
-        { "funct": this.comeMrTallyManTallinitialResource.bind(this),        "ok": false },
-        { "funct": this.restartMainLoop.bind(this),                          "ok": false },
+        { "funct": this.reset.bind(this),                             "ok": false },
+        { "funct": this.findPlayerName.bind(this),                    "ok": false },
+        { "funct": this.findTranscription.bind(this),                 "ok": false },
+        { "funct": this.waitForInitialPlacement.bind(this),           "ok": false },
+        { "funct": this.recoverUsers.bind(this),                      "ok": false },
+        { "funct": this.initializeTracker.bind(this),                 "ok": false },
+        { "funct": () => { this.MSG_OFFSET = 0; return true; },       "ok": false },
+        { "funct": this.comeMrTallyManTallinitialResource.bind(this), "ok": false },
+        { "funct": this.restartMainLoop.bind(this),                   "ok": false },
     ])
     {
         for (let i = 0; i < tasks.length; ++i)

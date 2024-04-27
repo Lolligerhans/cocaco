@@ -4,7 +4,7 @@
 
 "use strict";
 
-const version_string="v2.2.0"; // TODO Query from browser
+const version_string="v2.2.1"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -72,18 +72,19 @@ function resourcesAsUtf8(resources)
     return s;
 }
 
+const theBrowser = chrome !== undefined ? chrome : browser;
 const alternativeAssets =
 {
     // More at 408f1c219dc04fb8746541fed624e6d4026aaaac
-    wood:       `<img src="${browser.runtime.getURL("assets/wood31.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    brick:      `<img src="${browser.runtime.getURL("assets/brick24.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    sheep:      `<img src="${browser.runtime.getURL("assets/sheep1.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    wheat:      `<img src="${browser.runtime.getURL("assets/wheat2.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    ore:        `<img src="${browser.runtime.getURL("assets/ore27.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    road:       `<img src="${browser.runtime.getURL("assets/street10.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    settlement: `<img src="${browser.runtime.getURL("assets/settle7.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    devcard:    `<img src="${browser.runtime.getURL("assets/dev4.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    city:       `<img src="${browser.runtime.getURL("assets/city23.jpg")}" class="explorer-tbl-resource-icon"/>`
+    wood:       `<img src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    brick:      `<img src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    sheep:      `<img src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    wheat:      `<img src="${theBrowser.runtime.getURL("assets/wheat2.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    ore:        `<img src="${theBrowser.runtime.getURL("assets/ore27.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    road:       `<img src="${theBrowser.runtime.getURL("assets/street10.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    settlement: `<img src="${theBrowser.runtime.getURL("assets/settle7.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    devcard:    `<img src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="explorer-tbl-resource-icon"/>`,
+    city:       `<img src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="explorer-tbl-resource-icon"/>`
 };
 
 
