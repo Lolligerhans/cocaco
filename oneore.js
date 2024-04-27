@@ -298,9 +298,16 @@ resetState: function()
 findLogElement: function()
 {
     console.assert(!twosheep.logElement);
-    twosheep.logElement = document.getElementsByClassName("fadePanel")[2];
+    const fadePanels = document.getElementsByClassName("fadePanel");
+    if (!fadePanels)
+    {
+        //console.debug("• No fadePanel found");
+        return false;
+    }
+    twosheep.logElement = fadePanels[fadePanels.length - 1];
     if (!twosheep.logElement)
     {
+        //console.debug("• No logElement found");
         return false;
     }
     console.log("• Found logElement");
