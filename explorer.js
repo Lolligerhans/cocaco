@@ -87,6 +87,14 @@ const alternativeAssets =
     city:       `<img src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="explorer-tbl-resource-icon"/>`
 };
 
+// Interpolate red-green over yellow
+// @param {number} zeroToOne: within [0, 1]
+function colourInterpolate(zeroToOne)
+{
+    const r = Math.ceil(255 * Math.cos(Math.PI * zeroToOne / 2));
+    const g = Math.ceil(255 * Math.sin(Math.PI * zeroToOne / 2));
+     return `rgb(${(255+r)/2}, ${(255+g)/2}, 128)`;
+}
 
 //============================================================
 // Hello

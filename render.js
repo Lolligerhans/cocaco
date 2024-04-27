@@ -239,9 +239,14 @@ class Render
                 const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
                 const fraction = this.manyWorlds.worldGuessAndRange[player][res][1]; // Fraction
                 const percentString = fraction > 0.999 ? "" : ` <span class="table-percent table-number-chance">${Math.round(fraction * 100)}%</span>`;
+                const stealChance = this.manyWorlds.mwSteals[player][res];
+                const shadowColour = colourInterpolate(stealChance);
                 cell.innerHTML = this.manyWorlds.worldGuessAndRange[player][res][3] === 0
                                ? "" // Display nothing if guaranteed 0 amount available
-                               : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100">${Math.round(this.manyWorlds.mwSteals[player][res] * 100)}%</span>`;
+                               : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
+                // Alternatively, background whole cell
+                //if (this.manyWorlds.worldGuessAndRange[player][res][3] !== 0)
+                //    cell.style.background = shadowColour;
             }
             // Copy the cell-adding for resource
             let j = resourceTypes.length + 1;
@@ -254,6 +259,8 @@ class Render
                 cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
                                : chance > 0.999 ? "<span class='table-number'>✔️ </span>"
                                : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
+                if (0.001 < chance)
+                    cell.style.background = colourInterpolate(chance);
                 ++j;
             };
             Object.keys(mw.mwBuilds).forEach(addBuildFunc);
