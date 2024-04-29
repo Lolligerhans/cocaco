@@ -764,30 +764,6 @@ class ManyWorlds
     // Called internally after branching operations
     removeDuplicateWorlds()
     {
-        // Sort worlds, then remove idendical elements following each other
-        const sorted = this.manyWorlds.sort((w1, w2) =>
-        {
-            // TODO This loop works? Replace with for of Object.keys()
-            for (let p in w1)
-            {
-                if (w1[p] !== w2[p]) return w1[p] < w2[p] ? -1 : 1;
-            }
-            return 0;
-        });
-        const filtered = sorted.filter((item, pos, others) =>
-        {
-            // Keep unique worlds
-            if (pos === 0) { return true; }
-            let other = others[pos-1];
-            for (let p of this.playerNames)
-            {
-                if (item[p] !== other[p])    // Compare full slices in one go
-                    return true;
-            }
-            other["chance"] += item["chance"]; // TODO I hope this is legitimate
-            return false;
-        });
-
         this.manyWorlds = this.manyWorlds.sort((w1, w2) =>
         {
             // TODO This loop works? Replace with for of Object.keys()
