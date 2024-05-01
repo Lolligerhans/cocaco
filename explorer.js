@@ -4,7 +4,7 @@
 
 "use strict";
 
-const version_string="2.2.4"; // TODO Query from browser
+const version_string="2.2.5"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -223,6 +223,7 @@ function alertIf(message)
     if (configDoAlert)
     {
         alert(message);
+        debugger;
     }
     else
     {

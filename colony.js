@@ -149,8 +149,7 @@ class Colony
         monoStoleSnippet: " stole ", // Contained
         monoFromSnippet: "from", // Not contained
         discardedSnippet: " discarded ",
-        tradeSnippet: " traded  for  with ",
-        tradeSplitSnippet: " for ",
+        trade: {detect: " traded for with ", split: " for "},
         stealingSnippet: " stole  from ",
         winSnippet: "won the game",
         rolledSnippet: " rolled ",
@@ -932,44 +931,33 @@ class Colony
         return true;
     }
 
-    /**
-     * Parse trade messages.
-     *
-     * Example HTML content:
-     *  Julius traded: <img...><img...> for: <img...> with: John#1234
-     * Note: Contains 3 colons, resulting in 4 sections after split(":"). Middle
-     *       two sections contain the resource imgages.
-     */
+    // .outerHTML: <div><img><span><span>TradingPlayer<> traded <img> <img>  for <img>  with <span>OtherPlayer<><><>
+    // .textContent: "TradingPlayer traded    for   with OtherPlayer"
+    // Has whitespace between cards.
     parseTradeMessage(element)
     {
-        // Identify trading messages
-        let textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.tradeSnippet)) return false;
+        // Collapse whitespace into single space
+        const textContent = element.textContent.replace(/\s+/g, ' ');
+        if (!textContent.includes(Colony.snippets.trade.detect)) return false;
 
-        // Determine trading players
-        let involvedPlayers = textContent.split(Colony.snippets.tradeSnippet);
-        let tradingPlayer = involvedPlayers[0];
-        let otherPlayer = involvedPlayers[1].trim(); // Remove trailing space
-
-        // Sanity check
+        const involvedPlayers = textContent.split(Colony.snippets.trade.detect);
+        const tradingPlayer = involvedPlayers[0];
+        const otherPlayer = involvedPlayers[1].trim(); // Remove trailing space
         if (!verifyPlayers(this.players, tradingPlayer, otherPlayer)) return false;
 
-        // Split HTML at colons to separate sending from receiving resources
-        let split = element.innerHTML.split(Colony.snippets.tradeSplitSnippet);
+        const split = element.innerHTML.split(Colony.snippets.trade.split);
         if (split.length !== 2) // Sanity check
         {
-            log("[ERROR] Expected 4 parts when parsing trading message.",
-                "Got:", split);
-            log(" [NOTE] InnerHTML:", element.innerHTML);
+            console.error("Expected 2 parts when parsing trading message");
+            console.debug("Split:", split);
+            console.debug("InnerHTML:", element.innerHTML);
             alertIf(7);
             return false;
         }
-        let offer = Colony.findAllResourceCardsInHtml(split[0]);
-        let demand = Colony.findAllResourceCardsInHtml(split[1]);
+        const offer = Colony.findAllResourceCardsInHtml(split[0]);
+        const demand = Colony.findAllResourceCardsInHtml(split[1]);
+        console.debug("[INFO] Trade:", offer, tradingPlayer, "--> | <--", otherPlayer, demand);
 
-        // ManyWorlds version
-        logs("[INFO] Trade:", offer, tradingPlayer,
-            "--> | <--", otherPlayer, demand);
         this.trackerObject.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
         this.trackerObject.printWorlds();
 
