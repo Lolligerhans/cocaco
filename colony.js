@@ -150,7 +150,7 @@ class Colony
         monoFromSnippet: "from", // Not contained
         discardedSnippet: " discarded ",
         trade: {detect: " traded for with ", split: " for "},
-        stealingSnippet: " stole  from ",
+        steal: {you: ["You ", " from you"], detect: " stole from "},
         winSnippet: "won the game",
         rolledSnippet: " rolled ",
     }
@@ -964,38 +964,27 @@ class Colony
         return true;
     }
 
-    // Parse steal including "you" or "You"
-    //
-    // Example text content we want to parse:
-    //  You stole:  from: Isabel
-    //  Isabel stole:  from you
+    // <div><img><span><span>Stealer</span> stole <img>  from you</span></div>
+    // "You stole   from VictimPlayer"
     stealKnown(element)
     {
-        const textContent = element.textContent;
+        const textContent = element.textContent.replace(/\s+/g, " ");
+        const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
+                           || textContent.includes(Colony.snippets.steal.you[1]);
+        const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
+        if (!containsYou || !containsStealSnippet) return false;
 
-        // Detect desired message type
-        // TODO Have a function matchPlayers(string) --> [involved, players]
-        const containsYou = textContent.indexOf("You ") === 0 || textContent.includes("from you");
-        const containsStealSnippet = textContent.includes(Colony.snippets.stealingSnippet);
-        if (!containsYou || !containsStealSnippet)  // (!)
-        {
-            return false;
-        }
-
-        // Obtain player names
-        let involvedPlayers = textContent
-            .replace(/\:/g, "")   // One version has an extra colon // TODO Now obsolete
-            .replace(Colony.snippets.stealingSnippet, " ") // After this only the names are left
+        const involvedPlayers = textContent
+            .replace(Colony.snippets.steal.detect, " ") // After this only the names are left
             .split(" ");
-
-        // Replace player name
+        // Replace [Yy]ou with our name
         if      (involvedPlayers[0] === "You" || involvedPlayers[0] === "you")
         {        involvedPlayers[0] = this.playerUsername; }
         else if (involvedPlayers[1] === "You" || involvedPlayers[1] === "you")
         {        involvedPlayers[1] = this.playerUsername; }
         else
         {
-            console.error("[ERROR] Expected \"[Yy]ou\" for", this.playerUsername, "in known steal");
+            console.error("Expected \"[Yy]ou\" for", this.playerUsername, "in known steal");
             alertIf(33);
             return;
         }
@@ -1017,52 +1006,35 @@ class Colony
         return true;
     }
 
-    /**
-     * Handles messages with steals that do not include the player.
-     *
-     * In this type of steal, the player names are given directly, but the resource
-     * is unknown.
-     */
+    // <div><img><span><span>StealingPlayer</span> stole <img>  from <span>VictimPlayer</span></span></div>
+    // "StealingPlayer stole   from VictimPlayer"
     stealUnknown(element)
     {
-        let textContent = element.textContent;
+        const textContent = element.textContent.replace(/\s+/g, " ");
+        const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
+                          || textContent.includes(Colony.snippets.steal.you[1]);
+        const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
+        if (containsYou || !containsStealSnippet) return false;
 
-        // Detect desired message type
-        const containsYou = textContent.indexOf("You ") === 0 || textContent.includes("from you");
-        const containsStealSnippet = textContent.includes(Colony.snippets.stealingSnippet);
-        if (containsYou || !containsStealSnippet)   // (!)
-        {
-            return false;
-        }
-
-        // Obtain player names
         const involvedPlayers = textContent
-            .replace(/\:/g, "")   // One version has an extra colon
-            .replace(Colony.snippets.stealingSnippet, " ") // After this only the names are left
+            .replace(Colony.snippets.steal.detect, " ") // After this only the names are left
             .split(" ");
-
-        // Replace player name
-        if (involvedPlayers[0] === "You" || involvedPlayers[0] === "you")
+        if (  involvedPlayers[0] === "You"
+           || involvedPlayers[0] === "you"
+           || involvedPlayers[1] === "You"
+           || involvedPlayers[1] === "you" )
         {
-            involvedPlayers[0] = this.playerUsername;
-            alertIf(28); return; // Should never happen
+            console.error("Did not expect \"[Yy]ou\" in unknown steal");
+            alertIf(28);
+            // Fallthrough in case an actual name is "[Yy]ou"
         }
-        if (involvedPlayers[1] === "You" || involvedPlayers[1] === "you")
-        {
-            involvedPlayers[1] = this.playerUsername;
-            alertIf(29); return; // Should never happen
-        }
-
-        // Sanity check
         const stealingPlayer = involvedPlayers[0];
         const targetPlayer = involvedPlayers[1];
         if (!verifyPlayers(this.players, stealingPlayer, targetPlayer)) return false;
-
-        // Robs update
         logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
+
         this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
-        // ManyWorlds update
         this.trackerObject.branchSteal(targetPlayer, stealingPlayer);
         this.trackerObject.printWorlds();
 

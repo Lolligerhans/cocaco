@@ -4,7 +4,7 @@
 
 "use strict";
 
-const version_string="2.2.5"; // TODO Query from browser
+const version_string="2.2.6"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
