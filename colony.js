@@ -993,14 +993,19 @@ class Colony
         const targetPlayer = involvedPlayers[1];
         if (!verifyPlayers(this.players, stealingPlayer, targetPlayer)) return false; // Sanity check
         const stolenResourceType = Colony.findSingularResourceImageInElement(element);
+        const stolenResourceIndex = mw.worldResourceIndex(stolenResourceType);
 
         // Robs update
         logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
         this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
-        // ManyWorlds update (treating it as a trade)
-        this.trackerObject.transformExchange(targetPlayer, stealingPlayer, // source, target
-            mw.generateSingularSlice(mw.worldResourceIndex(stolenResourceType)));
+        // ManyWorlds update
+        this.trackerObject.collapseAsRandom(targetPlayer, stolenResourceIndex);
+        this.trackerObject.transformExchange
+        (
+            targetPlayer, stealingPlayer, // source, target
+            mw.generateSingularSlice(stolenResourceIndex)
+        );
         this.trackerObject.printWorlds(); // TODO maybe print in the parser loop
 
         return true;

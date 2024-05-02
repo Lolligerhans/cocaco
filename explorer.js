@@ -4,7 +4,7 @@
 
 "use strict";
 
-const version_string="2.2.6"; // TODO Query from browser
+const version_string="2.2.7"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -204,10 +204,7 @@ const ore = "ore";
 const wheat = "wheat";
 const brick = "brick";
 const sheep = "sheep";
-const resourceTypes = [wood, brick, sheep, wheat, ore];   // MW depends on this
-
-// Players
-// So we have assets when the others break or whatever
+const resourceTypes = [wood, brick, sheep, wheat, ore];
 
 //============================================================
 // Helpers

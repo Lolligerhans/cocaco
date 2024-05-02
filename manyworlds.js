@@ -574,8 +574,6 @@ class ManyWorlds
             const totalRes = mw.getResourceSumOfSlice(world[victim]);
             if (totalRes === 0) continue;   // Impossible to steal => world dies
             for (let r = 0; r < resourceTypes.length; ++r)  // TODO How to iterate easier?
-    //        for (const [r, resName] of Object.keys(resourceTypes))
-    //        for (const r in resourceTypes)  // (!) Iterates indices. Depends on order.
             {
                 let w = deepCopy(world);
                 const slice = mw.generateSingularSlice(r, 1);
@@ -759,6 +757,44 @@ class ManyWorlds
             }
             return true;
         });
+    }
+
+    // Why: This function is used when revealing a single resource card from
+    // a uniform random event (known steal). Knwoing about the uniformness
+    // allows a bayesian update on the 'chance' of each world. Since player may
+    // reveal resources in ways that are no uniform random, this does not
+    // generally apply.
+    //
+    // When: After a known stela, first call this function to adjust the
+    // 'chance' of each world, then transfer the stolen resource using
+    // 'transformExchance()'.
+    //
+    // What: Pretend a single resource of player 'playerName' was selected
+    // uniformly at random and the result was 'slice'. Adjust chances with
+    // bayesian update.
+    //
+    // How: First remove all inconsistent worlds. Then multiply unnormalized
+    // bayesian update to 'chance' of each world. The worlds are left
+    // unnormalized.
+    //
+    // TODO: Add test for this function.
+    collapseAsRandom(playerName, resourceIndex)
+    {
+        const slice = mw.generateSingularSlice(resourceIndex);
+        this.mwCollapseMin(playerName, slice);
+
+        //console.debug("Before collapse:", this.mwHumanReadableWorld());
+        const playerIdx = mw.worldPlayerIndex(playerName);
+        this.manyWorlds = this.manyWorlds.map((world) =>
+        {
+            const totalResourceCount = mw.getResourceSumOfSlice(world[playerIdx]);
+            const specificCount = mw.getResourceCountOfSlice(world[playerIdx], resourceIndex);
+            // No need to normalize updates because all worlds get updated
+            const bayesianUpdate = specificCount / totalResourceCount;
+            world["chance"] = world["chance"] * bayesianUpdate;
+            return world;
+        });
+        //console.debug("After collapse:", this.mwHumanReadableWorld());
     }
 
     // Called internally after branching operations

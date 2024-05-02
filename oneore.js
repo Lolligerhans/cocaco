@@ -1138,7 +1138,6 @@ parsers:
         return true;
     },
 
-    // Example:
     steal: function(element)
     {
         let textContent = element.textContent;
@@ -1161,15 +1160,15 @@ parsers:
             //console.log(`🤖 %c${stealingPlayer}%c (the bot steals)`, twosheep.consoleCss(stealingPlayer), "");
             //console.debug(`◦ The bot steals for ${stealingPlayer}`);
         }
-        // Sanity checks
         //console.debug(`◦ Player ${stealingPlayer} steals from ${targetPlayer}`);
-
         console.assert(stealingPlayer && targetPlayer);
         if (!verifyPlayers(twosheep.players, stealingPlayer, targetPlayer))
             return false;
 
         // Distinguish known from unknown
         const resources = twosheep.extractResourcesFromLogMessage(element.innerHTML);
+        const stolenResourceType = Object.entries(resources).reduce(
+            (res, [key, value]) => value !== 0 ? key : res, null);
         const asSlice = mw.generateFullSliceFromNames(resources);
         console.assert(mw.getResourceSumOfSlice(asSlice) === 1);
 
@@ -1183,8 +1182,10 @@ parsers:
         }
         else
         {
+            const stolenResourceIndex = mw.worldResourceIndex(stolenResourceType);
             //console.log(`🥷 %c${stealingPlayer}%c ← ${resourcesAsUtf8(resources)} %c${targetPlayer}%c`, twosheep.consoleCss(stealingPlayer), "", twosheep.consoleCss(targetPlayer), "");
             //console.info("• Steal (known):", targetPlayer, "->", stealingPlayer, "(", resources, ")");
+            twosheep.worlds.collapseAsRandom(targetPlayer, stolenResourceIndex);
             twosheep.worlds.transformExchange(targetPlayer, stealingPlayer, asSlice);
         }
 
