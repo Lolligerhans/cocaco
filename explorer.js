@@ -27,6 +27,22 @@ const configLogMessages = false;
 const configRefreshRate = 3000;
 const configOwnIcons = false;
 const configUseTimer = false;
+console.log("[INFO]",
+    "| configDoAlert:", configDoAlert,
+    "| configPrintWorlds:", configPrintWorlds,
+    "| configRunManyWorldsTest:", configRunManyWorldsTest,
+    "| configFixedPlayerName:", configFixedPlayerName,
+    "| configPlayerName:", configPlayerName,
+    "| configPlotBubbles:", configPlotBubbles,
+    "| configPlotRolls:", configPlotRolls,
+    "| configLogMessages:", configLogMessages,
+    "| configLogWorldCount:", configLogWorldCount
+);
+
+let e = document.getElementById("header_navigation_store");
+if (e !== null) e.textContent = "(CoCaCo " + version_string + ")";
+e = document.querySelector(".betaTag")
+if (e !== null) e.textContent = "CoCaCo " + version_string;
 
 // The text symbols are for outputting only ;)
 const resourceIcons =
@@ -93,34 +109,8 @@ function colourInterpolate(zeroToOne)
 {
     const r = Math.ceil(255 * Math.cos(Math.PI * zeroToOne / 2));
     const g = Math.ceil(255 * Math.sin(Math.PI * zeroToOne / 2));
-     return `rgb(${(255+r)/2}, ${(255+g)/2}, 128)`;
+    return `rgb(${(255+r)/2}, ${(255+g)/2}, 128)`;
 }
-
-//============================================================
-// Hello
-//============================================================
-
-// TODO Use console.table
-console.log("[INFO]",
-    "| configDoAlert:", configDoAlert,
-    "| configPrintWorlds:", configPrintWorlds,
-    "| configRunManyWorldsTest:", configRunManyWorldsTest,
-    "| configFixedPlayerName:", configFixedPlayerName,
-    "| configPlayerName:", configPlayerName,
-    "| configPlotBubbles:", configPlotBubbles,
-    "| configPlotRolls:", configPlotRolls,
-    "| configLogMessages:", configLogMessages,
-    "| configLogWorldCount:", configLogWorldCount
-);
-
-let e = document.getElementById("header_navigation_store");
-if (e !== null) e.textContent = "(CoCaCo " + version_string + ")";
-e = document.querySelector(".betaTag")
-if (e !== null) e.textContent = "CoCaCo " + version_string;
-
-//============================================================
-// Utils
-//============================================================
 
 // fac(20) < 2^64 < fac(21)
 let facArray = [];
@@ -172,10 +162,7 @@ function setDoInterval(repeat, time, then = null)
     );
 }
 
-//============================================================
-// Logging helpers
-//============================================================
-
+// For debugging
 function p(object)
 {
     return JSON.stringify(object);
@@ -206,12 +193,9 @@ const brick = "brick";
 const sheep = "sheep";
 const resourceTypes = [wood, brick, sheep, wheat, ore];
 
-//============================================================
-// Helpers
-//============================================================
-
 function deepCopy(object)
 {
+    // TODO Is there a good canonical method? We use this in some inner loops.
     return JSON.parse(JSON.stringify(object));
 }
 
@@ -259,32 +243,6 @@ const predicates =
         "name": (x) => `!= ${x}`,
     }
 }
-
-
-//============================================================
-// Cards and robs tracking
-//============================================================
-
-
-//============================================================
-// Rendering
-//============================================================
-
-// Temporary helper
-// FIXME If this is not used in Colony, maybe just delete it?
-function exportCurrentMW()
-{
-    mwUpdateStats();
-    console.log("mwHumanReadableWorld:");
-    console.log(p(mwHumanReadableWorld()));
-    console.log("worldGuessAndRange:");
-    console.log(p(worldGuessAndRange));
-    console.log("mwDistribution:");
-    console.log(p(mwDistribution));
-    log("[NOTE] Exportet current ManyWorlds state above");
-}
-
-//============================================================
 
 function verifyPlayers(players_array, p1 = null, p2 = null)
 {
