@@ -130,7 +130,7 @@ class Colony
     // Constants
     //=====================================================================
 
-    static refreshRate = 10000;
+    static refreshRate = 3000;
     static snippets =
     {
         initialPlacementDoneSnippet: "rolled",

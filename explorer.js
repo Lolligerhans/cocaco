@@ -4,7 +4,7 @@
 
 "use strict";
 
-const version_string="2.2.7"; // TODO Query from browser
+const version_string="2.2.8"; // TODO Query from browser
 
 let stats = new Statistics({}, {});
 
@@ -24,7 +24,6 @@ const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 const configPlotRolls = true;
 const configLogMessages = false;
-const configRefreshRate = 3000;
 const configOwnIcons = false;
 const configUseTimer = false;
 console.log("[INFO]",
