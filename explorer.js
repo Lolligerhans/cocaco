@@ -25,7 +25,8 @@ const configPlotBubbles = true;
 const configPlotRolls = true;
 const configLogMessages = false;
 const configOwnIcons = false;
-const configUseTimer = false;
+const configUseTimer = true;
+
 console.log("[INFO]",
     "| configDoAlert:", configDoAlert,
     "| configPrintWorlds:", configPrintWorlds,
