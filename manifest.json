@@ -19,7 +19,7 @@
             "matches": ["https://colonist.io/*", "https://twosheep.io/*"],
             "css": ["explorer-styles.css"],
             "run_at": "document_idle",
-            "js": ["statistics.js/statistics.min.js", "plotly/plotly-2.25.2.min.js", "manyworlds.js", "track.js", "render.js", "colony.js", "oneore.js", "plot.js", "explorer.js" ]
+            "js": ["statistics.js/statistics.min.js", "plotly/plotly-2.25.2.min.js", "manyworlds.js", "track.js", "render.js", "colony.js", "oneore.js", "javascript/multiverse.js", "plot.js", "explorer.js" ]
         }
     ] ,
     "web_accessible_resources":
