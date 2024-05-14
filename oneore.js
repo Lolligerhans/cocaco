@@ -1172,7 +1172,7 @@ parsers:
         console.assert(split.length === 3);
         const offer = twosheep.extractResourcesFromLogMessage(split[1]);
         const demand = twosheep.extractResourcesFromLogMessage(split[2]);
-        console.log(`%c${tradingPlayer}%c ${resourcesAsUtf8(offer)} ↔️ ${resourcesAsUtf8(demand)} ${otherPlayer}`, twosheep.consoleCss(tradingPlayer), "");
+        console.log(`%c${tradingPlayer}%c ${resourcesAsUtf8(offer)} ↔️ ${resourcesAsUtf8(demand)} %c${otherPlayer}%c`, twosheep.consoleCss(tradingPlayer), "", twosheep.consoleCss(otherPlayer), "");
         //logs("[INFO] Trade:", offer, tradingPlayer, "--> | <--", otherPlayer, demand);
 
         twosheep.worlds.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);

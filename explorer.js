@@ -4,7 +4,9 @@
 
 "use strict";
 
-const version_string="3.0.0-dev"; // TODO Query from browser
+const theBrowser = chrome !== undefined ? chrome : browser;
+
+const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
 
@@ -88,7 +90,6 @@ function resourcesAsUtf8(resources)
     return s;
 }
 
-const theBrowser = chrome !== undefined ? chrome : browser;
 const alternativeAssets =
 {
     // More at 408f1c219dc04fb8746541fed624e6d4026aaaac

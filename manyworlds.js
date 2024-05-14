@@ -422,6 +422,11 @@ class ManyWorlds
                     newWorlds.push(w);
                     didBranch = true;
                 }
+                else
+                {
+                    console.error("Unreachable");
+                    debugger;
+                }
             }
         });
 
