@@ -288,8 +288,8 @@ resetState: function()
     twosheep.player_colours = null;
     twosheep.icons = null;
     twosheep.worlds = null;
-    twosheep.tracker = null;
     twosheep.multiverse = null;
+    twosheep.tracker = null;
     twosheep.render = null;
     twosheep.renderedOffset = -1;
 
@@ -461,7 +461,7 @@ initializeTracker: function()
     twosheep.tracker.init(twosheep.players);
     twosheep.render = new Render
     (
-        twosheep.worlds,
+        twosheep.multiverse,
         twosheep.tracker,
         twosheep.players,
         twosheep.player_colours,
@@ -619,7 +619,7 @@ mainLoop: function(continueIf)
             if (!failed)
             {
                 //console.debug(`◦ ${p} succeeded on message ${i}`);
-                twosheep.worlds.printWorlds();
+                twosheep.multiverse.printWorlds();
             }
             { // Consistency check. Can be removed when stable.
                 const lengthDiffer = twosheep.worlds.manyWorlds.length !== twosheep.multiverse.worlds.length;
@@ -640,9 +640,9 @@ mainLoop: function(continueIf)
         });
     };
 
-    console.log(`🌎 ${twosheep.worlds.manyWorlds.length}`);
+    console.log(`🌎 ${twosheep.multiverse.worlds.length}`);
 
-    if (twosheep.worlds.manyWorlds.length == 0)
+    if (twosheep.multiverse.worlds.length == 0)
     {
         console.error("No worlds left after parsing");
         twosheep.stopMainLoop();
@@ -894,7 +894,7 @@ parsers:
 
         twosheep.worlds.mwTransformSpawn(player, asSlice);
         twosheep.multiverse.mwTransformSpawn(player, twosheep.multiverse.asSlice(obtainedResources));
-        twosheep.worlds.printWorlds();
+        twosheep.multiverse.printWorlds();
 
         return true;
     },
@@ -941,7 +941,7 @@ parsers:
         const asSlice = -mw.mwBuilds[building];
         twosheep.worlds.mwTransformSpawn(player, asSlice);
         twosheep.multiverse.mwTransformSpawn(player, twosheep.multiverse.costs[building]);
-        twosheep.worlds.printWorlds();
+        twosheep.multiverse.printWorlds();
 
         return true;
     },
@@ -963,7 +963,7 @@ parsers:
         const asSlice = -mw.mwBuilds.devcard;
         twosheep.worlds.mwTransformSpawn(player, asSlice);
         twosheep.multiverse.mwTransformSpawn(player, twosheep.multiverse.costs.devcard);
-        twosheep.worlds.printWorlds();
+        twosheep.multiverse.printWorlds();
 
         return true;
     },
@@ -989,7 +989,7 @@ parsers:
             twosheep.multiverse.sliceSubtract(
                 twosheep.multiverse.asSlice(took),
                 twosheep.multiverse.asSlice(gave)));
-        twosheep.worlds.printWorlds();
+        twosheep.multiverse.printWorlds();
 
         return true;
     },
@@ -1005,7 +1005,7 @@ parsers:
 
         // Remove print eventually
         console.info("Exporting worlds in times of monopoly:");
-        const w = twosheep.worlds.mwHumanReadableWorld();
+        const w = twosheep.multiverse.mwHumanReadableWorld();
         console.info(w);
 
         const thief = textContent.substring(0, textContent.indexOf(" "));
@@ -1070,7 +1070,7 @@ parsers:
         // If only the monopoly resource type is known transformMonopoly() is
         // used. Twosheep lists exact counts, so implement as trade, followed by
         // collapsing to 0 of the resource type left.
-        //twosheep.worlds.transformMonopoly(thief, worldResourceIndex(stolenResource));
+        //twosheep.multiverse.transformMonopoly(thief, worldResourceIndex(stolenResource));
 
         // Since twosheep tells the resources in detail, trade them over
         // individually, then collapse to 0 left over.
@@ -1177,7 +1177,7 @@ parsers:
 
         twosheep.worlds.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
         twosheep.multiverse.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
-        twosheep.worlds.printWorlds();
+        twosheep.multiverse.printWorlds();
 
         return true;
     },
@@ -1223,7 +1223,7 @@ parsers:
             console.info("• Steal (unknown):", targetPlayer, "->", stealingPlayer);
             twosheep.worlds.branchSteal(targetPlayer, stealingPlayer);
             twosheep.multiverse.branchSteal(targetPlayer, stealingPlayer);
-            twosheep.worlds.printWorlds();
+            twosheep.multiverse.printWorlds();
         }
         else
         {
