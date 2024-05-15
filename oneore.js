@@ -1223,8 +1223,10 @@ parsers:
             console.info("• Steal (known):", targetPlayer, "->", stealingPlayer, "(", resources, ")");
             twosheep.worlds.collapseAsRandom(targetPlayer, stolenResourceIndex);
             twosheep.worlds.transformExchange(targetPlayer, stealingPlayer, asSlice);
-            twosheep.multiverse.collapseAsRandom(targetPlayer, stolenResourceIndex);
-            twosheep.multiverse.mwTransformExchange(targetPlayer, stealingPlayer, twosheep.multiverse.asSlice(resources));
+            twosheep.multiverse.collapseAsRandom(targetPlayer,
+                twosheep.multiverse.getResourceIndex(stolenResourceType));
+            twosheep.multiverse.mwTransformExchange(targetPlayer, stealingPlayer,
+                twosheep.multiverse.asSlice(resources));
         }
 
         return true;
