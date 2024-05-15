@@ -10,22 +10,21 @@ class Multiverse
     {
         this.resources = ["wood", "brick", "sheep", "wheat", "ore", "unknown"];
         this.resourceIndices = Object.fromEntries(this.resources.map((value, index) => [value, index]));
-        console.log("resourceIndices:", this.resourceIndices);
-        //debugger; // verify reosurce indices is {"wood":0, "brick":1, "sheep":2, "wheat":3, "ore":4, "unknown":5}
 
         this.zeroResources = new Array(this.resources.length).fill(0);
         this.zeroResourcesByName = this.asNames(this.zeroResources);
-//        this.emptyResourcesByName = {wood:0, brick:0, sheep:0, wheat:0, ore:0, "unknown":0};
-//        this.emptyResourcesByName_noU = {wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0};
         this.costs =
         {
             road:       new Array(this.resources.length).fill(0).fill(-1, 0, 2),
             settlement: new Array(this.resources.length).fill(0).fill(-1, 0, 4),
             devcard:    new Array(this.resources.length).fill(0).fill(-1, 2, 5),
-            city:       new Array(this.resources.length).fill(0)
+            city:       new Array(this.resources.length).fill(0),
+            ship:       new Array(this.resources.length).fill(0),
         };
-        this.costs.city[3] = -2;  // wheat
-        this.costs.city[4] = -3;  // ore
+        this.costs.city[this.getResourceIndex("wheat")] = -2;
+        this.costs.city[this.getResourceIndex("ore")] = -3;
+        this.costs.ship[this.getResourceIndex("wood")] = -1;
+        this.costs.ship[this.getResourceIndex("sheep")] = -1;
 
         // Helpers
         this.worlds = [];   // worlds === [world, world, ...] one world for ever possible state
@@ -632,7 +631,6 @@ Multiverse.prototype.normalizeManyWorlds = function()
 //  - Minimal resource distribution
 //  - Maximal resource distribution
 //  - Majority vote distribution
-// At the moment has to be used with filled players and manyWorlds variables.
 Multiverse.prototype.mwUpdateStats = function()
 {
     this.normalizeManyWorlds();
@@ -643,16 +641,8 @@ Multiverse.prototype.mwUpdateStats = function()
     //  3) Update secondary objects derived from those stats
 
     console.assert(this.worlds.length >= 1);
-
-    // Set assert to > 0 when allowing non-4-player games eventually
-    // expect 4 players + chance entry
-    console.assert(Object.keys(this.worlds[0]).length === 5);
-    console.assert(this.players.length === 4);
-    if (Object.keys(this.worlds[0]).length !== 5)
-    {
-        console.error("Not 4-player game");
-        console.trace(this.worlds[0]);
-    }
+    console.assert(Object.keys(this.worlds[0]).length >= 2); // Player + chance
+    console.assert(this.players.length >= 1);
     for (const player of this.players)
     {
         this.mwSteals[player] = deepCopy(this.zeroResourcesByName);

@@ -98,6 +98,7 @@ render: null, // Render Object
 // Helper
 // ============================================================================
 
+// Does NOT chance MSG_OFFSET (unlike 'getNewMessages()')
 getAllMessages: function()
 {
     // Surely there is a way without a copy? Is this a copy?
@@ -171,7 +172,7 @@ extractDiceSumFromLogMessage: function(element)
 // Identify buildings from their SVG tag <use>
 // Example:
 //  <use href="#road-def-yellow" style="transform: translate(-2px, 7px) scale(0.25) rotate(-45deg);"></use>
-// @return "road", "settlement", "city" or null
+// @return "road", "settlement", "city", "ship" or null
 extractOnlyBuildingFromLogMessage: function(element)
 {
     const image = element.querySelector("use");
@@ -184,23 +185,24 @@ extractOnlyBuildingFromLogMessage: function(element)
         return "settlement";
     if (ref.startsWith("#city-def-"))
         return "city";
+    if (ref.startsWith("#ship-def-"))
+        return "ship";
     return null;
 
 },
 
 findFirstRollIndex: function(messages)
 {
-    return 29;
-    // If needed, actually search for the first roll. For example when
-    // disconnects shift the index of the first roll (which we do not know yet).
-    //for (const msg of messages)
-    //{
-    //    if (msg.textContent.includes(twosheep.snippets.rolled)) // maybe the snippet is wrong by then
-    //    {
-    //        return messages.indexOf(msg);
-    //    }
-    //}
-    //return -1;
+    for (const [index, message] of messages.entries())
+    {
+        for (const img of message.querySelectorAll("img"))
+        {
+            if (img.alt.includes("dice"))
+                return index;
+        }
+    }
+    console.assert(false, "unreachable");
+    return null;
 },
 
 generateEmptyResourceList: function(playerNameList)
@@ -437,7 +439,8 @@ findIcons: function()
         road: `<img src="${document.querySelector(`img[src*="road_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
         // In the log element: <svg height="20" width="20" overflow="visible"><use href="#settlement-def-red" style="transform: translate(13px, 11px) scale(0.06);"></use></svg>
         settlement: `<svg height="20" width="20" overflow="visible"><use href="#settlement-def-${anyColour}" style="transform: translate(13px, 13px) scale(0.07);"></use></svg>`,
-        city: `<svg height="20" width="20" overflow="visible"><use href="#city-def-${anyColour}" style="transform: translate(4px, 13px) scale(0.08);"></use></svg>`
+        city: `<svg height="20" width="20" overflow="visible"><use href="#city-def-${anyColour}" style="transform: translate(6px, 13px) scale(0.08);"></use></svg>`,
+        ship: `<svg height="20" width="20" overflow="visible"><use href="#ship-def-${anyColour}" style="transform: translate(8px, 13px) scale(0.07);"></use></svg>`,
     };
     //console.debug("◦ Found icons:", twosheep.icons);
     // We schedule this late so that the icons are present already. No need to
@@ -492,13 +495,14 @@ findInitialResources: function()
 {
     //console.debug("◦ Setting initial resources");
     console.assert(twosheep.MSG_OFFSET >= 29); // Sanity check: waited for initial placements
-    console.assert(twosheep.players.length === 4); // Hardcoded message indices
-    const msg_indices = [14, 18, 22, 26]; // 4*n + 14
     const allMessages = twosheep.getAllMessages();
     console.assert(allMessages.length > 26);
-    for (const i of msg_indices)
+    for (let i = 0; i < twosheep.MSG_OFFSET; ++i)
     {
         const msg = allMessages[i];
+        console.assert(!msg.textContent.includes(twosheep.snippets.roll)); // MSG_OFFSET should be set to the first roll
+        if (!msg.textContent.endsWith(twosheep.snippets.receivedResources))
+            continue; // Skip other messages
         const nameElement = msg.children[0].children[0];
         const name = nameElement.textContent;
         const resources = twosheep.extractResourcesFromLogMessage(msg.innerHTML);
@@ -621,36 +625,22 @@ mainLoop: function(continueIf)
                 //console.debug(`◦ ${p} succeeded on message ${i}`);
                 twosheep.multiverse.printWorlds();
             }
-            { // Consistency check. Can be removed when stable.
-                const lengthDiffer = twosheep.worlds.manyWorlds.length !== twosheep.multiverse.worlds.length;
-                const identical = twosheep.multiverse.compareToManyworlds(twosheep.worlds);
-                if (lengthDiffer || !identical)
-                {
-                    const offendingMessage = allMessages[i];
-                    const text = offendingMessage.textContent;
-                    console.error("Worlds mismatch", twosheep.worlds.manyWorlds.length, twosheep.multiverse.worlds.length);
-                    debugger;
-                }
-                else
-                {
-                    console.debug("✔");
-                }
-            }
             return failed;
         });
+
+        if (twosheep.multiverse.worlds.length == 0)
+        {
+            console.error("No worlds left after parsing. Stopping..");
+            twosheep.stopMainLoop();
+            alert("No worlds left after parsing. Stopping.");
+            // Signal completion to not be called again (although it should abort
+            // next iteration otherwise).
+            debugger;
+            return true;
+        }
     };
 
     console.log(`🌎 ${twosheep.multiverse.worlds.length}`);
-
-    if (twosheep.multiverse.worlds.length == 0)
-    {
-        console.error("No worlds left after parsing");
-        twosheep.stopMainLoop();
-        alert("Tracking stopped after inconsistency");
-        // Signal completion to not be called again (although it should abort
-        // next iteration otherwise).
-        return true;
-    }
 
     if (configUseTimer) console.time("render");
     twosheep.render.render(() => twosheep.MSG_OFFSET > twosheep.renderedOffset);
@@ -918,10 +908,11 @@ parsers:
             debugger;
             return false;
         }
-        console.assert(["road", "settlement", "city"].includes(building));
+        if (building === "ship") debugger; // test ship building
+        console.assert(["road", "settlement", "city", "ship"].includes(building));
         // Special case: Road builder dev card has same message as buying roads,
         // but is preceded by a road builder notification message.
-        if (building === "road")
+        if (["road", "ship"].includes(building))
         {
             // Because of the ends turn message, a road builder message 1 or
             // 2 behind is safe to attribute to this road.
@@ -948,7 +939,7 @@ parsers:
 
     // Example:
     //  - »yellow bought a «
-    //  - »yellow bought a🂠«
+    //  - »yellow bought a 🂠«
     buyDev: function(element)
     {
         const textContent = element.textContent;
