@@ -146,7 +146,7 @@ class Render
         let headerRow = header.insertRow(0);
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.addEventListener("click", this.context.recoverNamesCallback, false);
-        playerHeaderCell.innerHTML = `${this.manyWorlds.manyWorlds.length} 🌎`;
+        playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
         playerHeaderCell.className = "explorer-tbl-player-col-header";
         for (let i = 0; i < resourceTypes.length; i++)
         {

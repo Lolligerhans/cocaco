@@ -4,7 +4,9 @@
 
 "use strict";
 
-const version_string="2.2.8"; // TODO Query from browser
+const theBrowser = chrome !== undefined ? chrome : browser;
+
+const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
 
@@ -25,7 +27,8 @@ const configPlotBubbles = true;
 const configPlotRolls = true;
 const configLogMessages = false;
 const configOwnIcons = false;
-const configUseTimer = false;
+const configUseTimer = true;
+
 console.log("[INFO]",
     "| configDoAlert:", configDoAlert,
     "| configPrintWorlds:", configPrintWorlds,
@@ -87,7 +90,6 @@ function resourcesAsUtf8(resources)
     return s;
 }
 
-const theBrowser = chrome !== undefined ? chrome : browser;
 const alternativeAssets =
 {
     // More at 408f1c219dc04fb8746541fed624e6d4026aaaac
