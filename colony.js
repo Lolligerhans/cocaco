@@ -439,7 +439,7 @@ class Colony
         for (const name of this.players)
             noResources[name] = {}; // Could be {"wood": 5, ...}
 
-        this.trackerObejct = new ManyWorlds();
+        this.trackerObject = new ManyWorlds();
         this.trackerObject.initWorlds(noResources);
         this.multiverse = new Multiverse();
         this.multiverse.initWorlds(noResources);
@@ -510,7 +510,7 @@ class Colony
         console.assert(this.startupFlag === false);
 
         const newMessages = this.getNewMessages();
-        newMessages.forEach((msg, idx) =>
+        for (const [idx, msg] of newMessages.entries())
         {
             if (configLogMessages === true)
                 console.log("[NOTE] Msg", this.MSG_OFFSET + idx, "|", msg.textContent);
