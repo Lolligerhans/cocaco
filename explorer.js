@@ -73,6 +73,7 @@ const utf8Symbols =
     "city": "🏢",
     "road": "🛣", // Lane symbols: ⛙ ⛜
     "devcard": "🂠",
+    "ship": "⛵",
 };
 
 function resourcesAsUtf8(resources)

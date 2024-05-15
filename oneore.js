@@ -171,7 +171,7 @@ extractDiceSumFromLogMessage: function(element)
 // Identify buildings from their SVG tag <use>
 // Example:
 //  <use href="#road-def-yellow" style="transform: translate(-2px, 7px) scale(0.25) rotate(-45deg);"></use>
-// @return "road", "settlement", "city" or null
+// @return "road", "settlement", "city", "ship" or null
 extractOnlyBuildingFromLogMessage: function(element)
 {
     const image = element.querySelector("use");
@@ -184,6 +184,8 @@ extractOnlyBuildingFromLogMessage: function(element)
         return "settlement";
     if (ref.startsWith("#city-def-"))
         return "city";
+    if (ref.startsWith("#ship-def-"))
+        return "ship";
     return null;
 
 },
@@ -437,7 +439,8 @@ findIcons: function()
         road: `<img src="${document.querySelector(`img[src*="road_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
         // In the log element: <svg height="20" width="20" overflow="visible"><use href="#settlement-def-red" style="transform: translate(13px, 11px) scale(0.06);"></use></svg>
         settlement: `<svg height="20" width="20" overflow="visible"><use href="#settlement-def-${anyColour}" style="transform: translate(13px, 13px) scale(0.07);"></use></svg>`,
-        city: `<svg height="20" width="20" overflow="visible"><use href="#city-def-${anyColour}" style="transform: translate(4px, 13px) scale(0.08);"></use></svg>`
+        city: `<svg height="20" width="20" overflow="visible"><use href="#city-def-${anyColour}" style="transform: translate(6px, 13px) scale(0.08);"></use></svg>`,
+        ship: `<svg height="20" width="20" overflow="visible"><use href="#ship-def-${anyColour}" style="transform: translate(8px, 13px) scale(0.07);"></use></svg>`,
     };
     //console.debug("◦ Found icons:", twosheep.icons);
     // We schedule this late so that the icons are present already. No need to
@@ -903,10 +906,11 @@ parsers:
             debugger;
             return false;
         }
-        console.assert(["road", "settlement", "city"].includes(building));
+        if (building === "ship") debugger; // test ship building
+        console.assert(["road", "settlement", "city", "ship"].includes(building));
         // Special case: Road builder dev card has same message as buying roads,
         // but is preceded by a road builder notification message.
-        if (building === "road")
+        if (["road", "ship"].includes(building))
         {
             // Because of the ends turn message, a road builder message 1 or
             // 2 behind is safe to attribute to this road.

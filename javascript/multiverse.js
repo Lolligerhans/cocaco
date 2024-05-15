@@ -18,10 +18,13 @@ class Multiverse
             road:       new Array(this.resources.length).fill(0).fill(-1, 0, 2),
             settlement: new Array(this.resources.length).fill(0).fill(-1, 0, 4),
             devcard:    new Array(this.resources.length).fill(0).fill(-1, 2, 5),
-            city:       new Array(this.resources.length).fill(0)
+            city:       new Array(this.resources.length).fill(0),
+            ship:       new Array(this.resources.length).fill(0),
         };
-        this.costs.city[3] = -2;  // wheat
-        this.costs.city[4] = -3;  // ore
+        this.costs.city[this.getResourceIndex("wheat")] = -2;
+        this.costs.city[this.getResourceIndex("ore")] = -3;
+        this.costs.ship[this.getResourceIndex("wood")] = -1;
+        this.costs.ship[this.getResourceIndex("sheep")] = -1;
 
         // Helpers
         this.worlds = [];   // worlds === [world, world, ...] one world for ever possible state
