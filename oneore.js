@@ -98,6 +98,7 @@ render: null, // Render Object
 // Helper
 // ============================================================================
 
+// Does NOT chance MSG_OFFSET (unlike 'getNewMessages()')
 getAllMessages: function()
 {
     // Surely there is a way without a copy? Is this a copy?
@@ -192,17 +193,16 @@ extractOnlyBuildingFromLogMessage: function(element)
 
 findFirstRollIndex: function(messages)
 {
-    return 29;
-    // If needed, actually search for the first roll. For example when
-    // disconnects shift the index of the first roll (which we do not know yet).
-    //for (const msg of messages)
-    //{
-    //    if (msg.textContent.includes(twosheep.snippets.rolled)) // maybe the snippet is wrong by then
-    //    {
-    //        return messages.indexOf(msg);
-    //    }
-    //}
-    //return -1;
+    for (const [index, message] of messages.entries())
+    {
+        for (const img of message.querySelectorAll("img"))
+        {
+            if (img.alt.includes("dice"))
+                return index;
+        }
+    }
+    console.assert(false, "unreachable");
+    return null;
 },
 
 generateEmptyResourceList: function(playerNameList)
@@ -495,13 +495,14 @@ findInitialResources: function()
 {
     //console.debug("◦ Setting initial resources");
     console.assert(twosheep.MSG_OFFSET >= 29); // Sanity check: waited for initial placements
-    console.assert(twosheep.players.length === 4); // Hardcoded message indices
-    const msg_indices = [14, 18, 22, 26]; // 4*n + 14
     const allMessages = twosheep.getAllMessages();
     console.assert(allMessages.length > 26);
-    for (const i of msg_indices)
+    for (let i = 0; i < twosheep.MSG_OFFSET; ++i)
     {
         const msg = allMessages[i];
+        console.assert(!msg.textContent.includes(twosheep.snippets.roll)); // MSG_OFFSET should be set to the first roll
+        if (!msg.textContent.endsWith(twosheep.snippets.receivedResources))
+            continue; // Skip other messages
         const nameElement = msg.children[0].children[0];
         const name = nameElement.textContent;
         const resources = twosheep.extractResourcesFromLogMessage(msg.innerHTML);
@@ -626,19 +627,20 @@ mainLoop: function(continueIf)
             }
             return failed;
         });
+
+        if (twosheep.multiverse.worlds.length == 0)
+        {
+            console.error("No worlds left after parsing. Stopping..");
+            twosheep.stopMainLoop();
+            alert("No worlds left after parsing. Stopping.");
+            // Signal completion to not be called again (although it should abort
+            // next iteration otherwise).
+            debugger;
+            return true;
+        }
     };
 
     console.log(`🌎 ${twosheep.multiverse.worlds.length}`);
-
-    if (twosheep.multiverse.worlds.length == 0)
-    {
-        console.error("No worlds left after parsing");
-        twosheep.stopMainLoop();
-        alert("Tracking stopped after inconsistency");
-        // Signal completion to not be called again (although it should abort
-        // next iteration otherwise).
-        return true;
-    }
 
     if (configUseTimer) console.time("render");
     twosheep.render.render(() => twosheep.MSG_OFFSET > twosheep.renderedOffset);

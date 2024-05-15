@@ -631,7 +631,6 @@ Multiverse.prototype.normalizeManyWorlds = function()
 //  - Minimal resource distribution
 //  - Maximal resource distribution
 //  - Majority vote distribution
-// At the moment has to be used with filled players and manyWorlds variables.
 Multiverse.prototype.mwUpdateStats = function()
 {
     this.normalizeManyWorlds();
@@ -642,16 +641,8 @@ Multiverse.prototype.mwUpdateStats = function()
     //  3) Update secondary objects derived from those stats
 
     console.assert(this.worlds.length >= 1);
-
-    // Set assert to > 0 when allowing non-4-player games eventually
-    // expect 4 players + chance entry
-    console.assert(Object.keys(this.worlds[0]).length === 5);
-    console.assert(this.players.length === 4);
-    if (Object.keys(this.worlds[0]).length !== 5)
-    {
-        console.error("Not 4-player game");
-        console.trace(this.worlds[0]);
-    }
+    console.assert(Object.keys(this.worlds[0]).length >= 2); // Player + chance
+    console.assert(this.players.length >= 1);
     for (const player of this.players)
     {
         this.mwSteals[player] = deepCopy(this.zeroResourcesByName);
