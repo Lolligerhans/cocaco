@@ -159,21 +159,12 @@ class Render
                                ? `${total}`
                                : "";
             resourceHeaderCell.innerHTML = numberString + this.iconElements[resourceType];
-            if (i === 0)
-            {
-                // FIXME I guess we can remove this testing if now (?)
-                let e = document.getElementById("testwood");
-                if (e)
-                    log("e.src:", e.src);
-    //            e.src = "chrome://ColonistCardCounter/wood1.jpg";
-            }
         }
-        let i = resourceTypes.length + 1;
-        for (const [i, v] of Object.keys(mw.mwBuilds).entries())
+        for (const [i, name] of Object.keys(this.manyWorlds.costs).entries())
         {
-            let headerCell = headerRow.insertCell(i + 1 + resourceTypes.length);
+            let headerCell = headerRow.insertCell(i + this.manyWorlds.resources.length);
             headerCell.className = "explorer-tbl-cell";
-            headerCell.innerHTML = this.iconElements[v];
+            headerCell.innerHTML = this.iconElements[name];
         }
 
         // TODO Is there performance problem defining lambdas each time?
@@ -212,7 +203,7 @@ class Render
         };
         const guessHasNoBuilding = (playerName, buildingName) =>
         {
-            this.manyWorlds.mwWeightGuessNotavailable(playerName, mw.mwBuilds[buildingName]);
+            this.manyWorlds.mwWeightGuessNotavailable(playerName, this.manyWorlds.costs[buildingName]);
             log('[NOTE] Guessing that', playerName, 'has no', buildingName, 'in hand');
             this.render();
         };
@@ -263,7 +254,7 @@ class Render
                     cell.style.background = colourInterpolate(chance);
                 ++j;
             };
-            Object.keys(mw.mwBuilds).forEach(addBuildFunc);
+            Object.keys(this.manyWorlds.costs).forEach(addBuildFunc);
         }
 
         //----------------------------------------------------------------------

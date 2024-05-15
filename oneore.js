@@ -621,21 +621,6 @@ mainLoop: function(continueIf)
                 //console.debug(`◦ ${p} succeeded on message ${i}`);
                 twosheep.multiverse.printWorlds();
             }
-            { // Consistency check. Can be removed when stable.
-                const lengthDiffer = twosheep.worlds.manyWorlds.length !== twosheep.multiverse.worlds.length;
-                const identical = twosheep.multiverse.compareToManyworlds(twosheep.worlds);
-                if (lengthDiffer || !identical)
-                {
-                    const offendingMessage = allMessages[i];
-                    const text = offendingMessage.textContent;
-                    console.error("Worlds mismatch", twosheep.worlds.manyWorlds.length, twosheep.multiverse.worlds.length);
-                    debugger;
-                }
-                else
-                {
-                    console.debug("✔");
-                }
-            }
             return failed;
         });
     };
@@ -948,7 +933,7 @@ parsers:
 
     // Example:
     //  - »yellow bought a «
-    //  - »yellow bought a🂠«
+    //  - »yellow bought a 🂠«
     buyDev: function(element)
     {
         const textContent = element.textContent;

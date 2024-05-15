@@ -10,13 +10,9 @@ class Multiverse
     {
         this.resources = ["wood", "brick", "sheep", "wheat", "ore", "unknown"];
         this.resourceIndices = Object.fromEntries(this.resources.map((value, index) => [value, index]));
-        console.log("resourceIndices:", this.resourceIndices);
-        //debugger; // verify reosurce indices is {"wood":0, "brick":1, "sheep":2, "wheat":3, "ore":4, "unknown":5}
 
         this.zeroResources = new Array(this.resources.length).fill(0);
         this.zeroResourcesByName = this.asNames(this.zeroResources);
-//        this.emptyResourcesByName = {wood:0, brick:0, sheep:0, wheat:0, ore:0, "unknown":0};
-//        this.emptyResourcesByName_noU = {wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0};
         this.costs =
         {
             road:       new Array(this.resources.length).fill(0).fill(-1, 0, 2),
