@@ -314,6 +314,20 @@ class ManyWorlds
         this.mwBuildsProb = {};
         this.mwSteals = {};
         this.mwTotals = {};
+
+        // TODO These are useless helpers that recover the new interface that
+        // 'Render' expects for the new tracker.
+        {
+            // Eventually, rename mwBuilds to 'costs' instead.
+            this.costs = mw.mwBuilds
+            // TODO rename
+            this.resources = [...resourceTypes, "unknown"];
+        }
+    }
+
+    worldCount()
+    {
+        return this.manyWorlds.length;
     }
 
     printWorlds()

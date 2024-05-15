@@ -299,6 +299,7 @@ class Colony
         this.player_colors = {}; // {"John": "blue", "Jane": "rgb(...)", ...}
 
         this.trackerObject = null; // new ManyWorlds();
+        this.multiverse = null; // new Multiverse();
         this.renderObject = null; // new Render();
         this.trackerCollection = null; // new Track();
 
@@ -356,11 +357,13 @@ class Colony
         const dummyColours = {"Awaiting":"black", "First":"red", "Roll":"gold", "...":"white"};
         this.trackerObject = new ManyWorlds();
         this.trackerObject.initWorlds({"Awaiting":{}, "First":{}, "Roll":{}, "...":{}});
+        this.multiverse = new Multiverse();
+        this.multiverse.initWorlds({"Awaiting":{}, "First":{}, "Roll":{}, "...":{}});
         this.trackerCollection = new Track();
         this.trackerCollection.init(dummyPlayers);
         this.renderObject = new Render
         (
-            this.trackerObject, this.trackerCollection, dummyPlayers, dummyColours,
+            this.multiverse, this.trackerCollection, dummyPlayers, dummyColours,
             null,
             null,
             null,
@@ -438,6 +441,8 @@ class Colony
 
         this.trackerObejct = new ManyWorlds();
         this.trackerObject.initWorlds(noResources);
+        this.multiverse = new Multiverse();
+        this.multiverse.initWorlds(noResources);
         this.trackerCollection = new Track;
         this.trackerCollection.init(this.players);
 
@@ -447,7 +452,7 @@ class Colony
 
         this.renderObject = new Render
         (
-            this.trackerObject, this.trackerCollection,
+            this.multiverse, this.trackerCollection,
             this.players, this.player_colors,
             this.mainLoop.bind(this, () => true),
             null,
@@ -484,7 +489,7 @@ class Colony
             return false;
 
 
-        //this.trackerObject.printWorlds();
+        //this.multiverse.printWorlds();
         // TODO If we have a getNextMessage() function we would not need to reset afterwards because we can check one by one.
         const correctedOffset = Colony.computeInitialPhaseOffset(this.getAllMessages());
         this.MSG_OFFSET = correctedOffset;
@@ -511,19 +516,38 @@ class Colony
                 console.log("[NOTE] Msg", this.MSG_OFFSET + idx, "|", msg.textContent);
             this.ALL_PARSERS.every(parser => { return !parser(msg); });
             if (configLogWorldCount === true)
-                console.log("[NOTE] MW count:", this.trackerObject.manyWorlds.length);
-        });
+                console.log("[NOTE] MW count:", this.multiverse.worlds.length);
 
-        // Abort if card tracking is broken
-        if (this.trackerObject.manyWorlds.length === 0)
-        {
-            console.error("[ERROR] No world left");
-            alertIf("Tracker OFF: Inconsistency (no world left). Try recovery mode.");
-            this.stopMainLoop();
-            return true; // Return true to signal completion
+            // Abort if card tracking is broken
+            if (0 === this.multiverse.worldCount())
+            {
+                console.error("[ERROR] No world left");
+                alertIf("Tracker OFF: Inconsistency (no world left). Try recovery mode.");
+                this.stopMainLoop();
+                return true; // Return true to signal completion
+            }
+
+            { // Consistency check. Can be removed when stable.
+                const lengthDiffer = this.trackerObject.manyWorlds.length !== this.multiverse.worlds.length;
+                const identical = this.multiverse.compareToManyworlds(this.trackerObject);
+                if (lengthDiffer || !identical)
+                {
+                    const offendingMessage = msg;
+                    const text = offendingMessage.textContent;
+                    console.error("Worlds mismatch", this.trackerObject.manyWorlds.length, this.multiverse.worlds.length);
+                    debugger;
+                }
+                else
+                {
+                    console.debug("✔");
+                }
+            }
         }
 
         this.renderObject.render(() => this.isNewMessage(this.MSG_OFFSET));
+
+        debugger; // manual consistency check in debugger
+
     }
 
     // Recovers MW state from unknown cards. Player array is used and assumed
@@ -552,6 +576,7 @@ class Colony
             counts[player] = count;
         }
         this.trackerObject.mwCardRecovery(counts);
+        this.multiverse.mwCardRecovery(counts);
 
         this.renderObject.render();
         this.restartMainLoop();
@@ -666,6 +691,7 @@ class Colony
         logs("[INFO] First settlement resources:", player, "<-", initialResourceTypes);
         if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
         this.trackerObject.mwTransformSpawn(player, asSlice);
+        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(initialResourceTypes));
 
         return true;
     }
@@ -682,7 +708,8 @@ class Colony
         const asSlice = mw.generateWorldSlice(offer);
         logs("[INFO] Trade offer:", player, "->", offer);
         this.trackerObject.mwCollapseMin(player, asSlice);
-        this.trackerObject.printWorlds();
+        this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -701,7 +728,8 @@ class Colony
         const asSlice = mw.generateWorldSlice(offer);
         logs("[INFO] Trade counter offer:", player, "->", offer);
         this.trackerObject.mwCollapseMin(player, asSlice);
-        this.trackerObject.printWorlds();
+        this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -720,7 +748,8 @@ class Colony
         logs("[INFO] Year of Plenty:", beneficiary, "<-", obtainedResources);
         const asSlice = mw.generateWorldSlice(obtainedResources);
         this.trackerObject.mwTransformSpawn(beneficiary, asSlice);
-        this.trackerObject.printWorlds();
+        this.multiverse.mwTransformSpawn(beneficiary, this.multiverse.asSlice(obtainedResources));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -741,7 +770,8 @@ class Colony
             let asSlice = mw.generateWorldSlice(obtainedResources);
             logs("[INFO] Got resources:", player, "<-", obtainedResources);
             this.trackerObject.mwTransformSpawn(player, asSlice);
-            this.trackerObject.printWorlds();
+            this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
+            this.multiverse.printWorlds();
 
             return true;
         }
@@ -793,7 +823,8 @@ class Colony
         let asSlice = mw.generateWorldSlice(buildResources);
         logs("[INFO] Built:", player, buildResources);
         this.trackerObject.mwTransformSpawn(player, asSlice);
-        this.trackerObject.printWorlds();
+        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(buildResources));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -838,7 +869,8 @@ class Colony
         const devCardSlice = mw.generateWorldSlice(devCardResources);
         logs("[INFO] Baught dev card:", player, "->", devCardResources);
         this.trackerObject.mwTransformSpawn(player, devCardSlice);
-        this.trackerObject.printWorlds();
+        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(devCardResources));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -873,7 +905,9 @@ class Colony
         const takeSlice     = mw.generateWorldSlice(takeResources);
         logs("[INFO] Traded with bank:", player, giveResources, "->", takeResources);
         this.trackerObject.mwTransformSpawn(player, takeSlice - giveSlice);
-        this.trackerObject.printWorlds();
+        this.multiverse.mwTransformSpawn(player, this.multiverse.sliceSubtract( this.multiverse.asSlice(takeResources)
+                                                                              , this.multiverse.asSlice(giveResources) ));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -903,7 +937,8 @@ class Colony
         const stolenResource = Colony.findSingularResourceImageInElement(element);
         logs("[INFO] Monopoly:", thief, "<-", stolenResource);
         this.trackerObject.transformMonopoly(thief, mw.worldResourceIndex(stolenResource));
-        this.trackerObject.printWorlds();
+        this.multiverse.transformMonopoly(thief, this.multiverse.getResourceIndex(stolenResource));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -926,7 +961,10 @@ class Colony
         logs("[INFO] Discarded:", player, "->", discarded);
         this.trackerObject.mwCollapseMinTotal(player); // Total can be unknown to MW after monopoly
         this.trackerObject.mwTransformSpawn(player, -discardedCardsAsSlie);
-        this.trackerObject.printWorlds();
+        this.multiverse.mwCollapseMinTotal(player);
+        this.multiverse.mwTransformSpawn(player,
+            this.multiverse.sliceNegate(this.multiverse.asSlice(discarded)));
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -959,7 +997,8 @@ class Colony
         console.debug("[INFO] Trade:", offer, tradingPlayer, "--> | <--", otherPlayer, demand);
 
         this.trackerObject.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
-        this.trackerObject.printWorlds();
+        this.multiverse.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
+        this.multiverse.printWorlds();
 
         return true;
     }
@@ -1006,7 +1045,15 @@ class Colony
             targetPlayer, stealingPlayer, // source, target
             mw.generateSingularSlice(stolenResourceIndex)
         );
-        this.trackerObject.printWorlds(); // TODO maybe print in the parser loop
+        this.multiverse.collapseAsRandom(targetPlayer,
+            this.multiverse.getResourceIndex(stolenResourceType));
+        debugger; // verify the multiverse asSlice below
+        this.multiverse.mwTransformExchange
+        (
+            targetPlayer, stealingPlayer, // source, target
+            this.multiverse.asSlice({ [stolenResourceType]: 1 })
+        );
+        this.multiverse.printWorlds(); // TODO maybe print in the parser loop
 
         return true;
     }
@@ -1041,7 +1088,8 @@ class Colony
         this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
         this.trackerObject.branchSteal(targetPlayer, stealingPlayer);
-        this.trackerObject.printWorlds();
+        this.multiverse.branchSteal(targetPlayer, stealingPlayer);
+        this.multiverse.printWorlds();
 
         return true;
     }
