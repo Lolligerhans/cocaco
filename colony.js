@@ -161,7 +161,7 @@ class Colony
         wood: "card_lumber", brick: "card_brick", sheep: "card_wool",
         wheat: "card_grain", ore: "card_ore", "road": "road_red",
         "settlement": "settlement_red", "devcard": "card_devcardback",
-        "city": "city_red"
+        "city": "city_red", ship: "ship_red_north_west",
     };
 
     static colonistAssets =
@@ -174,7 +174,8 @@ class Colony
         road:       `<img src="dist/images/${Colony.imageNameSnippets["road"]}.svg" class="explorer-tbl-resource-icon"/>`,
         settlement: `<img src="dist/images/${Colony.imageNameSnippets["settlement"]}.svg" class="explorer-tbl-resource-icon"/>`,
         devcard:    `<img src="dist/images/${Colony.imageNameSnippets["devcard"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        city:       `<img src="dist/images/${Colony.imageNameSnippets["city"]}.svg" class="explorer-tbl-resource-icon"/>`
+        city:       `<img src="dist/images/${Colony.imageNameSnippets["city"]}.svg" class="explorer-tbl-resource-icon"/>`,
+        ship:       `<img src="dist/images/${Colony.imageNameSnippets["ship"]}.svg" class="explorer-tbl-resource-icon"/>`,
     };
 
     constructor()
@@ -813,32 +814,38 @@ class Colony
         let player = textContent.split(" ")[0];
         if (!verifyPlayers(this.players, player)) return false; // Sanity check
         let buildResources = deepCopy(mw.emptyResourcesByNameWithU);
-        let building = false;
+        let foundBuilding = false;
         // TODO use predefined resource cost slices
         for (let img of images)
         {
             if (img.src.includes("road")) {
                 buildResources[wood] = -1;
                 buildResources[brick] = -1;
-                building = true;
+                foundBuilding = true;
                 break;
             } else if (img.src.includes("settlement")) {
                 buildResources[wood] = -1;
                 buildResources[brick] = -1;
                 buildResources[sheep] = -1;
                 buildResources[wheat] = -1;
-                building = true;
+                foundBuilding = true;
                 break;
             } else if (img.src.includes("city")) {
                 buildResources[wheat] = -2;
                 buildResources[ore] = -3;
-                building = true;
+                foundBuilding = true;
+                break;
+            }
+            else if (img.src.includes("ship")) {
+                buildResources[wood] = -1;
+                buildResources[sheep] = -1;
+                foundBuilding = true;
                 break;
             }
         }
-        if (!building)
+        if (!foundBuilding)
         {
-            console.error("[ERROR] Build message without building");
+            console.error("[ERROR] Build message without foundBuilding");
             alertIf(31);
         }
 
