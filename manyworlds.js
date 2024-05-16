@@ -339,7 +339,7 @@ class ManyWorlds
             console.log("🌎 No worlds left!");
         for (let i = 0; i < this.manyWorlds.length; ++i)
         {
-            log(`\t----- ${i}/${this.manyWorlds.length}: ${this.manyWorlds[i]["chance"]} -----`);
+            log(`\t----- 🌎 ${i}/${this.manyWorlds.length}: ${this.manyWorlds[i]["chance"]} -----`);
             for (const pl of this.playerNames)
             {
                 log(`\t\t[${i}][${pl}] =`, mw.generateFullNamesFromSlice(this.manyWorlds[i][pl]));
@@ -732,6 +732,7 @@ class ManyWorlds
             return;
         }
 
+        // TODO Could this be done with transformSpawn(..., -slice)❔
         // Generate as-if stolen worlds (to filter)
         const pIdx = mw.worldPlayerIndex(player);
         this.manyWorlds = this.manyWorlds.map(world =>

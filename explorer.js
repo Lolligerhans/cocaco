@@ -17,7 +17,7 @@ let stats = new Statistics({}, {});
 
 // Some are for colonist only. TODO Clean this up eventually.
 const configDoAlert = true;
-const configPrintWorlds = false;
+const configPrintWorlds = true;
 const configLogWorldCount = false;
 const configPrintRobs = false;
 const configRunManyWorldsTest = false;  // Run test and quit. Not a full unit test.
@@ -250,8 +250,8 @@ function verifyPlayers(players_array, p1 = null, p2 = null)
 {
     if (p1 === null && p2 === null)
     {
-        console.error("Must specify at least one player");
-        alertIf(5);
+        console.error(`${verifyPlayers.name}: Must specify at least one player`);
+        debugger;
         return false;
     }
     for (const p of [p1, p2])
@@ -259,9 +259,8 @@ function verifyPlayers(players_array, p1 = null, p2 = null)
         if (p === null) continue;
         if (!players_array.includes(p))
         {
-            console.error(`Unknown player: ${p}, valid players: ${players_array}`);
-            debugger;
-            alertIf(5);
+            console.error(`${verifyPlayers.name}: {Unknown player: ${p}, valid players: ${players_array}`);
+            return false;
         }
     }
     return true;
