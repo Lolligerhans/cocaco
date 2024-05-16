@@ -135,6 +135,7 @@ class Colony
     {
         initialPlacementDoneSnippet: "rolled",
         receivedInitialResourcesSnippet: "received starting resources",  // Used to determine which resources each player should get in the initial phase
+        gold: {present: "from gold tile", absent: "selecting resource from gold tile"},
         sufficientInitialPhaseMessageSnippet: "received starting resources", // Sufficient (not necessary) to identify messages from the initial phase
         placeInitialSettlementSnippet: "placed a", // Necessary (not sufficient) for detecting initial placement. Used to determine players
         tradeOfferSnippet: " wants to give ",
@@ -199,6 +200,7 @@ class Colony
         this.ALL_PARSERS = // TODO can we make it static?
         [
             this.parseGotMessage.bind(this),
+            this.parseGoldTile.bind(this),
             this.parseTradeOffer.bind(this),
             this.parseTradeOfferCounter.bind(this),
             this.parseRolls.bind(this),
@@ -777,6 +779,27 @@ class Colony
         }
 
         return false;
+    }
+
+    // "KhrisW90 selected 🂠 🂠 🂠 from gold tile"
+    parseGoldTile(element)
+    {
+        if (!element.textContent.includes(Colony.snippets.gold.present))
+            return false;
+        if (element.textContent.includes(Colony.snippets.gold.absent))
+            return false;
+        const player = element.textContent.substring(0, element.textContent.indexOf(" "));
+        if (!verifyPlayers(this.players, player)) return false; // Sanity check
+
+        const obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
+        logs("[INFO] Selected gold tile:", player, "<-", obtainedResources);
+
+        this.trackerObject.mwTransformSpawn(player, mw.generateWorldSlice(obtainedResources));
+        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
+        this.trackerObject.printWorlds();
+        this.multiverse.printWorlds();
+
+        return true;
     }
 
     /**
