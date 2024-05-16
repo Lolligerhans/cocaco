@@ -395,8 +395,10 @@ class Colony
         let foundRoll = false;
         const done = () =>
         {
-            return foundRoll ||
-                playerCount !== null && playerCount - this.players.length === 0;
+            if (playerCount === null)
+                return foundRoll;
+            else
+                return playerCount - this.players.length === 0;
         };
         console.assert(!done()); // Dont come back when done
 
@@ -407,7 +409,12 @@ class Colony
             if (msg.textContent.includes(Colony.snippets.rolledSnippet))
             {
                 foundRoll = true;
-                break;
+                // If this concludes the recovery we can skip the rest. If this
+                // does not conclude (because 'playerCount' is not reached), we
+                // continue so that we don't have to take the route around
+                // 'setDoInterval' just to end up here again.
+                if (done())
+                    break;
             }
 
             const [name, colour] = this.parseTurnName(msg);
@@ -422,6 +429,7 @@ class Colony
                     break;
             }
         }
+
         if (done())
         {
             // Ensure our name is last in the array
@@ -431,6 +439,7 @@ class Colony
             return true;
         }
 
+        // Signal "not done" by returning false. So we are called again later.
         return false;
     }
 
@@ -525,7 +534,7 @@ class Colony
             if (0 === this.multiverse.worldCount())
             {
                 console.error("[ERROR] No world left");
-                alertIf("Tracker OFF: Inconsistency (no world left). Try recovery mode.");
+                alertIf("Tracker OFF: No world left. Try recovery mode.");
                 this.stopMainLoop();
                 return true; // Return true to signal completion
             }
@@ -548,9 +557,6 @@ class Colony
         }
 
         this.renderObject.render(() => this.isNewMessage(this.MSG_OFFSET));
-
-        debugger; // manual consistency check in debugger
-
     }
 
     // Recovers MW state from unknown cards. Player array is used and assumed
@@ -576,7 +582,7 @@ class Colony
         for (const player of this.players)
         {
             const count = prompt(`${player} number of cards:`, 0);
-            counts[player] = count;
+            counts[player] = Number(count);
         }
         this.trackerObject.mwCardRecovery(counts);
         this.multiverse.mwCardRecovery(counts);
@@ -591,14 +597,14 @@ class Colony
     {
         if (this.startupFlag === true)
         {
-            log("[NOTE] recoverNames() suppressed: this.startupFlag === true");
+            console.warn(`${recoverNames.name}: Suppressed! startupFlag === true`);
             return;
         }
         log("[NOTE] Starting manual name recovery");
         const playerCount = Number(prompt("Player count (0 to abort):", 0));
-        if (playerCount < 1 || 4 < playerCount)
+        if (playerCount < 1 || 8 < playerCount)
         {
-            log("[NOTE] Aborting manual name recovery");
+            console.error("Invalid player count:", playerCount, "(1-8). Aborting name recovery.");
             return;
         }
 
@@ -712,6 +718,7 @@ class Colony
         logs("[INFO] Trade offer:", player, "->", offer);
         this.trackerObject.mwCollapseMin(player, asSlice);
         this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -732,6 +739,7 @@ class Colony
         logs("[INFO] Trade counter offer:", player, "->", offer);
         this.trackerObject.mwCollapseMin(player, asSlice);
         this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -752,6 +760,7 @@ class Colony
         const asSlice = mw.generateWorldSlice(obtainedResources);
         this.trackerObject.mwTransformSpawn(beneficiary, asSlice);
         this.multiverse.mwTransformSpawn(beneficiary, this.multiverse.asSlice(obtainedResources));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -774,6 +783,7 @@ class Colony
             logs("[INFO] Got resources:", player, "<-", obtainedResources);
             this.trackerObject.mwTransformSpawn(player, asSlice);
             this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
+            this.trackerObject.printWorlds();
             this.multiverse.printWorlds();
 
             return true;
@@ -854,6 +864,7 @@ class Colony
         logs("[INFO] Built:", player, buildResources);
         this.trackerObject.mwTransformSpawn(player, asSlice);
         this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(buildResources));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -900,6 +911,7 @@ class Colony
         logs("[INFO] Baught dev card:", player, "->", devCardResources);
         this.trackerObject.mwTransformSpawn(player, devCardSlice);
         this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(devCardResources));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -937,6 +949,7 @@ class Colony
         this.trackerObject.mwTransformSpawn(player, takeSlice - giveSlice);
         this.multiverse.mwTransformSpawn(player, this.multiverse.sliceSubtract( this.multiverse.asSlice(takeResources)
                                                                               , this.multiverse.asSlice(giveResources) ));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -968,6 +981,7 @@ class Colony
         logs("[INFO] Monopoly:", thief, "<-", stolenResource);
         this.trackerObject.transformMonopoly(thief, mw.worldResourceIndex(stolenResource));
         this.multiverse.transformMonopoly(thief, this.multiverse.getResourceIndex(stolenResource));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -994,6 +1008,7 @@ class Colony
         this.multiverse.mwCollapseMinTotal(player);
         this.multiverse.mwTransformSpawn(player,
             this.multiverse.sliceNegate(this.multiverse.asSlice(discarded)));
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -1028,6 +1043,7 @@ class Colony
 
         this.trackerObject.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
         this.multiverse.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -1083,6 +1099,7 @@ class Colony
             targetPlayer, stealingPlayer, // source, target
             this.multiverse.asSlice({ [stolenResourceType]: 1 })
         );
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds(); // TODO maybe print in the parser loop
 
         return true;
@@ -1119,6 +1136,7 @@ class Colony
 
         this.trackerObject.branchSteal(targetPlayer, stealingPlayer);
         this.multiverse.branchSteal(targetPlayer, stealingPlayer);
+        this.trackerObject.printWorlds();
         this.multiverse.printWorlds();
 
         return true;
@@ -1170,7 +1188,7 @@ class Colony
         {
             if (!configFixedPlayerName)
             {
-                console.warning("Username not found. Using fixed name.");
+                console.warn("Username not found. Using fixed name.");
             }
             this.playerUsername = configPlayerName;
         }
@@ -1180,8 +1198,8 @@ class Colony
         const rotation = this.players.length - ourPosition - 1;
         if (ourPosition < 0)
         {
-            console.error("Username not part of this.players");
-            alertIf(32);
+            console.error(`reorderPlayerNames: Username "${this.playerUsername}" not part of this.players`);
+            console.warn("Skip reordering");
             return;
         }
         const unrotatedCopy = deepCopy(this.players);

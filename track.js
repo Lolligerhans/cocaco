@@ -71,7 +71,7 @@ class Track
 
     initRobs(playerNames = players)
     {
-        if (playerNames.length < 2) alertIf(47);
+        console.assert(playerNames.length >= 2, "initRobs expects at least 2 players");
         this.robs = {};
         this.robsTaken = {};
         this.robsLost = {};

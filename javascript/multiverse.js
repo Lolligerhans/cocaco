@@ -125,6 +125,13 @@ Multiverse.prototype.asNames = function(resourcesAsSlice)
 
 Multiverse.prototype.sliceHasNegative = function(slice)
 {
+    { // TODO unreachable. Remove this test eventuall
+        if (!slice)
+            debugger;
+        if (slice === undefined)
+            debugger;
+        console.error("unreachable");
+    }
     return slice.some(x => x < 0);
 }
 
@@ -181,16 +188,16 @@ Multiverse.prototype.printWorlds = function()
 {
     if (configPrintWorlds === false)
         return;
-    log2("🌎 ManyWorlds:", this.worlds);
+    log2("🌎 Multiverse:", this.worlds);
     if (this.worlds.length === 0)
         console.log("🌎 No worlds left!");
     for (let i = 0; i < this.worlds.length; ++i)
     {
-        log(`\t----- ${i}/${this.worlds.length}: ${this.worlds[i]["chance"]} -----`);
+        log(`\t----- 🌌 ${i}/${this.worlds.length}: ${this.worlds[i]["chance"]} -----`);
         for (const pl of this.players)
         {
             const pIndx = this.getPlayerIndex(pl);
-            log(`\t\t[${i}][${pIndx}] =`, this.asNames(this.worlds[i][pIndx]));
+            log(`\t\t[${i}][${pl}] =`, this.asNames(this.worlds[i][pIndx]));
         }
     }
 }
@@ -199,7 +206,7 @@ Multiverse.prototype.printWorlds = function()
 // Input: counts === { "alice": 5, ... } the total number of (unknown) cards
 Multiverse.prototype.mwCardRecovery = function(counts)
 {
-    let world = new Array(this.players.length);
+    let world = {};
     for(const [player, count] of Object.entries(counts))
     {
         const playerIdx = this.getPlayerIndex(player);
@@ -208,7 +215,7 @@ Multiverse.prototype.mwCardRecovery = function(counts)
     }
     world["chance"] = 1;
     this.worlds = [world];
-    console.debug("🌎 Starting MW recovery mode");
+    console.debug("🌎 Converting multiverse into recovery mode");
     //console.debug(this.worlds);
     this.printWorlds();
 }
@@ -464,11 +471,13 @@ Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex)
     {
         // Total count may be difference in worlds because of recovery mode
         let totalCount = 0;
-        for (const slice of world) // For simplicity includes thief as well
+        // For simplicity includes thief as well
+        debugger;
+        Object.entries(world).forEach( ([index,slice]) =>
         {
             totalCount += slice[resourceIndex];
             slice[resourceIndex] = 0;
-        }
+        });
         world[thiefIdx][resourceIndex] += totalCount;
 
         return world;
@@ -511,16 +520,19 @@ Multiverse.prototype.mwCollapseMin = function(playerName, slice)
     // Sanity check
     if (this.sliceHasNegative(slice))
     {
+        console.error(`{this.mwCollapseMin.name}: Expecting non-negative slice in mwCollapseMin. Got ${slice}`);
         alertIf(37);
-        console.error("[ERROR] mwCollapseMin mut take positive slices");
         return;
     }
+    console.assert(slice[this.getResourceIndex("unknown")] === 0, "Argument 'slice' must not contain unknown cards");
 
-    const pIdx = this.getPlayerIndex(playerName);
-    this.worlds = this.worlds.filter(world =>
-    {
-        return world[pIdx].every((n, r) => n >= slice[r]);
-    });
+    // debugging
+    console.log(`Collapsing player ${playerName} to with at least this slice: ${slice}`);
+
+    // Remove offending worlds
+    this.mwTransformSpawn(playerName, this.sliceNegate(slice));
+    // Restore original resources
+    this.mwTransformSpawn(playerName, slice);
 }
 
 // Discard if 8 or more cards
@@ -552,7 +564,7 @@ Multiverse.prototype.collapseExact = function(player, resourceIndex, count)
 //
 // When: After a known stela, first call this function to adjust the
 // 'chance' of each world, then transfer the stolen resource using
-// 'transformExchance()'.
+// 'mwTransformExchance()'.
 //
 // What: Pretend a single resource of player 'playerName' was selected
 // uniformly at random and the result was 'slice'. Adjust chances with
@@ -640,9 +652,10 @@ Multiverse.prototype.mwUpdateStats = function()
     //  2) Iterate worlds to accumulate stats
     //  3) Update secondary objects derived from those stats
 
-    console.assert(this.worlds.length >= 1);
-    console.assert(Object.keys(this.worlds[0]).length >= 2); // Player + chance
-    console.assert(this.players.length >= 1);
+    console.assert(this.worlds.length >= 1, `${this.mwUpdateStats.name}: Expected at least 1 world, got ${this.worlds.length}`);
+    console.assert(this.players.length >= 1, `${this.mwUpdateStats.name}: Expected at least 1 player, got ${this.players.length}`);
+    // 1 Player + chance ➜ 2 entries
+    console.assert(Object.keys(this.worlds[0]).length >= 2, `${this.mwUpdateStats.name}: Expected at least 2 world entries, got ${Object.keys(this.worlds[0]).length}`);
     for (const player of this.players)
     {
         this.mwSteals[player] = deepCopy(this.zeroResourcesByName);
@@ -750,7 +763,7 @@ Multiverse.prototype.compareToManyworlds = function(manyWorlds)
         matchingIndices.add(i);
         if (foundAt === -1)
         {
-            console.error("Inconsistency");
+            console.warn(`${this.compareToManyworlds.name}: Inconsistency found`);
             debugger;
             return false;
         }
@@ -758,7 +771,7 @@ Multiverse.prototype.compareToManyworlds = function(manyWorlds)
     // Make sure each of our worlds matches a distinct world in theirs
     if (matchingIndices.size !== our.length)
     {
-        console.error("Inconsistency");
+        console.warn(`${this.compareToManyworlds.name}: Inconsistency found`);
         debugger;
         return false;
     }
