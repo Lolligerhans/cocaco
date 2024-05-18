@@ -508,6 +508,7 @@ class ManyWorlds
             {
                 return !mw.sliceHasNegative(world[playerIdx]);
             });
+            this.removeDuplicateWorlds();
         }
     }
 
@@ -536,6 +537,7 @@ class ManyWorlds
             return !mw.sliceHasNegative(world[source])
                 && !mw.sliceHasNegative(world[target]);
         });
+        this.removeDuplicateWorlds();
     }
 
     // Incorporate player trade. Since each resource type goes in only one
