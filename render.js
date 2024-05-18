@@ -148,9 +148,9 @@ class Render
         playerHeaderCell.addEventListener("click", this.context.recoverNamesCallback, false);
         playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
         playerHeaderCell.className = "explorer-tbl-player-col-header";
-        for (let i = 0; i < resourceTypes.length; i++)
+        for (let i = 0; i < this.manyWorlds.resources.length; i++)
         {
-            let resourceType = resourceTypes[i];
+            let resourceType = this.manyWorlds.getResourceName(i);
             let resourceHeaderCell = headerRow.insertCell(i + 1);
             resourceHeaderCell.addEventListener("click", this.context.recoverCardsCallback, false);
             resourceHeaderCell.className = "explorer-tbl-cell";
@@ -162,7 +162,7 @@ class Render
         }
         for (const [i, name] of Object.keys(this.manyWorlds.costs).entries())
         {
-            let headerCell = headerRow.insertCell(i + this.manyWorlds.resources.length);
+            let headerCell = headerRow.insertCell(i + 1 + this.manyWorlds.resources.length);
             headerCell.className = "explorer-tbl-cell";
             headerCell.innerHTML = this.iconElements[name];
         }
@@ -172,7 +172,7 @@ class Render
         // into the class as a member function
         const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
         {
-            const resourceName = resourceTypes[resourceIndex];
+            const resourceName = this.manyWorlds.getResourceName(resourceIndex);
             const icon = resourceIcons[resourceName];
             const guessStr = prompt(`How many ${icon} has ${playerName}?`, defaultCount.toString());
 
@@ -204,7 +204,6 @@ class Render
         const guessHasNoBuilding = (playerName, buildingName) =>
         {
             this.manyWorlds.mwWeightGuessNotavailable(playerName, this.manyWorlds.costs[buildingName]);
-            log('[NOTE] Guessing that', playerName, 'has no', buildingName, 'in hand');
             this.render();
         };
 
@@ -220,13 +219,12 @@ class Render
             let playerRowCell = row.insertCell(0);
             playerRowCell.className = "explorer-tbl-player-col-cell";   // Same as for rob table
             playerRowCell.innerHTML = this.renderPlayerCell(player);
-            for (let j = 0; j < resourceTypes.length; j++)
+            for (let j = 0; j < this.manyWorlds.resources.length; j++)
             {
-                const res = resourceTypes[j];
+                const res = this.manyWorlds.getResourceName(j);
                 let cell = row.insertCell(j + 1);
                 cell.className = "explorer-tbl-cell";   // Same as for rob table
                 cell.addEventListener("click", guessCardCountFunction.bind(null, player, j, this.manyWorlds.worldGuessAndRange[player][res][2]), false);
-                let resourceType = resourceTypes[j];
                 const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
                 const fraction = this.manyWorlds.worldGuessAndRange[player][res][1]; // Fraction
                 const percentString = fraction > 0.999 ? "" : ` <span class="table-percent table-number-chance">${Math.round(fraction * 100)}%</span>`;
@@ -240,7 +238,7 @@ class Render
                 //    cell.style.background = shadowColour;
             }
             // Copy the cell-adding for resource
-            let j = resourceTypes.length + 1;
+            let j = this.manyWorlds.resources.length + 1;
             let addBuildFunc = b =>
             {
                 const chance = this.manyWorlds.mwBuildsProb[player][b];

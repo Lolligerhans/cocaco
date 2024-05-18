@@ -8,7 +8,7 @@ class Multiverse
 {
     constructor()
     {
-        this.resources = ["wood", "brick", "sheep", "wheat", "ore", "unknown"];
+        this.resources = ["wood", "brick", "sheep", "wheat", "ore", "cloth", "coin", "paper", "unknown"];
         this.resourceIndices = Object.fromEntries(this.resources.map((value, index) => [value, index]));
 
         this.zeroResources = new Array(this.resources.length).fill(0);
@@ -127,10 +127,15 @@ Multiverse.prototype.sliceHasNegative = function(slice)
 {
     { // TODO unreachable. Remove this test eventuall
         if (!slice)
+        {
+            console.error("unreachable");
             debugger;
+        }
         if (slice === undefined)
+        {
+            console.error("unreachable");
             debugger;
-        console.error("unreachable");
+        }
     }
     return slice.some(x => x < 0);
 }
@@ -138,6 +143,15 @@ Multiverse.prototype.sliceHasNegative = function(slice)
 Multiverse.prototype.sliceTotal = function(slice)
 {
     return slice.reduce((a, b) => a + b, 0);
+}
+
+// Like sliceTotal but consider only resources at specific indices
+Multiverse.prototype.sliceTotalIndices = function(slice, indices)
+{
+    let total = 0;
+    for (const index of indices)
+        total += slice[index];
+    return total;
 }
 
 Multiverse.prototype.sliceNegate = function(slice)
@@ -188,6 +202,11 @@ Multiverse.prototype.printWorlds = function()
 {
     if (configPrintWorlds === false)
         return;
+    if (this.worlds.length > 1000)
+    {
+        console.log("🌎 > 1000 worlds (suppressing print)");
+        return;
+    }
     log2("🌎 Multiverse:", this.worlds);
     if (this.worlds.length === 0)
         console.log("🌎 No worlds left!");
@@ -332,20 +351,21 @@ Multiverse.prototype.mwWeightGuessPredicate = function(playerName, resourceIndex
 }
 
 
-// Boost worlds where the player 'playerName' does not have the resources given
-// in 'resourceSlice'.
-// • resourceSlice: Typically one of the 'mwBuilds' slices
+// Boost worlds where the player 'playerName' can not spawn the resources given
+// in 'resourceSlice'. Only amounts < 0 have an effect.
+// @param resourceSlice  Typically one of the 'mwBuilds' slices, containing
+//                       negative numbers for restricted resources!
 // Recovery mode: Apply bonus if amount of unknown cards is too small. No
 // changes if sufficient unknown cards.
 Multiverse.prototype.mwWeightGuessNotavailable = function(playerName, resourceSlice)
 {
+    console.log(`❕❔ ${playerName} 🚫`, this.asNames(resourceSlice));
     const playerIdx = this.getPlayerIndex(playerName);
     const factor = 100; // Arbitrary large value
     let didBranch = false;
-    let newWorlds = []; // Avoid appending to 'worlds' while iterating
     this.worlds.forEach(world =>
     {
-        let adjustedSlice = this.sliceSubtract(world[playerIdx], resourceSlice);
+        let adjustedSlice = this.sliceAdd(world[playerIdx], resourceSlice);
         const slice = this.sliceUseUnknowns(adjustedSlice);
         if (slice === null)
             world["chance"] *= factor;
@@ -361,12 +381,17 @@ Multiverse.prototype.mwTransformSpawn = function(playerName, resourceSlice)
     {
         world[playerIdx] = this.sliceAdd(world[playerIdx], resourceSlice);
         if (subtractsSomething)
+            // Replace impossible with null
             world[playerIdx] = this.sliceUseUnknowns(world[playerIdx]);
         return world;
     });
 
     if (subtractsSomething)
+    {
         this.worlds = this.worlds.filter(world => world[playerIdx] !== null);
+        // Worlds with unknown may become duplicates
+        this.removeDuplicateWorlds();
+    }
 }
 
 // If you do not have a slice, use 'transformTradeByName()' instead
@@ -386,6 +411,7 @@ Multiverse.prototype.mwTransformExchange = function(source, target, tradedSlice)
     {
         return world[s] !== null && world[t] !== null;
     });
+    this.removeDuplicateWorlds(); // Worlds with unknown may become duplicates
 }
 
 // Incorporate player trade. Since each resource type goes in only one
@@ -402,17 +428,33 @@ Multiverse.prototype.transformTradeByName = function(trader, other, offer, deman
 
 // Branch for unknown resource transfer between two players.
 // Note: For known "steals", treat as one-sided trade.
-Multiverse.prototype.branchSteal = function(victimName, thiefName)
+// @param deterministic  Set to 'true' if steal is not uniform random. This will
+//                       suppress the bayesian update (replacing with uniform
+//                       one).
+// @param availableIndices  Specify which resources are available for stealing.
+//                          Set to 'null' if all resources are available. This
+//                          is meant for the "commercial harbor" progress card.
+Multiverse.prototype.branchSteal = function(victimName, thiefName, deterministic, availableIndices = null)
 {
+    if (availableIndices === null)
+    {
+        availableIndices = Object.values(this.resourceIndices);
+    }
+    else
+    {
+        //debugger; // verify index restriction
+        // Not technically required but intended use
+        console.assert(deterministic === true);
+    }
     let newWorlds = [];
     const victim = this.getPlayerIndex(victimName);
     const thief = this.getPlayerIndex(thiefName);
     for (const world of this.worlds)
     {
-        const totalRes = this.sliceTotal(world[victim]);
+        const totalRes = this.sliceTotalIndices(world[victim], availableIndices);
         if (totalRes === 0)
             continue;// Impossible to steal => world dies
-        for (let r = 0; r < this.resources.length; ++r) // Includes "unknown" resources
+        for (const r of availableIndices)
         {
             if (world[victim][r] === 0)
                 continue; // No resource of this type
@@ -421,7 +463,10 @@ Multiverse.prototype.branchSteal = function(victimName, thiefName)
             w[victim][r] -= 1;
             w[thief ][r] += 1;
             const thisRes = world[victim][r];
-            w["chance"] = world["chance"] * thisRes / totalRes; // Unnormalized "bayes" update
+            if (deterministic === true) // Exception to the rule
+                w["chance"] = world["chance"];
+            else // Usual case
+                w["chance"] = world["chance"] * thisRes / totalRes; // Unnormalized "bayes" update
             if (totalRes < thisRes) { alertIf(27); debugger; } // Sanity check
             newWorlds.push(w);
         }
@@ -432,10 +477,26 @@ Multiverse.prototype.branchSteal = function(victimName, thiefName)
     this.removeDuplicateWorlds();
 }
 
+// Implements a "commercial harbor" exchange, i.e., playerName gives a regular
+// resource of their choice in exchange for a commodity of otherNames's choice.
+Multiverse.prototype.branchHarbor = function(playerName, otherName)
+{
+    const commodityIndices = ["cloth", "coin", "paper", "unknown"].map(r => this.getResourceIndex(r));
+    const regularResIndices = ["wood", "brick", "sheep", "wheat", "ore", "unknown"].map(r => this.getResourceIndex(r));
+
+    // Since the steals are guaranteed to be different resources, we need not
+    // collapse on availability beforehand.
+    this.branchSteal(otherName, playerName, true, commodityIndices); // Obtain commodity
+    this.branchSteal(playerName, otherName, true, regularResIndices); // Give regular
+
+    this.removeDuplicateWorlds();
+}
+
 // Branches by moving, in all worlds, 0 to U from victims unknown cards to the
 // thief's slice as stolen resource type. Where U is the number of unknown cards
 // victim has. This is a helper to allow monopolies in recovery mode.
-Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, resourceIndex)
+// @param max  Per-opponent stealing limit (for C&K).
+Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, resourceIndex, max=19)
 {
     // For binomial chance
     const p = 1 / this.resources.length;
@@ -446,7 +507,7 @@ Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, re
     {
         const totalRes = this.sliceTotal(world[victimIdx]);
         const u = world[victimIdx][unknowIndex];
-        for (let i = 0; i <= u; ++i)
+        for (let i = 0; i <= Math.min(u, max); ++i)
         {
             let w = deepCopy(world);
             w[victimIdx][unknowIndex] -= i;
@@ -464,20 +525,23 @@ Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, re
 }
 
 // Transform worlds by monopoly (branches in recovery mode!)
-Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex)
+// @param max  Per-opponent stealing limit (for C&K).
+Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex, max=19)
 {
     const thiefIdx = this.getPlayerIndex(thiefName);
-    this.worlds = this.worlds.map( world =>
+    this.worlds = this.worlds.map(world =>
     {
         // Total count may be difference in worlds because of recovery mode
         let totalCount = 0;
         // For simplicity includes thief as well
-        debugger;
-        Object.entries(world).forEach( ([index,slice]) =>
+        //console.log("Monopoly world:", world); // debugging
+        for (let p = 0; p < this.players.length; ++p)
         {
-            totalCount += slice[resourceIndex];
-            slice[resourceIndex] = 0;
-        });
+            const stolen = Math.min(world[p][resourceIndex], max);
+            totalCount += stolen
+            //console.log("Monopoly slice:", world[p], stolen); // debugging
+            world[p][resourceIndex] -= stolen; // ❗
+        }
         world[thiefIdx][resourceIndex] += totalCount;
 
         return world;
@@ -489,7 +553,7 @@ Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex)
     for (const victimIdx of Object.values(this.playerIndices))
     {
         if (victimIdx === thiefIdx) continue;
-        this.mwBranchRecoveryMonopoly(victimIdx, thiefIdx, resourceIndex);
+        this.mwBranchRecoveryMonopoly(victimIdx, thiefIdx, resourceIndex, max);
     }
 }
 
@@ -502,6 +566,13 @@ Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex)
 Multiverse.prototype.mwCollapseMax = function(playerName, slice)
 {
     console.assert(!this.sliceHasNegative(slice), "Epecting non-negative slice in mwCollapseMax");
+    // Unclear how unknowns would resolve
+    if (slice[this.getResourceIndex("unknown")] !== 0)
+    {
+        console.error(`{this.mwCollapseMax.name}: Expecting non-unknown slice in mwCollapseMax. Got ${slice}`);
+        alertIf("Cannot collapse unknown cards");
+        return;
+    }
     const pIdx = this.getPlayerIndex(playerName);
     this.worlds = this.worlds.filter(world =>
     {
@@ -557,27 +628,24 @@ Multiverse.prototype.collapseExact = function(player, resourceIndex, count)
 }
 
 // Why: This function is used when revealing a single resource card from
-// a uniform random event (known steal). Knwoing about the uniformness
-// allows a bayesian update on the 'chance' of each world. Since player may
-// reveal resources in ways that are no uniform random, this does not
-// generally apply.
+// a uniform random event (known steal). Knwoing about the uniformness allows
+// a bayesian update on the 'chance' of each world. Since players may reveal
+// resources in ways that are not uniform random, this does not generally apply.
 //
-// When: After a known stela, first call this function to adjust the
-// 'chance' of each world, then transfer the stolen resource using
-// 'mwTransformExchance()'.
+// When: After a known stela, first call this function to adjust the 'chance' of
+// each world, then transfer the stolen resource using 'mwTransformExchance()'.
 //
-// What: Pretend a single resource of player 'playerName' was selected
-// uniformly at random and the result was 'slice'. Adjust chances with
-// bayesian update.
+// What: Pretend a single resource of player 'playerName' was selected uniformly
+// at random and the result was 'slice'. Adjust chances with bayesian update.
 //
 // How: First remove all inconsistent worlds. Then multiply unnormalized
-// bayesian update to 'chance' of each world. The worlds are left
-// unnormalized.
+// bayesian update to 'chance' of each world. The worlds are left unnormalized.
 //
 // TODO: Add test for this function.
 // TODO: Rename to transformAsRandom (?)
 Multiverse.prototype.collapseAsRandom = function(playerName, resourceIndex)
 {
+    console.assert(resourceIndex !== this.getResourceIndex("unknown"), "Bayes update is for known cards only");
     const playerIdx = this.getPlayerIndex(playerName);
     this.worlds = this.worlds.filter(world =>
     {
@@ -668,6 +736,10 @@ Multiverse.prototype.mwUpdateStats = function()
             //  Accumulated chance of player having exactly 4 of this resource
             //                                       ~~~v~~~
             this.mwDistribution[player][res] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+            // FIXME This allow up to 19 resources, but we might want to allow more for "unknown"
+            //  ➜ an alternative would be to save indices explicitly:
+            //      ❌ [0,0,0,1,4,2,1]
+            //      ✅ {3:1, 4:4, 5:5, 1:0}
         }
     }
 
@@ -683,6 +755,10 @@ Multiverse.prototype.mwUpdateStats = function()
                 const resIndx = this.getResourceIndex(res);
                 // For distribution
                 const countInWorld = w[playerIdx][resIndx];
+                // FIXME IF distr[][][] does not exist yet, this does not set it
+                //       it it was set explicitly in that case we would
+                //       automatically allow more than 19 resources. This is
+                //       probably better than fixing size to 19 a priori
                 this.mwDistribution[player][res][countInWorld] += w["chance"];
                 // For steals
                 if (countInWorld > 0)
@@ -714,6 +790,7 @@ Multiverse.prototype.mwUpdateStats = function()
             let range = [19, 0, 0, 0]; // [ smallest_nonzero_index,
                                        //   max_chance, index_of_max_count
                                        //   largest_nonzero_index ]
+            // FIXME mwDistribution goes until 19 only, but unknown cards might be more than 19
             let maxIndex = this.mwDistribution[player][res].reduce((r, val, idx) =>
             {
                 if (val != 0) r[0] = Math.min(r[0], idx);
@@ -725,6 +802,7 @@ Multiverse.prototype.mwUpdateStats = function()
         }
     }
     // For total card stats (doesnt matter which world is used)
+    // FIXME: It can matter in recovery mode
     this.mwTotals = this.generateFullNamesFromWorld(this.worlds[0]);
 }
 

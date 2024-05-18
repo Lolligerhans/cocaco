@@ -4,7 +4,7 @@
 
 "use strict";
 
-const theBrowser = chrome !== undefined ? chrome : browser;
+const theBrowser = typeof(chrome) !== "undefined" ? chrome : browser;
 
 const version_string = theBrowser.runtime.getManifest().version;
 
@@ -25,7 +25,8 @@ const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
 const configPlotBubbles = true;
 const configPlotRolls = true;
-const configLogMessages = false;
+const configShowRobs = true;
+const configLogMessages = true;
 const configOwnIcons = false;
 const configUseTimer = true;
 
@@ -42,9 +43,9 @@ console.log("[INFO]",
 );
 
 let e = document.getElementById("header_navigation_store");
-if (e !== null) e.textContent = "(CoCaCo " + version_string + ")";
+if (e !== null) { e.textContent = "(CoCaCo " + version_string + ")"; e.style.background = "LightGreen"; }
 e = document.querySelector(".betaTag")
-if (e !== null) e.textContent = "CoCaCo " + version_string;
+if (e !== null) { e.textContent = "CoCaCo " + version_string; e.style.background = "LightGreen"; }
 
 // The text symbols are for outputting only ;)
 const resourceIcons =
@@ -203,6 +204,7 @@ function deepCopy(object)
 
 function alertIf(message)
 {
+    console.error("alert(", message, ")");
     if (configDoAlert)
     {
         alert(message);
@@ -210,9 +212,8 @@ function alertIf(message)
     }
     else
     {
-        console.error("Skipping alert(", message, ")");
+        console.warn("Skipping alert(", message, ")");
     }
-    console.trace();
 }
 
 // Strings contained in the resource image file names. Used also in regex so

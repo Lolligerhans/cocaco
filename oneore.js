@@ -462,6 +462,7 @@ initializeTracker: function()
     twosheep.multiverse.initWorlds(noResources);
     twosheep.tracker = new Track();
     twosheep.tracker.init(twosheep.players);
+    twosheep.render.unrender(); // Remove table to force redraw over update
     twosheep.render = new Render
     (
         twosheep.multiverse,
@@ -639,15 +640,15 @@ mainLoop: function(continueIf)
             return true;
         }
     };
+    if (configUseTimer) console.timeEnd("mainLoop");
 
     console.log(`🌎 ${twosheep.multiverse.worlds.length}`);
 
     if (configUseTimer) console.time("render");
     twosheep.render.render(() => twosheep.MSG_OFFSET > twosheep.renderedOffset);
+    if (configUseTimer) console.timeEnd("render");
     twosheep.renderedOffset = twosheep.MSG_OFFSET;
 
-    if (configUseTimer) console.timeEnd("render");
-    if (configUseTimer) console.timeEnd("mainLoop");
 
     // Run indefinitely since there is no win message to be parsed
     return false; // Signal not completed to run again
