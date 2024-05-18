@@ -55,7 +55,8 @@ class Multiverse
         this.mwDistribution = {};
         this.mwBuildsProb = {};
         this.mwSteals = {};
-        this.mwTotals = {};
+        this.mwTotals = {}; // Card sum per resource
+        this.heldCounts = {};
     }
 };
 
@@ -733,6 +734,7 @@ Multiverse.prototype.mwUpdateStats = function()
         this.mwBuildsProb[player] = deepCopy(this.costs);
         Object.keys(this.mwBuildsProb[player]).forEach(k => this.mwBuildsProb[player][k] = 0);
         this.mwDistribution[player] = {};
+        this.mwDistribution[player].cardSum = {}; // {[N]: chance_of_N, ...
         for (const res of this.resources)
         {
             // At most 19 cards because there are only 19 cards per resource
@@ -741,8 +743,8 @@ Multiverse.prototype.mwUpdateStats = function()
             this.mwDistribution[player][res] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
             // FIXME This allow up to 19 resources, but we might want to allow more for "unknown"
             //  ➜ an alternative would be to save indices explicitly:
-            //      ❌ [0,0,0,1,4,2,1]
-            //      ✅ {3:1, 4:4, 5:5, 1:0}
+            //      ❌ [0, 0, 0, 0.1, 0.4, 0.3, 0.2]
+            //      ✅ {3:0.1, 4:0.4, 5:0.3, 6:0.2} // Pairs [N, chance_of_N]
         }
     }
 
@@ -753,6 +755,8 @@ Multiverse.prototype.mwUpdateStats = function()
         {
             const playerIdx = this.getPlayerIndex(player);
             const totalPlayerRes = this.sliceTotal(w[playerIdx]);
+            this.mwDistribution[player].cardSum[totalPlayerRes] =
+                (this.mwDistribution[player].cardSum[totalPlayerRes] || 0) + w["chance"];
             for (const res of this.resources)
             {
                 const resIndx = this.getResourceIndex(res);
@@ -802,6 +806,21 @@ Multiverse.prototype.mwUpdateStats = function()
                 return r;
             }, range);
             this.worldGuessAndRange[player][res] = range;
+        }
+
+        // Do the same for cardSum. But better since we use a better format
+        {
+            debugger;
+            let range = [1000, 0, 0, 0]; // Arbitrary large start maximum
+            for (const [idx, val] of Object.entries(this.mwDistribution[player].cardSum))
+            {
+                if (val != 0)           { range[0] = Math.min(range[0], idx); }
+                if (val > range[1])     { range[1] = val;
+                                          range[2] = idx; }
+                if (val != 0)           { range[3] = Math.max(range[3], idx); }
+            }
+            this.worldGuessAndRange[player].cardSum = range;
+            debugger; // Verify that the cards sums have meaningful values
         }
     }
     // For total card stats (doesnt matter which world is used)

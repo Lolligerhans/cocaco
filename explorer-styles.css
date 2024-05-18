@@ -126,6 +126,7 @@
     font-weight: bold;
     margin: 0px 8px 0 4px;
     white-space: pre;
+    font-family: monospace;
 }
 
 .explorer-tbl-unknown-stats

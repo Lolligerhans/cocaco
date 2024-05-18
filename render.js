@@ -491,13 +491,13 @@ class Render
     {
         if (robsCount === false)
         {
-            const gar = this.manyWorlds.worldGuessAndRange[player]["unknown"];
-            const stealProb = Math.round(this.manyWorlds.mwSteals[player]["unknown"] * 100);
-            const unknownString = gar[3] === 0
-                                ? ""
-                                : ` + ${gar[2]} (${Math.round(gar[1] * 100)}%) | ${stealProb}%`;
-            return `<span class="explorer-tbl-player-name" style="color:${this.colour_map[player]}">${player}</span>`
-                 + `<span class="explorer-tbl-unknown-stats">${unknownString}</span>`;
+            const gar = this.manyWorlds.worldGuessAndRange[player].cardSum;
+            const definite = gar[0] === gar[3]; // min === max
+            const value = gar[2]; // most likely
+            const padding = value >= 10 ? "" : " ";
+            const sumString = gar[3] === 0 ? "  " : `${padding}${value}`;
+            const post = definite ? "" : ` (${Math.round(gar[1] * 100)}%) | ${gar[0]} - ${gar[3]}`;
+            return `<span class="explorer-tbl-player-name" style="color:${this.colour_map[player]}">${sumString} ${player}</span><span class="explorer-tbl-unknown-stats">${post}</span>`;
         }
         else
         {
