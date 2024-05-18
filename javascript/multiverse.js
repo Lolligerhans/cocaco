@@ -649,13 +649,16 @@ Multiverse.prototype.collapseAsRandom = function(playerName, resourceIndex)
     const playerIdx = this.getPlayerIndex(playerName);
     this.worlds = this.worlds.filter(world =>
     {
-        return world[playerIdx][resourceIndex] !== 0;
+        return 0 !==
+            ( world[playerIdx][resourceIndex]
+            + world[playerIdx][this.getResourceIndex("unknown")] );
     });
 
     this.worlds = this.worlds.map((world) =>
     {
         const total = this.sliceTotal(world[playerIdx]);
-        const specific = world[playerIdx][resourceIndex];
+        const specific = world[playerIdx][resourceIndex]
+                       + world[playerIdx][this.getResourceIndex("unknown")];
         const bayesianUpdate = specific / total;
         world["chance"] = world["chance"] * bayesianUpdate;
         return world;
