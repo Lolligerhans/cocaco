@@ -67,6 +67,110 @@ class Render
         }
     }
 
+    update()
+    {
+        console.debug("🖥 Updating...");
+        this.manyWorlds.mwUpdateStats();     //TODO circumvents souldRenderTable()
+
+        //----------------------------------------------------------------------
+        // Display resource plot
+        //----------------------------------------------------------------------
+
+        if (configPlotBubbles === true)
+        {
+            let plt = document.getElementById(this.ids.bubblePlot);
+            fillElementWithPlot(plt, this.manyWorlds, this.colour_map);
+        }
+
+        //----------------------------------------------------------------------
+        // Dispaly rolls histogram
+        //----------------------------------------------------------------------
+
+        if (configPlotRolls === true)
+        {
+            let plt = document.getElementById(this.ids.rollsPlot);
+            this.track.fillRollPlot(plt);
+        }
+
+        //======================================================================
+        // Display table
+        //======================================================================
+
+        let tbl = document.getElementById(this.ids.resourceTable);
+
+        //----------------------------------------------------------------------
+        // Header row - one column per resource, plus player column
+        //----------------------------------------------------------------------
+
+        let header = tbl.tHead;
+        let headerRow = header.rows[0];
+        let playerHeaderCell = headerRow.cells[0];
+        playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
+        for (let i = 0; i < this.manyWorlds.resources.length; i++)
+        { // TODO use spans to separate number from icon
+            let resourceType = this.manyWorlds.getResourceName(i);
+            let resourceHeaderCell = headerRow.cells[i + 1];
+            const total = this.manyWorlds.mwTotals[resourceType];
+            const numberString = total > 0 ? `${total}` : "";
+            resourceHeaderCell.innerHTML = numberString + this.iconElements[resourceType];
+        }
+
+        //----------------------------------------------------------------------
+        // One resource table row per player
+        //----------------------------------------------------------------------
+
+        let tblBody = tbl.tBodies[0];
+        for (let i = 0; i < this.playerNames.length; i++) {
+            const player = this.playerNames[i];
+            let row = tblBody.rows[i];
+            let playerRowCell = row.cells[0];
+            playerRowCell.innerHTML = this.renderPlayerCell(player); // TODO Remove?
+            for (let j = 0; j < this.manyWorlds.resources.length; j++)
+            {
+                const res = this.manyWorlds.getResourceName(j);
+                let cell = row.cells[j + 1];
+                const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
+                const fraction = this.manyWorlds.worldGuessAndRange[player][res][1]; // Fraction
+                const percentString = fraction > 0.999 ? "" : ` <span class="table-percent table-number-chance">${Math.round(fraction * 100)}%</span>`;
+                const stealChance = this.manyWorlds.mwSteals[player][res];
+                const shadowColour = colourInterpolate(stealChance);
+                cell.innerHTML = this.manyWorlds.worldGuessAndRange[player][res][3] === 0
+                               ? "" // Display nothing if guaranteed 0 amount available
+                               : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
+                // Alternatively, background whole cell
+                //if (this.manyWorlds.worldGuessAndRange[player][res][3] !== 0)
+                //    cell.style.background = shadowColour;
+            }
+            // Copy the cell-adding for resource
+            let j = this.manyWorlds.resources.length + 1;
+            let addBuildFunc = b =>
+            {
+                const chance = this.manyWorlds.mwBuildsProb[player][b];
+                let cell = row.cells[j];
+                cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
+                               : chance > 0.999 ? "<span class='table-number'>✔️ </span>"
+                               : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
+                if (0.001 < chance)
+                    cell.style.background = colourInterpolate(chance);
+                else
+                    cell.style.background = "";
+                ++j;
+            };
+            Object.keys(this.manyWorlds.costs).forEach(addBuildFunc);
+        }
+
+        //----------------------------------------------------------------------
+        // Display rob table
+        //----------------------------------------------------------------------
+
+        if (configShowRobs === true)
+        {
+            this.updateRobTable();
+        }
+
+        console.debug("🖥 Updated display");
+    }
+
     render(renderIf = () => true)
     {
         if (this.manyWorlds === null)
@@ -78,12 +182,18 @@ class Render
 
         if (!renderIf())
         {
-            //console.debug("🖥 Skip display update");
+            console.debug("🖥 Skip display render");
             return;
         }
-        //console.debug("🖥 Updaing display...");
 
-        // TODO Draw only once then only change text content later
+        if (document.getElementById(this.ids.resourceTable))
+        {
+            console.log("🖥 Delegating to update()");
+            this.update(renderIf);
+            return;
+        }
+
+        console.debug("🖥 Inserting display...");
 
         // TODO generate and return stats object?
         this.manyWorlds.mwUpdateStats();     //TODO circumvents souldRenderTable()
@@ -105,7 +215,6 @@ class Render
             // FIXME I dont remember what this 'plot-window' is meant to do. The entire css syling is a mess anyway.
     //        plt.class = "plot-window";
             body.appendChild(plt);
-            fillElementWithPlot(plt, this.manyWorlds, this.colour_map);
         }
 
         //----------------------------------------------------------------------
@@ -121,7 +230,6 @@ class Render
             let plt = document.createElement("roll-plot");
             plt.id = this.ids.rollsPlot;
             body.appendChild(plt);
-            this.track.fillRollPlot(plt);
         }
 
         //======================================================================
@@ -134,7 +242,7 @@ class Render
         let tbl = document.createElement("table");
         tbl.id = this.ids.resourceTable;
 
-        tbl.setAttribute("cellspacing", 0);
+        tbl.setAttribute("cellspacing", 0); // ?
         tbl.setAttribute("cellpadding", 0);
 
         //----------------------------------------------------------------------
@@ -146,7 +254,6 @@ class Render
         let headerRow = header.insertRow(0);
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.addEventListener("click", this.context.recoverNamesCallback, false);
-        playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
         playerHeaderCell.className = "explorer-tbl-player-col-header";
         for (let i = 0; i < this.manyWorlds.resources.length; i++)
         {
@@ -154,11 +261,6 @@ class Render
             let resourceHeaderCell = headerRow.insertCell(i + 1);
             resourceHeaderCell.addEventListener("click", this.context.recoverCardsCallback, false);
             resourceHeaderCell.className = "explorer-tbl-cell";
-            const total = this.manyWorlds.mwTotals[resourceType];
-            const numberString = total > 0
-                               ? `${total}`
-                               : "";
-            resourceHeaderCell.innerHTML = numberString + this.iconElements[resourceType];
         }
         for (const [i, name] of Object.keys(this.manyWorlds.costs).entries())
         {
@@ -167,9 +269,7 @@ class Render
             headerCell.innerHTML = this.iconElements[name];
         }
 
-        // TODO Is there performance problem defining lambdas each time?
-        // FIXME Once the class thing is done this would appropriately be thrown
-        // into the class as a member function
+        // TODO Make labdas to data members?
         const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
         {
             const resourceName = this.manyWorlds.getResourceName(resourceIndex);
@@ -218,24 +318,12 @@ class Render
             row.className = "explorer-tbl-row";
             let playerRowCell = row.insertCell(0);
             playerRowCell.className = "explorer-tbl-player-col-cell";   // Same as for rob table
-            playerRowCell.innerHTML = this.renderPlayerCell(player);
             for (let j = 0; j < this.manyWorlds.resources.length; j++)
             {
                 const res = this.manyWorlds.getResourceName(j);
                 let cell = row.insertCell(j + 1);
                 cell.className = "explorer-tbl-cell";   // Same as for rob table
                 cell.addEventListener("click", guessCardCountFunction.bind(null, player, j, this.manyWorlds.worldGuessAndRange[player][res][2]), false);
-                const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
-                const fraction = this.manyWorlds.worldGuessAndRange[player][res][1]; // Fraction
-                const percentString = fraction > 0.999 ? "" : ` <span class="table-percent table-number-chance">${Math.round(fraction * 100)}%</span>`;
-                const stealChance = this.manyWorlds.mwSteals[player][res];
-                const shadowColour = colourInterpolate(stealChance);
-                cell.innerHTML = this.manyWorlds.worldGuessAndRange[player][res][3] === 0
-                               ? "" // Display nothing if guaranteed 0 amount available
-                               : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
-                // Alternatively, background whole cell
-                //if (this.manyWorlds.worldGuessAndRange[player][res][3] !== 0)
-                //    cell.style.background = shadowColour;
             }
             // Copy the cell-adding for resource
             let j = this.manyWorlds.resources.length + 1;
@@ -245,11 +333,6 @@ class Render
                 let cell = row.insertCell(j);
                 cell.addEventListener("click", guessHasNoBuilding.bind(null, player, b), false);
                 cell.className = "explorer-tbl-cell";
-                cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
-                               : chance > 0.999 ? "<span class='table-number'>✔️ </span>"
-                               : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
-                if (0.001 < chance)
-                    cell.style.background = colourInterpolate(chance);
                 ++j;
             };
             Object.keys(this.manyWorlds.costs).forEach(addBuildFunc);
@@ -259,14 +342,81 @@ class Render
         // Display rob table
         //----------------------------------------------------------------------
 
-        const robTable = this.generateRobTable();
+        if (configShowRobs === true)
+        {
+            const robTable = this.generateRobTable();
+            body.appendChild(robTable);
+        }
 
         body.appendChild(tbl);
-        body.appendChild(robTable);
 
         tbl.setAttribute("border", "2"); // (?)
 
-        //console.debug("🖥 Updated display");
+        console.debug("🖥 Inserted display");
+
+        console.log("🖥 Delegating to update()");
+        this.update(renderIf);
+    }
+
+    updateRobTable()
+    {
+        let robTable = document.getElementById(this.ids.robTable);
+
+        // Player name and total steal count header cells
+        let header = robTable.tHead;
+        let headerRow = header.rows[0];
+        let playerHeaderCell = headerRow.cells[0];
+        let i = this.playerNames.length;
+        let totalHeaderCell = headerRow.cells[i + 1];
+
+        // Rows for player i robbing player j. And one last cell for rob total
+        let tblBody = robTable.tBodies[0];
+        for (i = 0; i < this.playerNames.length; i++)
+        {
+            const thief = this.playerNames[i];
+            let row = tblBody.rows[i];
+            let playerRowCell = row.cells[0];
+            playerRowCell.innerHTML = this.renderPlayerCell(thief, true); // true -> add rob counts
+            for (let j = 0; j < this.playerNames.length; ++j)
+            {
+    //            if (j === i) continue;
+                const victim = this.playerNames[j];
+                let robCount = this.track.robs[thief][victim];
+                if (robCount === undefined) { alertIf(43); robCount = 0; }
+                const robAdvantage = robCount - this.track.robs[victim][thief];
+                const irrelevant = robCount === 0 && robAdvantage === 0;
+                const robColour = robAdvantage > 0 ? "#00a000"
+                                : robAdvantage < 0 ? "#a00000"
+                                :                    "#000000";
+                const style = `style="color:${robColour}"`;
+                let cell = row.cells[j + 1];
+                cell.innerHTML = irrelevant ? "" : `<span ${style}>${robCount}</span>`;
+            }
+            let j = this.playerNames.length;
+            let cell = row.cells[j + 1];
+            let taken = this.track.robsTaken[thief];
+            if (taken === undefined) { alertIf(44); taken = 0; }
+            const sevenStr = this.track.robsSeven[thief] ? this.track.robsSeven[thief].toString() : " ";
+            const knightsCount = taken - this.track.robsSeven[thief];
+            const knightStr = knightsCount ? `+${knightsCount.toString()}` : "  ";
+            cell.innerHTML = taken === 0 ? "" : `<span style="color:${this.colour_map[thief]}">${sevenStr}${knightStr}</span>`;
+        }
+
+        // Final row for lost totals and steal totals
+        i = this.playerNames.length;
+        let row = tblBody.rows[i];
+        let totalRowCell = row.cells[0];
+        for (let j = 0; j < this.playerNames.length; ++j)
+        {
+            const victim = this.playerNames[j];
+            let lostCount = this.track.robsLost[victim];
+            if (lostCount === undefined) { alertIf(45); lostCount = 0; }
+            let cell = row.cells[j + 1];
+            cell.innerHTML = lostCount === 0 ? "" : `<span style="color:${this.colour_map[victim]}">${lostCount}</span>`;
+        }
+        let j = this.playerNames.length;
+        let cell = row.cells[j + 1];
+        cell.innerHTML = this.track.robsTotal === 0 ? "" : `${this.track.robsTotal}`;
     }
 
     generateRobTable()
@@ -287,7 +437,6 @@ class Render
         let headerRow = header.insertRow(0);
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.className = "explorer-tbl-player-col-header";
-        //playerHeaderCell.innerHTML = "Criminals";
         let i = 0;
         for (i = 0; i < this.playerNames.length; i++)
         {
@@ -298,44 +447,24 @@ class Render
         i = this.playerNames.length;
         let totalHeaderCell = headerRow.insertCell(i + 1);
         totalHeaderCell.className = "explorer-tbl-total-cell";
-        totalHeaderCell.innerHTML = `<div class="explorer-tbl-player-name">🗡</div>`; // Using shield emoji
 
         // Rows for player i robbing player j. And one last cell for rob total
         let tblBody = robTable.createTBody();
         for (i = 0; i < this.playerNames.length; i++)
         {
-            const thief = this.playerNames[i];
             let row = tblBody.insertRow(i);
             row.className = "explorer-tbl-row";
             let playerRowCell = row.insertCell(0);
             playerRowCell.className = "explorer-rob-tbl-player-col-cell";   // Same as for resource table
-            playerRowCell.innerHTML = this.renderPlayerCell(thief, true); // true -> add rob counts
             for (let j = 0; j < this.playerNames.length; ++j)
             {
-    //            if (j === i) continue;
-                const victim = this.playerNames[j];
-                let robCount = this.track.robs[thief][victim];
-                if (robCount === undefined) { alertIf(43); robCount = 0; }
-                const robAdvantage = robCount - this.track.robs[victim][thief];
-                const irrelevant = robCount === 0 && robAdvantage === 0;
-                const robColour = robAdvantage > 0 ? "#00a000"
-                                : robAdvantage < 0 ? "#a00000"
-                                :                    "#000000";
-                const style = `style="color:${robColour}"`;
                 let cell = row.insertCell(j + 1);
                 cell.className = "explorer-tbl-cell";   // Same as for resource table
-                cell.innerHTML = irrelevant ? "" : `<span ${style}>${robCount}</span>`;
             }
             let j = this.playerNames.length;
             let cell = row.insertCell(j + 1);
-            let taken = this.track.robsTaken[thief];
-            if (taken === undefined) { alertIf(44); taken = 0; }
-            const sevenStr = this.track.robsSeven[thief] ? this.track.robsSeven[thief].toString() : " ";
-            const knightsCount = taken - this.track.robsSeven[thief];
-            const knightStr = knightsCount ? `+${knightsCount.toString()}` : "  ";
             // Originally we wanted class 'explorer-tbl-total-cell' here but it looks terrible
             cell.className = "explorer-tbl-cell";
-            cell.innerHTML = taken === 0 ? "" : `<span style="color:${this.colour_map[thief]}">${sevenStr}${knightStr}</span>`;
         }
 
         // Final row for lost totals and steal totals
@@ -344,20 +473,14 @@ class Render
         row.className="explorer-tbl-total-row";
         let totalRowCell = row.insertCell(0)
         totalRowCell.className = "explorer-tbl-cell";
-        totalRowCell.innerHTML = "🛡";
         for (let j = 0; j < this.playerNames.length; ++j)
         {
-            const victim = this.playerNames[j];
-            let lostCount = this.track.robsLost[victim];
-            if (lostCount === undefined) { alertIf(45); lostCount = 0; }
             let cell = row.insertCell(j + 1);
             cell.className = "explorer-tbl-cell";
-            cell.innerHTML = lostCount === 0 ? "" : `<span style="color:${this.colour_map[victim]}">${lostCount}</span>`;
         }
         let j = this.playerNames.length;
         let cell = row.insertCell(j + 1);
         cell.className = "explorer-tbl-total-cell";
-        cell.innerHTML = this.track.robsTotal === 0 ? "" : `${this.track.robsTotal}`;
 
         robTable.addEventListener("click", this.context.updateCallback, false);
         return robTable;
