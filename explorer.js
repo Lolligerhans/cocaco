@@ -5,17 +5,14 @@
 "use strict";
 
 const theBrowser = typeof(chrome) !== "undefined" ? chrome : browser;
-
 const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
-
 //console.log(stats);
 //console.log(Statistics);
 //console.log(stats.binomialDistribution);
 //console.log(stats.binomialDistribution(50, 1/6));
 
-// Some are for colonist only. TODO Clean this up eventually.
 const configDoAlert = true;
 const configPrintWorlds = true;
 const configLogWorldCount = false;
@@ -75,6 +72,7 @@ const utf8Symbols =
     "ship": "⛵",
 };
 
+// @param resources: ...
 function resourcesAsUtf8(resources)
 {
     let s = "";
@@ -193,6 +191,17 @@ const wheat = "wheat";
 const brick = "brick";
 const sheep = "sheep";
 const resourceTypes = [wood, brick, sheep, wheat, ore];
+
+function rotateToLastPosition(array, value)
+{
+    const pos = array.indexOf(value);
+    console.assert(pos >= 0, "Value must be in array");
+    const rotation = array.length - pos - 1;
+    const unrotatedCopy = deepCopy(array);
+    for (let i = 0; i < array.length; ++i)
+        array[(i + rotation) % array.length] = unrotatedCopy[i];
+    return array;
+}
 
 function deepCopy(object)
 {

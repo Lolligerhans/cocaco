@@ -49,9 +49,9 @@ class Render
         this.config =
         {
             // The main table is always drawn because it contains onclick events
-            bubbles: true,
-            rolls: true,
-            robs: true,
+            bubbles: false,
+            rolls: false,
+            robs: false,
         };
     }
 
@@ -86,7 +86,7 @@ class Render
     update()
     {
         console.debug("🖥 Updating...");
-        this.manyWorlds.mwUpdateStats();     //TODO circumvents souldRenderTable()
+        this.manyWorlds.mwUpdateStats();
 
         //----------------------------------------------------------------------
         // Display resource plot
@@ -141,7 +141,7 @@ class Render
             const player = this.playerNames[i];
             let row = tblBody.rows[i];
             let playerRowCell = row.cells[0];
-            playerRowCell.innerHTML = this.renderPlayerCell(player); // TODO Remove?
+            playerRowCell.innerHTML = this.renderPlayerCell(player);
             for (let j = 0; j < Multiverse.resources.length; j++)
             {
                 const res = Multiverse.getResourceName(j);
@@ -213,7 +213,8 @@ class Render
         console.debug("🖥 Inserting display...");
 
         // TODO generate and return stats object?
-        this.manyWorlds.mwUpdateStats();     //TODO circumvents souldRenderTable()
+        this.manyWorlds.mwUpdateStats();
+        this.unrender();
 
         // Display
         let body = document.getElementsByTagName("body")[0];
@@ -290,7 +291,7 @@ class Render
             headerCell.addEventListener("click", () => this.toggle(i), false);
         }
 
-        // TODO Make labdas to data members?
+        // TODO Make lambdas to data members?
         const measureTotalCountFunction = (playerName) =>
         {
             // Show the most likely value as default
@@ -377,10 +378,22 @@ class Render
         // Display rob table
         //----------------------------------------------------------------------
 
+        let previousRobTbl = document.getElementById(this.ids.robTable);
+        try
+        {
+            if (previousRobTbl && !this.config.robs)
+                previousRobTbl.remove();
+        }
+        catch(e)
+        {
+            console.warn("[WARNING] Exception in unrender():", e);
+            alertIf(46);
+        }
+
         if (this.mustRedraw || this.config.robs === true)
         {
             const robTable = this.generateRobTable();
-            body.appendChild(robTable);
+            if (robTable) body.appendChild(robTable);
         }
 
         body.appendChild(tbl);
@@ -457,9 +470,12 @@ class Render
 
     generateRobTable()
     {
+
         let existingTbl = document.getElementById(this.ids.robTable);
         try { if (existingTbl) { existingTbl.remove(); } }
         catch (e) { console.warn("had an issue deleting the rob table", e); }
+        if (this.config.robs === false) return null;
+
         let robTable = document.createElement("table");
         robTable.id = this.ids.robTable;
 

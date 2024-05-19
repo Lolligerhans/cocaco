@@ -87,7 +87,6 @@ maxIndex: -1,
 worlds: null, // ManyWorlds Object
 multiverse: null, // Multiverse Object
 // The tracker object collects all the simple tracker data, like roll counting.
-// TODO Is tracker used everywhere possible? Compare to colonist version
 tracker: null, // Track Object
 // Because currently the render() function (that creates HTML elements in DOM)
 // makes good access of the other stuff, we implement it as a class that is
@@ -462,7 +461,6 @@ initializeTracker: function()
     twosheep.multiverse.initWorlds(noResources);
     twosheep.tracker = new Track();
     twosheep.tracker.init(twosheep.players);
-    twosheep.render.unrender(); // Remove table to force redraw over update
     twosheep.render = new Render
     (
         twosheep.multiverse,
@@ -477,6 +475,7 @@ initializeTracker: function()
         // Allowing our own icons as fallback
         configOwnIcons ? alternativeAssets : twosheep.icons
     );
+    twosheep.render.unrender(); // Remove table to force redraw over update
 
     // TODO Once internalized
     //twosheep.robsObject = twosheep.initRobs();
@@ -651,7 +650,7 @@ mainLoop: function(continueIf)
     return false; // Signal not completed to run again
 },
 
-// TODO DO we want to somehow disallow this call during initial phase?
+// TODO Do we want to somehow disallow this call during initial phase?
 recoverCards: function()
 {
     //console.debug("🩹 Considering card recovery");
@@ -771,7 +770,8 @@ parsers:
 {
     always: function(msg, idx)
     {
-        console.info(`👁 Message ${idx} »${msg.textContent}«`);
+        if (!configLogMessages) return false;
+        console.info(`👁 Message ${idx} | »${msg.textContent}«`);
         //console.debug(`🔍 Message ${idx} object:`, msg);
         return false;
     },
@@ -929,7 +929,7 @@ parsers:
 
         const asSlice = -mw.mwBuilds[building];
         twosheep.worlds.mwTransformSpawn(player, asSlice);
-        twosheep.multiverse.mwTransformSpawn(player, twosheep.multiverse.costs[building]);
+        twosheep.multiverse.mwTransformSpawn(player, Multiverse.costs[building]);
         twosheep.multiverse.printWorlds();
 
         return true;
@@ -951,7 +951,7 @@ parsers:
 
         const asSlice = -mw.mwBuilds.devcard;
         twosheep.worlds.mwTransformSpawn(player, asSlice);
-        twosheep.multiverse.mwTransformSpawn(player, twosheep.multiverse.costs.devcard);
+        twosheep.multiverse.mwTransformSpawn(player, Multiverse.costs.devcard);
         twosheep.multiverse.printWorlds();
 
         return true;
@@ -1126,7 +1126,7 @@ parsers:
 
         twosheep.worlds.mwCollapseMinTotal(player); // Total can be unknown to MW after monopoly
         twosheep.worlds.mwTransformSpawn(player, -discardedCardsAsSlie);
-        twosheep.multiverse.mwCollapseMinTotal(player);
+        twosheep.multiverse.mwCollapseTotal(player, n => n >= 8);
         twosheep.multiverse.mwTransformSpawn(player,
             Multiverse.sliceNegate(
                 Multiverse.asSlice(discarded)));

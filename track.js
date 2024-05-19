@@ -89,12 +89,13 @@ class Track
     }
 
     // The just the robbing action. No matter if from 7 or knight
-    addRob(thief, victim)
+    addRob(thief, victim, count = 1)
     {
-        this.robs[thief][victim] += 1;
-        this.robsTaken[thief] += 1;
-        this.robsLost[victim] += 1;
-        this.robsTotal += 1;
+        console.assert(typeof(count) === "number", "addRob: count must be a number");
+        this.robs[thief][victim] += count;
+        this.robsTaken[thief] += count;
+        this.robsLost[victim] += count;
+        this.robsTotal += count;
         this.printRobs();
     }
 

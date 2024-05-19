@@ -1,7 +1,7 @@
 "use strict";
 
 // TODO Store world chance outside of world. Makes iterating better
-// TODO Collapse based on monopolied number of cards for recovery mode
+// TODO Possibly add different statistics
 
 // Shared basics
 class Multiverse
@@ -19,7 +19,7 @@ class Multiverse
         // Output objects
         // range has 4 numbers: [ smallest_nonzero_index,
         //                        max_count, index_of_max_count,
-        //                        largest_nonzero_index ].  // TODO This is wrong by now
+        //                        largest_nonzero_index ].
         //  0) smallest_nonzero_index: minimal amount of available cards
         //  1) fraction: fraction of worlds having the most common (guessed) card count
         //  2) index_of_max_count: is the guess for the resource count, and the most
@@ -41,6 +41,7 @@ class Multiverse
         this.heldCounts = {};
     }
 };
+
 //==============================================================================
 // Helpers
 //==============================================================================
@@ -62,7 +63,7 @@ Multiverse.getResourceName = function(resourceIndex)
 
 Multiverse.prototype.getPlayerIndex = function(playerName)
 {
-    return this.playerIndices[playerName];
+    return Number( this.playerIndices[playerName] );
 }
 
 Multiverse.prototype.getPlayerName = function(playerIndex)
@@ -107,7 +108,7 @@ Multiverse.asNames = function(resourcesAsSlice)
 
 Multiverse.sliceHasNegative = function(slice)
 {
-    { // TODO unreachable. Remove this test eventuall
+    { // TODO Remove these checks eventually
         if (!slice)
         {
             console.error("unreachable");
@@ -310,10 +311,6 @@ Multiverse.prototype.mwWeightGuessExact = function(playerName, resourceIndex, co
         this.worlds = this.worlds.concat(newWorlds); // is there an in place version of this?
         this.removeDuplicateWorlds();
     }
-
-    // TODO (?) This was here before but I don't think it is needed
-    // Since we adjust chances in a one-sided way we need to make them sum to 1
-    // this.normalizeManyWorlds();
 }
 
 // Transform worlds by significantly increasing the 'chance' of worlds where
@@ -411,8 +408,7 @@ Multiverse.prototype.mwTransformExchange = function(source, target, tradedSlice)
 // direction, we can not get additional information by doing them 1 by 1.
 //
 // Format: offer = {wood:1, brick: 0, sheep: 2, ...}. Same for demand.
-// TODO: allow is unused now. was a sanity check
-Multiverse.prototype.transformTradeByName = function(trader, other, offer, demand, allow=false)
+Multiverse.prototype.transformTradeByName = function(trader, other, offer, demand)
 {
     // Generate slice in perspective trader -> other
     const slice = Multiverse.sliceSubtract(Multiverse.asSlice(offer), Multiverse.asSlice(demand));
@@ -489,6 +485,9 @@ Multiverse.prototype.branchHarbor = function(playerName, otherName)
 // thief's slice as stolen resource type. Where U is the number of unknown cards
 // victim has. This is a helper to allow monopolies in recovery mode.
 // @param max  Per-opponent stealing limit (for C&K).
+// ❕ Currently ignores the implicit reduction of 'max' to to stealing of
+// regular resources. To fix this, the branching could to happen before, while
+// the card count is still known.
 Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, resourceIndex, max=19)
 {
     // For binomial chance
@@ -519,26 +518,29 @@ Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, re
 
 // Transform worlds by monopoly (branches in recovery mode!)
 // @param max  Per-opponent stealing limit (for C&K).
-Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex, max=19)
+// @param count:  Collapses to worlds where exactly 'count' many resources are
+//                stolen. No effect on the recovery mode effects at the moment.
+Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex, max=19, count=null)
 {
     const thiefIdx = this.getPlayerIndex(thiefName);
     this.worlds = this.worlds.map(world =>
     {
         // Total count may be difference in worlds because of recovery mode
-        let totalCount = 0;
-        // For simplicity includes thief as well
-        //console.log("Monopoly world:", world); // debugging
+        let totalStolen = 0;
         for (let p = 0; p < this.players.length; ++p)
         {
+            if (p === thiefIdx) continue;
             const stolen = Math.min(world[p][resourceIndex], max);
-            totalCount += stolen
-            //console.log("Monopoly slice:", world[p], stolen); // debugging
-            world[p][resourceIndex] -= stolen; // ❗
+            totalStolen += stolen
+            world[p][resourceIndex] -= stolen;
         }
-        world[thiefIdx][resourceIndex] += totalCount;
+        world[thiefIdx][resourceIndex] += totalStolen;
 
+        if (count !== null)
+            if (totalStolen !== count) return null;
         return world;
     });
+    this.worlds = this.worlds.filter(w => w !== null);
 
     this.removeDuplicateWorlds();
 
@@ -599,25 +601,14 @@ Multiverse.prototype.mwCollapseMin = function(playerName, slice)
     this.mwTransformSpawn(playerName, slice);
 }
 
-// Discard if 8 or more cards
-Multiverse.prototype.mwCollapseMinTotal = function(playerName, count = 8)
+// Collapse by predicate on the slice sum of a single player
+Multiverse.prototype.mwCollapseTotal = function(playerName, predicate = n => n >= 8)
 {
     const playerIdx = this.getPlayerIndex(playerName);
     this.worlds = this.worlds.filter(world =>
     {
-        return Multiverse.sliceTotal(world[playerIdx]) >= count;
+        return predicate(Multiverse.sliceTotal(world[playerIdx]));
     });
-}
-
-// Measure single resource of a player
-//
-// (!) Not part of recovery mechanism! Because not used for games.
-// TODO make it part of recovery mechanism or remove.
-// FIXME Do we need to deal with recovery here?
-Multiverse.prototype.collapseExact = function(player, resourceIndex, count)
-{
-    console.error("Not implemented");
-    debugger;
 }
 
 // Why: This function is used when revealing a single resource card from
@@ -681,7 +672,7 @@ Multiverse.prototype.removeDuplicateWorlds = function()
             if (!Multiverse.sliceEquals(item[p], other[p]))
                 return true;
         }
-        other["chance"] += item["chance"]; // TODO I hope this is legitimate
+        other["chance"] += item["chance"]; // TODO I hope reference invalidation
         return false;
     });
 }
@@ -775,7 +766,6 @@ Multiverse.prototype.mwUpdateStats = function()
     });
 
     // Generate most "likely" suggestion
-    // TODO Possibly add different statistics: Mean, mode, other percentiles
     for (const player of this.players)
     {
         for (const res of Multiverse.resources)

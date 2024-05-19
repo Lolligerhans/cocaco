@@ -9,7 +9,8 @@
     {
         "512": "assets/catan2.jpg"
     },
-    "host_permissions": [
+    "host_permissions":
+    [
         "https://colonist.io/*",
         "https://twosheep.io/*"
     ],
