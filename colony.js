@@ -1255,7 +1255,9 @@ class Colony
             return true;
         }
 
-        logs("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
+        console.assert(this.turnState.nextSteal === "robber", "Should set next steal before entering here");
+
+        console.log("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
 
         this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
@@ -1700,7 +1702,7 @@ class Colony
         if (!verifyPlayers(this.players, player)) return false; // Sanity check
         console.log(`[INFO] Diplomat: ${player} repositioning road`);
 
-        this.turntable.diplomatReposition = true;
+        this.turnState.diplomatReposition = true;
 
         debugger; // Test if the repositioned-road message is captured
 

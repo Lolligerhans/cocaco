@@ -275,6 +275,17 @@ Multiverse.prototype.initWorlds = function(startingResources)
     this.printWorlds();
 }
 
+// @param count: True exact amount of cards 'layerName' is holding, including
+//               unknown cards.
+Multiverse.prototype.collapseExactTotal = function(playerName, count)
+{
+    const playerIdx = this.getPlayerIndex(playerName);
+    this.worlds = this.worlds.filter(world =>
+    {
+        return this.sliceTotal(world[playerIdx]) === count;
+    });
+}
+
 // Specializes mwWeightGuessPredicate() for the exact count case.
 // ❕ This specialization may branch in recovery mode by using unknown cards to
 // reach the exact count when possible.
@@ -810,7 +821,6 @@ Multiverse.prototype.mwUpdateStats = function()
 
         // Do the same for cardSum. But better since we use a better format
         {
-            debugger;
             let range = [1000, 0, 0, 0]; // Arbitrary large start maximum
             for (const [idx, val] of Object.entries(this.mwDistribution[player].cardSum))
             {
@@ -820,7 +830,6 @@ Multiverse.prototype.mwUpdateStats = function()
                 if (val != 0)           { range[3] = Math.max(range[3], idx); }
             }
             this.worldGuessAndRange[player].cardSum = range;
-            debugger; // Verify that the cards sums have meaningful values
         }
     }
     // For total card stats (doesnt matter which world is used)

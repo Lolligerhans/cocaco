@@ -270,6 +270,17 @@ class Render
         }
 
         // TODO Make labdas to data members?
+        const measureTotalCountFunction = (playerName) =>
+        {
+            // Show the most likely value as default
+            const defa = this.manyWorlds.worldGuessAndRange[playerName].cardSum[2];
+            const guessStr = prompt(`${playerName}'s true card count:`, defa.toString());
+            const guessCount = parseInt(guessStr, 10)
+            this.manyWorlds.collapseExactTotal(playerName, guessCount);
+
+            this.render();
+        };
+
         const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
         {
             const resourceName = this.manyWorlds.getResourceName(resourceIndex);
@@ -312,12 +323,15 @@ class Render
         //----------------------------------------------------------------------
 
         let tblBody = tbl.createTBody();
-        for (let i = 0; i < this.playerNames.length; i++) {
+        for (let i = 0; i < this.playerNames.length; i++)
+        {
             const player = this.playerNames[i];
             let row = tblBody.insertRow(i);
             row.className = "explorer-tbl-row";
             let playerRowCell = row.insertCell(0);
             playerRowCell.className = "explorer-tbl-player-col-cell";   // Same as for rob table
+            playerRowCell.addEventListener("click", measureTotalCountFunction.bind(null, player), false);
+            // Resources
             for (let j = 0; j < this.manyWorlds.resources.length; j++)
             {
                 const res = this.manyWorlds.getResourceName(j);
@@ -325,7 +339,7 @@ class Render
                 cell.className = "explorer-tbl-cell";   // Same as for rob table
                 cell.addEventListener("click", guessCardCountFunction.bind(null, player, j, this.manyWorlds.worldGuessAndRange[player][res][2]), false);
             }
-            // Copy the cell-adding for resource
+            // Buildings
             let j = this.manyWorlds.resources.length + 1;
             let addBuildFunc = b =>
             {
