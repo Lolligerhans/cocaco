@@ -18,7 +18,7 @@
     border: none;
     padding: 0px;
     z-index: 9998;
-    top: 0px;
+    top: 210px;
 }
 
 #explorer-plt-rolls
@@ -28,7 +28,7 @@
   padding: 0px;
   z-index: 9998;
   /*top: 550px; /* below resource plot */
-  top: 0px; /* next to resource plot */
+  top: 210px; /* next to resource plot */
   left: 315px;
 }
 
@@ -37,7 +37,7 @@
     position: absolute;
     background-color: #ccc;
     z-index: 9996;
-    top: 250px;
+    top: 0;
     left: 0;
     /*! padding: 3px; */
     border: solid 3px #555;
@@ -51,7 +51,7 @@
     background-color: #ccc;
     z-index: 9999;
     top: 0px;
-    left: 565px;
+    right: 0px;
     box-sizing: border-box;
     /*! padding: 3px; */
     border: solid 3px #555;

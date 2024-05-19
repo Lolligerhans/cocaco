@@ -23,9 +23,6 @@ const configPrintRobs = false;
 const configRunManyWorldsTest = false;  // Run test and quit. Not a full unit test.
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
-const configPlotBubbles = true;
-const configPlotRolls = true;
-const configShowRobs = true;
 const configLogMessages = true;
 const configOwnIcons = false;
 const configUseTimer = true;
@@ -36,8 +33,6 @@ console.log("[INFO]",
     "| configRunManyWorldsTest:", configRunManyWorldsTest,
     "| configFixedPlayerName:", configFixedPlayerName,
     "| configPlayerName:", configPlayerName,
-    "| configPlotBubbles:", configPlotBubbles,
-    "| configPlotRolls:", configPlotRolls,
     "| configLogMessages:", configLogMessages,
     "| configLogWorldCount:", configLogWorldCount
 );
@@ -50,12 +45,15 @@ if (e !== null) { e.textContent = "CoCaCo " + version_string; e.style.background
 // The text symbols are for outputting only ;)
 const resourceIcons =
 {
-  "wood":"🪵",
-  "brick": "🧱",
-  "sheep": "🐑",
-  "wheat": "🌾",
-  "ore": "🪨",
-  "unknown": "🂠",
+    wood:"🪵",
+    brick: "🧱",
+    sheep: "🐑",
+    wheat: "🌾",
+    ore: "🪨",
+    cloth: "🧶",
+    coin: "🪙",
+    paper: "📜",
+    unknown: "🂠",
 };
 const utf8Symbols =
 {
@@ -215,17 +213,6 @@ function alertIf(message)
         console.warn("Skipping alert(", message, ")");
     }
 }
-
-// Strings contained in the resource image file names. Used also in regex so
-// keep simple. Used to detect resource icons in log messages.
-const resourceCardNames =
-{
-    wood: "card_lumber",
-    brick: "card_brick",
-    sheep: "card_wool",
-    wheat: "card_grain",
-    ore: "card_ore"
-};
 
 
 const predicates =

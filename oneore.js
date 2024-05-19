@@ -469,9 +469,6 @@ initializeTracker: function()
         twosheep.tracker,
         twosheep.players,
         twosheep.player_colours,
-        // The update context runs the main loop once, triggering a render
-        // update if needed
-        twosheep.mainLoop.bind(twosheep, () => true),
         twosheep.restartTracker.bind(twosheep), // Currently ignored by Render
         null, // Card and name recovery
         null, // …are in findLogElement.
@@ -511,7 +508,7 @@ findInitialResources: function()
         twosheep.worlds.mwTransformSpawn(name, mw.generateFullSliceFromNames(resources));
         console.log(`▶️ %c${name}%c ${resourcesAsUtf8(resources)}`, twosheep.consoleCss(name), "");
         //console.debug(`• Set initial resources for ${name} to`, resources);
-        twosheep.multiverse.mwTransformSpawn(name, twosheep.multiverse.asSlice(resources));
+        twosheep.multiverse.mwTransformSpawn(name, Multiverse.asSlice(resources));
     }
 
     //console.debug("◦ Initial resources set");
@@ -844,7 +841,7 @@ parsers:
 
         const offerSlice = mw.generateWorldSlice(offer);
         twosheep.worlds.mwCollapseMin(player, offerSlice);
-        twosheep.multiverse.mwCollapseMin(player, twosheep.multiverse.asSlice(offer));
+        twosheep.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
 
         return true;
     },
@@ -865,7 +862,7 @@ parsers:
         const asSlice = mw.generateWorldSlice(offer);
 
         twosheep.worlds.mwCollapseMin(player, asSlice);
-        twosheep.multiverse.mwCollapseMin(player, twosheep.multiverse.asSlice(offer));
+        twosheep.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
 
         return true;
     },
@@ -884,7 +881,7 @@ parsers:
         console.log("Got resources:", player, "<-", obtainedResources);
 
         twosheep.worlds.mwTransformSpawn(player, asSlice);
-        twosheep.multiverse.mwTransformSpawn(player, twosheep.multiverse.asSlice(obtainedResources));
+        twosheep.multiverse.mwTransformSpawn(player, Multiverse.asSlice(obtainedResources));
         twosheep.multiverse.printWorlds();
 
         return true;
@@ -978,9 +975,9 @@ parsers:
 
         twosheep.worlds.mwTransformSpawn(player, takeSlice - giveSlice);
         twosheep.multiverse.mwTransformSpawn(player,
-            twosheep.multiverse.sliceSubtract(
-                twosheep.multiverse.asSlice(took),
-                twosheep.multiverse.asSlice(gave)));
+            Multiverse.sliceSubtract(
+                Multiverse.asSlice(took),
+                Multiverse.asSlice(gave)));
         twosheep.multiverse.printWorlds();
 
         return true;
@@ -1099,7 +1096,7 @@ parsers:
                 dummyDemand, // Using MW resource here but are by name
                 true
             )
-            twosheep.multiverse.mwCollapseMax(trade.victim, twosheep.multiverse.asSlice(collapseResources));
+            twosheep.multiverse.mwCollapseMax(trade.victim, Multiverse.asSlice(collapseResources));
         }
 
         return true;
@@ -1131,8 +1128,8 @@ parsers:
         twosheep.worlds.mwTransformSpawn(player, -discardedCardsAsSlie);
         twosheep.multiverse.mwCollapseMinTotal(player);
         twosheep.multiverse.mwTransformSpawn(player,
-            twosheep.multiverse.sliceNegate(
-                twosheep.multiverse.asSlice(discarded)));
+            Multiverse.sliceNegate(
+                Multiverse.asSlice(discarded)));
 
         return true;
     },
@@ -1225,9 +1222,9 @@ parsers:
             twosheep.worlds.collapseAsRandom(targetPlayer, stolenResourceIndex);
             twosheep.worlds.transformExchange(targetPlayer, stealingPlayer, asSlice);
             twosheep.multiverse.collapseAsRandom(targetPlayer,
-                twosheep.multiverse.getResourceIndex(stolenResourceType));
+                Multiverse.getResourceIndex(stolenResourceType));
             twosheep.multiverse.mwTransformExchange(targetPlayer, stealingPlayer,
-                twosheep.multiverse.asSlice(resources));
+                Multiverse.asSlice(resources));
         }
 
         return true;

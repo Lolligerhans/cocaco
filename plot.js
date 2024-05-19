@@ -310,7 +310,7 @@ function bubbleTest()
 */
 
     let playerBubbles = [];
-    const totalResources = generateFullNamesFromWorld(example_mw[0]);
+    const totalResources = Multiverse.generateFullNamesFromWorld(example_mw[0]);
     for (let j = 0; j < example_players.length; ++j)
     {
         const player = example_players[j];
@@ -891,7 +891,7 @@ function histogramTest()
 function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map)
 {
     let playerBubbles = [];
-    const totalResources = mw.generateFullNamesFromWorld(trackerObject);   // FIXME what is happening here?
+    const totalResources = Multiverse.generateFullNamesFromWorld(trackerObject);   // FIXME what is happening here?
     for (let j = 0; j < trackerObject.playerNames.length; ++j)
     {
         const player = trackerObject.playerNames[j];

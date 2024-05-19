@@ -25,17 +25,18 @@ class Colony
         for (let img of images)
         {
             // Check which resource it is
-            for (const resourceType of resourceTypes)
+            for (const resourceType of Multiverse.resources)
             {
-                if (img.src.includes(resourceCardNames[resourceType]))
+                if (img.src.includes(this.resourceSnippets[resourceType]))
                 {
-                    log("Found singular resource type", resourceType);
+                    console.debug("findSingularResourceImageInElement: Found singular resource type", resourceType);
                     return resourceType;
                 }
             }
         }
 
-        log("[ERROR] Expected resource image in element");
+        console.assert(false, "[ERROR] Expected resource image in element (unreachable)");
+        console.log(element);
         alertIf(4);
     }
 
@@ -54,7 +55,7 @@ class Colony
             {
                 if (img.src.includes(Colony.imageNameSnippets[r]))
                 {
-                    resources[r] = resources[r] + 1 || 1;
+                    resources[r] = (resources[r] || 0) + 1;
                     break;
                 }
             }
@@ -68,7 +69,7 @@ class Colony
     // Returns object {wood: 0, brick:1, …}
     static findAllResourceCardsInHtml(html)
     {
-        // Match resourceCardNames against string content
+        // Match 'resourceSnippets' against string content
         let foundAny = false;   // For sanity check
         let cards = {wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, cloth: 0, coin: 0, paper: 0};
         for (const [res, uniqueResString] of Object.entries(Colony.resourceSnippets))
@@ -489,7 +490,6 @@ Colony.prototype.waitForInitialPlacement = function()
         null,
         null,
         null,
-        null,
         configOwnIcons ? alternativeAssets : Colony.colonistAssets
     );
     this.renderObject.unrender(); // Remove leftovers during testing
@@ -585,7 +585,6 @@ Colony.prototype.initializeTracker = function()
     (
         this.multiverse, this.trackerCollection,
         this.players, this.player_colors,
-        this.mainLoop.bind(this, () => true), // Update function
         null,
         this.boundRecoverCards,
         this.boundRecoverNames,
@@ -811,7 +810,7 @@ Colony.prototype.parseInitialGotMessage = function(element)
     const asSlice = mw.generateWorldSlice(initialResourceTypes);
     logs("[INFO] First settlement resources:", player, "<-", initialResourceTypes);
     if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
-    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(initialResourceTypes));
+    this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(initialResourceTypes));
 
     return true;
 }
@@ -827,7 +826,7 @@ Colony.prototype.parseTradeOffer = function(element)
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
     const asSlice = mw.generateWorldSlice(offer);
     logs("[INFO] Trade offer:", player, "->", offer);
-    this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+    this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
     this.multiverse.printWorlds();
 
     return true;
@@ -846,7 +845,7 @@ Colony.prototype.parseTradeOfferCounter = function(element)
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
     const asSlice = mw.generateWorldSlice(offer);
     logs("[INFO] Trade counter offer:", player, "->", offer);
-    this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+    this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
     this.multiverse.printWorlds();
 
     return true;
@@ -865,7 +864,7 @@ Colony.prototype.parseYearOfPlenty = function(element)
     let obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
     logs("[INFO] Year of Plenty:", beneficiary, "<-", obtainedResources);
     const asSlice = mw.generateWorldSlice(obtainedResources);
-    this.multiverse.mwTransformSpawn(beneficiary, this.multiverse.asSlice(obtainedResources));
+    this.multiverse.mwTransformSpawn(beneficiary, Multiverse.asSlice(obtainedResources));
     this.multiverse.printWorlds();
 
     return true;
@@ -886,7 +885,7 @@ Colony.prototype.parseGotMessage = function(element)
         let obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
         let asSlice = mw.generateWorldSlice(obtainedResources);
         logs("[INFO] Got resources:", player, "<-", obtainedResources);
-        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
+        this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(obtainedResources));
         this.multiverse.printWorlds();
 
         return true;
@@ -908,7 +907,7 @@ Colony.prototype.parseGoldTile = function(element)
     const obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
     logs("[INFO] Selected gold tile:", player, "<-", obtainedResources);
 
-    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
+    this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(obtainedResources));
     this.multiverse.printWorlds();
 
     return true;
@@ -984,7 +983,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
     }
 
     console.log("[INFO] Built:", player, JSON.stringify(buildResources));
-    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(buildResources));
+    this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(buildResources));
     this.multiverse.printWorlds();
 
     return true;
@@ -1033,7 +1032,7 @@ Colony.prototype.parseBoughtMessage = function(element)
     devCardResources[ore  ] = -1;
     const devCardSlice = mw.generateWorldSlice(devCardResources);
     logs("[INFO] Baught dev card:", player, "->", devCardResources);
-    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(devCardResources));
+    this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(devCardResources));
     this.multiverse.printWorlds();
 
     return true;
@@ -1068,8 +1067,8 @@ Colony.prototype.parseTradeBankMessage = function(element)
     const giveSlice     = mw.generateWorldSlice(giveResources);
     const takeSlice     = mw.generateWorldSlice(takeResources);
     logs("[INFO] Traded with bank:", player, giveResources, "->", takeResources);
-    this.multiverse.mwTransformSpawn(player, this.multiverse.sliceSubtract( this.multiverse.asSlice(takeResources)
-                                                                          , this.multiverse.asSlice(giveResources) ));
+    this.multiverse.mwTransformSpawn(player, Multiverse.sliceSubtract( Multiverse.asSlice(takeResources)
+                                                                          , Multiverse.asSlice(giveResources) ));
     this.multiverse.printWorlds();
 
     return true;
@@ -1101,7 +1100,7 @@ Colony.prototype.parseMonopoly = function(element)
     // ManyWorlds version
     const stolenResource = Colony.findSingularResourceImageInElement(element);
     logs("[INFO] Monopoly:", thief, "<-", stolenResource);
-    this.multiverse.transformMonopoly(thief, this.multiverse.getResourceIndex(stolenResource));
+    this.multiverse.transformMonopoly(thief, Multiverse.getResourceIndex(stolenResource));
     this.multiverse.printWorlds();
 
     // TODO What to do with turnstate here?
@@ -1124,8 +1123,8 @@ Colony.prototype.parseDiscardedMessage = function(element)
     const discarded = Colony.findAllResourceCardsInHtml(element.innerHTML);
     logs("[INFO] Discarded:", player, "->", discarded);
 
-    const slice = this.multiverse.asSlice(discarded);
-    if (this.multiverse.sliceTotal(slice) === 0)
+    const slice = Multiverse.asSlice(discarded);
+    if (Multiverse.sliceTotal(slice) === 0)
     {
         console.log("[INFO] Discard slice empty: Assuming progress cards (skipping)");
         return true;
@@ -1138,7 +1137,7 @@ Colony.prototype.parseDiscardedMessage = function(element)
         // their cards (eiher 2x or 2x+1 ❔)
     }
     this.multiverse.mwTransformSpawn(player,
-        this.multiverse.sliceNegate(this.multiverse.asSlice(discarded)));
+        Multiverse.sliceNegate(Multiverse.asSlice(discarded)));
     this.multiverse.printWorlds();
 
     return true;
@@ -1219,7 +1218,7 @@ Colony.prototype.stealKnown = function(element)
     const targetPlayer = involvedPlayers[1];
     if (!verifyPlayers(this.players, stealingPlayer, targetPlayer)) return false; // Sanity check
     const stolenResourceType = Colony.findSingularResourceImageInElement(element);
-    const stolenResourceIndex = this.multiverse.getResourceIndex(stolenResourceType);
+    const stolenResourceIndex = Multiverse.getResourceIndex(stolenResourceType);
 
     if (this.turnState.nextSteal === "masterMerchant")
     {
@@ -1229,7 +1228,7 @@ Colony.prototype.stealKnown = function(element)
         console.log("[INFO] Non-random known steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
 
         this.multiverse.transformExchange(targetPlayer, stealingPlayer, // source, target
-            this.multiverse.asSlice(merchantStolen));
+            Multiverse.asSlice(merchantStolen));
 
         // TODO Add robs to trackerCollection
 
@@ -1246,7 +1245,7 @@ Colony.prototype.stealKnown = function(element)
         console.log("[INFO] Non-random known steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
 
         this.multiverse.transformExchange(targetPlayer, stealingPlayer, // source, target
-            this.multiverse.asSlice(weddingStolen));
+            Multiverse.asSlice(weddingStolen));
 
         // TODO Add robs to trackerCollection
 
@@ -1264,11 +1263,11 @@ Colony.prototype.stealKnown = function(element)
     this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
     this.multiverse.collapseAsRandom(targetPlayer,
-        this.multiverse.getResourceIndex(stolenResourceType));
+        Multiverse.getResourceIndex(stolenResourceType));
     this.multiverse.mwTransformExchange
     (
         targetPlayer, stealingPlayer, // source, target
-        this.multiverse.asSlice({ [stolenResourceType]: 1 })
+        Multiverse.asSlice({ [stolenResourceType]: 1 })
     );
     this.multiverse.printWorlds(); // TODO maybe print in the parser loop
 
@@ -1311,8 +1310,8 @@ Colony.prototype.stealUnknown = function(element)
     if (this.turnState.nextSteal === "masterMerchant")
     {
         const merchantStolen = Colony.extractResourcesFromElement(element);
-        const asSlice = this.multiverse.asSlice(merchantStolen);
-        const stolenCount = this.multiverse.sliceTotal(asSlice);
+        const asSlice = Multiverse.asSlice(merchantStolen);
+        const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(merchantStolen["unknown"] === stolenCount, "Unknown steals have only unknown cards");
         console.log("[INFO] Non-random unknown steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
 
@@ -1333,8 +1332,8 @@ Colony.prototype.stealUnknown = function(element)
     if (this.turnState.nextSteal === "wedding")
     {
         const weddingStolen = Colony.extractResourcesFromElement(element);
-        const asSlice = this.multiverse.asSlice(weddingStolen);
-        const stolenCount = this.multiverse.sliceTotal(asSlice);
+        const asSlice = Multiverse.asSlice(weddingStolen);
+        const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(weddingStolen["unknown"] === stolenCount, "Unknown steals have only unknown cards");
         console.log("[INFO] Non-random unknown steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
 
@@ -1431,7 +1430,7 @@ Colony.prototype.parsePlaceShipRoad = function(element)
         if (alt !== "ship")
             debugger;
     }
-    const asSlice = this.multiverse.asSlice(costs);
+    const asSlice = Multiverse.asSlice(costs);
     log("[INFO] Place Ship:", player, "->", costs);
 
     this.multiverse.mwTransformSpawn(player, asSlice);
@@ -1451,7 +1450,7 @@ Colony.prototype.parsePlaceKnight = function(element)
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const costSlice = this.turnState.deserter === true
         ? this.multiverse.zeroResources
-        : this.multiverse.asSlice({ sheep: -1, ore: -1 });
+        : Multiverse.asSlice({ sheep: -1, ore: -1 });
     if (this.turnState.deserter === true)
         console.log("[INFO] Deserter: ", player, "gets a free knight");
     log("[INFO] Place Knight:", player, "->", costSlice);
@@ -1477,7 +1476,7 @@ Colony.prototype.parseActivateKnight = function(element)
     this.multiverse.mwTransformSpawn
     (
         player,
-        this.multiverse.asSlice(cost)
+        Multiverse.asSlice(cost)
     );
     this.multiverse.printWorlds();
 
@@ -1502,7 +1501,7 @@ Colony.prototype.parseUpgradeKnight = function(element)
         this.turnState.smith -= 1;
     }
     log(`[INFO] Upgrade Knight: ${player} ➜ ${JSON.stringify(cost)}`);
-    const asSlice = this.multiverse.asSlice(cost);
+    const asSlice = Multiverse.asSlice(cost);
 
     this.multiverse.mwTransformSpawn
     (
@@ -1527,7 +1526,7 @@ Colony.prototype.parseAqueduct = function(element)
     this.multiverse.mwTransformSpawn
     (
         player,
-        this.multiverse.asSlice(obtainedResources)
+        Multiverse.asSlice(obtainedResources)
     );
     this.multiverse.printWorlds();
 
@@ -1551,7 +1550,7 @@ Colony.prototype.parseUpgradeCity = function(element)
         console.log("[INFO] Crane: ", player, "gets a city upgrade cheaper by 1");
         this.turnState.crane = false;
     }
-    const slice = this.multiverse.asSlice(resources);
+    const slice = Multiverse.asSlice(resources);
     log(`[INFO] Upgrade City: ${player} -> ${JSON.stringify(resources)} (${resourceType} ✕ ${level})`);
 
     this.multiverse.mwTransformSpawn(player, slice);
@@ -1633,7 +1632,7 @@ Colony.prototype.parseResourceMonopoly = function(element)
     this.multiverse.transformMonopoly
     (
         player,
-        this.multiverse.getResourceIndex(resourceName),
+        Multiverse.getResourceIndex(resourceName),
         2 // Steal at most 2
     );
     this.multiverse.printWorlds();
@@ -1654,7 +1653,7 @@ Colony.prototype.parseCommodityMonopoly = function(element)
     const player = element.textContent.slice(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const type = element.children[1].children[1].alt;
-    const resIndex = this.multiverse.getResourceIndex(type);
+    const resIndex = Multiverse.getResourceIndex(type);
     log(`[INFO] Commodity Monopoly: ${player} <- ${type}`);
 
     // Steal at most 1

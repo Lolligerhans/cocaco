@@ -8,24 +8,6 @@ class Multiverse
 {
     constructor()
     {
-        this.resources = ["wood", "brick", "sheep", "wheat", "ore", "cloth", "coin", "paper", "unknown"];
-        this.resourceIndices = Object.fromEntries(this.resources.map((value, index) => [value, index]));
-
-        this.zeroResources = new Array(this.resources.length).fill(0);
-        this.zeroResourcesByName = this.asNames(this.zeroResources);
-        this.costs =
-        {
-            road:       new Array(this.resources.length).fill(0).fill(-1, 0, 2),
-            settlement: new Array(this.resources.length).fill(0).fill(-1, 0, 4),
-            devcard:    new Array(this.resources.length).fill(0).fill(-1, 2, 5),
-            city:       new Array(this.resources.length).fill(0),
-            ship:       new Array(this.resources.length).fill(0),
-        };
-        this.costs.city[this.getResourceIndex("wheat")] = -2;
-        this.costs.city[this.getResourceIndex("ore")] = -3;
-        this.costs.ship[this.getResourceIndex("wood")] = -1;
-        this.costs.ship[this.getResourceIndex("sheep")] = -1;
-
         // Helpers
         this.worlds = [];   // worlds === [world, world, ...] one world for ever possible state
                             // world === [slice, slice, ...] one slice for each player
@@ -59,7 +41,6 @@ class Multiverse
         this.heldCounts = {};
     }
 };
-
 //==============================================================================
 // Helpers
 //==============================================================================
@@ -69,14 +50,14 @@ Multiverse.prototype.worldCount = function()
     return this.worlds.length;
 }
 
-Multiverse.prototype.getResourceIndex = function(resourceName)
+Multiverse.getResourceIndex = function(resourceName)
 {
-    return this.resourceIndices[resourceName];
+    return Multiverse.resourceIndices[resourceName];
 }
 
-Multiverse.prototype.getResourceName = function(resourceIndex)
+Multiverse.getResourceName = function(resourceIndex)
 {
-    return this.resources[resourceIndex];
+    return Multiverse.resources[resourceIndex];
 }
 
 Multiverse.prototype.getPlayerIndex = function(playerName)
@@ -90,15 +71,15 @@ Multiverse.prototype.getPlayerName = function(playerIndex)
 }
 
 // Compute world resource totals as names
-Multiverse.prototype.generateFullNamesFromWorld = function(world)
+Multiverse.generateFullNamesFromWorld = function(world)
 {
-    let sum = [...this.zeroResources];
+    let sum = [...Multiverse.zeroResources];
     sum = Object.entries(world).reduce
     (
-        (sum, [playerIdx, slice]) => playerIdx === "chance" ? sum : this.sliceAdd(sum, slice),
+        (sum, [playerIdx, slice]) => playerIdx === "chance" ? sum : Multiverse.sliceAdd(sum, slice),
         sum
     );
-    return this.asNames(sum);
+    return Multiverse.asNames(sum);
 }
 
 //==============================================================================
@@ -108,23 +89,23 @@ Multiverse.prototype.generateFullNamesFromWorld = function(world)
 // Convert resources by names to slice, allowing unspecified resources
 // By name = { "wood": 3, "brick": 2, ... }
 // As slice = [3, 2, 0, 0, ...]
-Multiverse.prototype.asSlice = function(resourcesByName)
+Multiverse.asSlice = function(resourcesByName)
 {
-    let result = [...this.zeroResources];
+    let result = [...Multiverse.zeroResources];
     for (let [name, count] of Object.entries(resourcesByName))
-        result[this.getResourceIndex(name)] = count;
+        result[Multiverse.getResourceIndex(name)] = count;
     return result;
 }
 
-Multiverse.prototype.asNames = function(resourcesAsSlice)
+Multiverse.asNames = function(resourcesAsSlice)
 {
     let result = {};
     for (let i = 0; i < resourcesAsSlice.length; ++i)
-        result[this.getResourceName(i)] = resourcesAsSlice[i];
+        result[Multiverse.getResourceName(i)] = resourcesAsSlice[i];
     return result;
 }
 
-Multiverse.prototype.sliceHasNegative = function(slice)
+Multiverse.sliceHasNegative = function(slice)
 {
     { // TODO unreachable. Remove this test eventuall
         if (!slice)
@@ -141,13 +122,13 @@ Multiverse.prototype.sliceHasNegative = function(slice)
     return slice.some(x => x < 0);
 }
 
-Multiverse.prototype.sliceTotal = function(slice)
+Multiverse.sliceTotal = function(slice)
 {
     return slice.reduce((a, b) => a + b, 0);
 }
 
 // Like sliceTotal but consider only resources at specific indices
-Multiverse.prototype.sliceTotalIndices = function(slice, indices)
+Multiverse.sliceTotalIndices = function(slice, indices)
 {
     let total = 0;
     for (const index of indices)
@@ -155,23 +136,23 @@ Multiverse.prototype.sliceTotalIndices = function(slice, indices)
     return total;
 }
 
-Multiverse.prototype.sliceNegate = function(slice)
+Multiverse.sliceNegate = function(slice)
 {
     return slice.map(x => -x);
 }
 
-Multiverse.prototype.sliceAdd = function(s1, s2)
+Multiverse.sliceAdd = function(s1, s2)
 {
     let result = s1.map((x, i) => x + s2[i]);
     return result;
 }
 
-Multiverse.prototype.sliceEquals = function(s1, s2)
+Multiverse.sliceEquals = function(s1, s2)
 {
     return s1.every((x, i) => x === s2[i]);
 }
 
-Multiverse.prototype.sliceSubtract = function(s1, s2)
+Multiverse.sliceSubtract = function(s1, s2)
 {
     let result = s1.map((x, i) => x - s2[i]);
     return result;
@@ -179,7 +160,7 @@ Multiverse.prototype.sliceSubtract = function(s1, s2)
 
 // Use "unknown" resource to ensure non-negativity.
 // @return Fixed slice if possible, else null
-Multiverse.prototype.sliceUseUnknowns = function(slice)
+Multiverse.sliceUseUnknowns = function(slice)
 {
     let result = [...slice];
     for (let i = 0; i < result.length - 1; ++i) // Stop before "unknown" (last resource)
@@ -217,7 +198,7 @@ Multiverse.prototype.printWorlds = function()
         for (const pl of this.players)
         {
             const pIndx = this.getPlayerIndex(pl);
-            log(`\t\t[${i}][${pl}] =`, this.asNames(this.worlds[i][pIndx]));
+            log(`\t\t[${i}][${pl}] =`, Multiverse.asNames(this.worlds[i][pIndx]));
         }
     }
 }
@@ -230,8 +211,8 @@ Multiverse.prototype.mwCardRecovery = function(counts)
     for(const [player, count] of Object.entries(counts))
     {
         const playerIdx = this.getPlayerIndex(player);
-        world[playerIdx] = [...this.zeroResources];
-        world[playerIdx][this.getResourceIndex("unknown")] = count;
+        world[playerIdx] = [...Multiverse.zeroResources];
+        world[playerIdx][Multiverse.getResourceIndex("unknown")] = count;
     }
     world["chance"] = 1;
     this.worlds = [world];
@@ -259,7 +240,7 @@ Multiverse.prototype.initWorlds = function(startingResources)
     let world = {};
     for (const [name, resources] of Object.entries(startingResources))
     {
-        world[this.getPlayerIndex(name)] = this.asSlice(resources);
+        world[this.getPlayerIndex(name)] = Multiverse.asSlice(resources);
     }
     world["chance"] = 1;
     this.worlds = [world];
@@ -282,7 +263,7 @@ Multiverse.prototype.collapseExactTotal = function(playerName, count)
     const playerIdx = this.getPlayerIndex(playerName);
     this.worlds = this.worlds.filter(world =>
     {
-        return this.sliceTotal(world[playerIdx]) === count;
+        return Multiverse.sliceTotal(world[playerIdx]) === count;
     });
 }
 
@@ -291,7 +272,7 @@ Multiverse.prototype.collapseExactTotal = function(playerName, count)
 // reach the exact count when possible.
 Multiverse.prototype.mwWeightGuessExact = function(playerName, resourceIndex, count)
 {
-    const resourceName = resourceTypes[resourceIndex];
+    const resourceName = Multiverse.resources[resourceIndex];
     const icon = resourceIcons[resourceName];
     console.log(`❕❔ ${playerName}[${icon}] === ${count}`);
     const playerIdx = this.getPlayerIndex(playerName);
@@ -299,7 +280,7 @@ Multiverse.prototype.mwWeightGuessExact = function(playerName, resourceIndex, co
 
     let didBranch = false;
     let newWorlds = []; // Avoid appending to 'worlds' while iterating
-    const unknownIndex = this.getResourceIndex("unknown");
+    const unknownIndex = Multiverse.getResourceIndex("unknown");
     this.worlds.forEach(world =>
     {
         const availableCount = world[playerIdx][resourceIndex];
@@ -344,7 +325,7 @@ Multiverse.prototype.mwWeightGuessExact = function(playerName, resourceIndex, co
 // general case.
 Multiverse.prototype.mwWeightGuessPredicate = function(playerName, resourceIndex, predicate, name = "predicate")
 {
-    const resourceName = this.getResourceName(resourceIndex);
+    const resourceName = Multiverse.getResourceName(resourceIndex);
     const icon = resourceIcons[resourceName];
     console.log(`❕❔ ${playerName}[${icon}] ${name}`);
     const playerIdx = this.getPlayerIndex(playerName);
@@ -371,14 +352,14 @@ Multiverse.prototype.mwWeightGuessPredicate = function(playerName, resourceIndex
 // changes if sufficient unknown cards.
 Multiverse.prototype.mwWeightGuessNotavailable = function(playerName, resourceSlice)
 {
-    console.log(`❕❔ ${playerName} 🚫`, this.asNames(resourceSlice));
+    console.log(`❕❔ ${playerName} 🚫`, Multiverse.asNames(resourceSlice));
     const playerIdx = this.getPlayerIndex(playerName);
     const factor = 100; // Arbitrary large value
     let didBranch = false;
     this.worlds.forEach(world =>
     {
-        let adjustedSlice = this.sliceAdd(world[playerIdx], resourceSlice);
-        const slice = this.sliceUseUnknowns(adjustedSlice);
+        let adjustedSlice = Multiverse.sliceAdd(world[playerIdx], resourceSlice);
+        const slice = Multiverse.sliceUseUnknowns(adjustedSlice);
         if (slice === null)
             world["chance"] *= factor;
     });
@@ -388,13 +369,13 @@ Multiverse.prototype.mwWeightGuessNotavailable = function(playerName, resourceSl
 Multiverse.prototype.mwTransformSpawn = function(playerName, resourceSlice)
 {
     const playerIdx = this.getPlayerIndex(playerName);
-    const subtractsSomething = this.sliceHasNegative(resourceSlice);
+    const subtractsSomething = Multiverse.sliceHasNegative(resourceSlice);
     this.worlds = this.worlds.map(world =>
     {
-        world[playerIdx] = this.sliceAdd(world[playerIdx], resourceSlice);
+        world[playerIdx] = Multiverse.sliceAdd(world[playerIdx], resourceSlice);
         if (subtractsSomething)
             // Replace impossible with null
-            world[playerIdx] = this.sliceUseUnknowns(world[playerIdx]);
+            world[playerIdx] = Multiverse.sliceUseUnknowns(world[playerIdx]);
         return world;
     });
 
@@ -413,10 +394,10 @@ Multiverse.prototype.mwTransformExchange = function(source, target, tradedSlice)
     const t = this.getPlayerIndex(target);
     this.worlds = this.worlds.map(world =>
     {
-        world[s] = this.sliceSubtract(world[s], tradedSlice);
-        world[t] = this.sliceAdd(world[t], tradedSlice);
-        world[s] = this.sliceUseUnknowns(world[s]);
-        world[t] = this.sliceUseUnknowns(world[t]);
+        world[s] = Multiverse.sliceSubtract(world[s], tradedSlice);
+        world[t] = Multiverse.sliceAdd(world[t], tradedSlice);
+        world[s] = Multiverse.sliceUseUnknowns(world[s]);
+        world[t] = Multiverse.sliceUseUnknowns(world[t]);
         return world;
     });
     this.worlds = this.worlds.filter( world =>
@@ -434,7 +415,7 @@ Multiverse.prototype.mwTransformExchange = function(source, target, tradedSlice)
 Multiverse.prototype.transformTradeByName = function(trader, other, offer, demand, allow=false)
 {
     // Generate slice in perspective trader -> other
-    const slice = this.sliceSubtract(this.asSlice(offer), this.asSlice(demand));
+    const slice = Multiverse.sliceSubtract(Multiverse.asSlice(offer), Multiverse.asSlice(demand));
     this.mwTransformExchange(trader, other, slice);
 }
 
@@ -450,7 +431,7 @@ Multiverse.prototype.branchSteal = function(victimName, thiefName, deterministic
 {
     if (availableIndices === null)
     {
-        availableIndices = Object.values(this.resourceIndices);
+        availableIndices = Object.values(Multiverse.resourceIndices);
     }
     else
     {
@@ -463,7 +444,7 @@ Multiverse.prototype.branchSteal = function(victimName, thiefName, deterministic
     const thief = this.getPlayerIndex(thiefName);
     for (const world of this.worlds)
     {
-        const totalRes = this.sliceTotalIndices(world[victim], availableIndices);
+        const totalRes = Multiverse.sliceTotalIndices(world[victim], availableIndices);
         if (totalRes === 0)
             continue;// Impossible to steal => world dies
         for (const r of availableIndices)
@@ -493,8 +474,8 @@ Multiverse.prototype.branchSteal = function(victimName, thiefName, deterministic
 // resource of their choice in exchange for a commodity of otherNames's choice.
 Multiverse.prototype.branchHarbor = function(playerName, otherName)
 {
-    const commodityIndices = ["cloth", "coin", "paper", "unknown"].map(r => this.getResourceIndex(r));
-    const regularResIndices = ["wood", "brick", "sheep", "wheat", "ore", "unknown"].map(r => this.getResourceIndex(r));
+    const commodityIndices = ["cloth", "coin", "paper", "unknown"].map(r => Multiverse.getResourceIndex(r));
+    const regularResIndices = ["wood", "brick", "sheep", "wheat", "ore", "unknown"].map(r => Multiverse.getResourceIndex(r));
 
     // Since the steals are guaranteed to be different resources, we need not
     // collapse on availability beforehand.
@@ -511,13 +492,13 @@ Multiverse.prototype.branchHarbor = function(playerName, otherName)
 Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, resourceIndex, max=19)
 {
     // For binomial chance
-    const p = 1 / this.resources.length;
+    const p = 1 / Multiverse.resources.length;
 
-    const unknowIndex = this.getResourceIndex("unknown");
+    const unknowIndex = Multiverse.getResourceIndex("unknown");
     let newWorlds = [];
     for (const world of this.worlds)
     {
-        const totalRes = this.sliceTotal(world[victimIdx]);
+        const totalRes = Multiverse.sliceTotal(world[victimIdx]);
         const u = world[victimIdx][unknowIndex];
         for (let i = 0; i <= Math.min(u, max); ++i)
         {
@@ -577,9 +558,9 @@ Multiverse.prototype.transformMonopoly = function(thiefName, resourceIndex, max=
 //               Set the unknown count to 19 * 5 = 95 to allow any number.
 Multiverse.prototype.mwCollapseMax = function(playerName, slice)
 {
-    console.assert(!this.sliceHasNegative(slice), "Epecting non-negative slice in mwCollapseMax");
+    console.assert(!Multiverse.sliceHasNegative(slice), "Epecting non-negative slice in mwCollapseMax");
     // Unclear how unknowns would resolve
-    if (slice[this.getResourceIndex("unknown")] !== 0)
+    if (slice[Multiverse.getResourceIndex("unknown")] !== 0)
     {
         console.error(`{this.mwCollapseMax.name}: Expecting non-unknown slice in mwCollapseMax. Got ${slice}`);
         alertIf("Cannot collapse unknown cards");
@@ -601,19 +582,19 @@ Multiverse.prototype.mwCollapseMax = function(playerName, slice)
 Multiverse.prototype.mwCollapseMin = function(playerName, slice)
 {
     // Sanity check
-    if (this.sliceHasNegative(slice))
+    if (Multiverse.sliceHasNegative(slice))
     {
         console.error(`{this.mwCollapseMin.name}: Expecting non-negative slice in mwCollapseMin. Got ${slice}`);
         alertIf(37);
         return;
     }
-    console.assert(slice[this.getResourceIndex("unknown")] === 0, "Argument 'slice' must not contain unknown cards");
+    console.assert(slice[Multiverse.getResourceIndex("unknown")] === 0, "Argument 'slice' must not contain unknown cards");
 
     // debugging
     console.log(`Collapsing player ${playerName} to with at least this slice: ${slice}`);
 
     // Remove offending worlds
-    this.mwTransformSpawn(playerName, this.sliceNegate(slice));
+    this.mwTransformSpawn(playerName, Multiverse.sliceNegate(slice));
     // Restore original resources
     this.mwTransformSpawn(playerName, slice);
 }
@@ -624,7 +605,7 @@ Multiverse.prototype.mwCollapseMinTotal = function(playerName, count = 8)
     const playerIdx = this.getPlayerIndex(playerName);
     this.worlds = this.worlds.filter(world =>
     {
-        return this.sliceTotal(world[playerIdx]) >= count;
+        return Multiverse.sliceTotal(world[playerIdx]) >= count;
     });
 }
 
@@ -657,20 +638,20 @@ Multiverse.prototype.collapseExact = function(player, resourceIndex, count)
 // TODO: Rename to transformAsRandom (?)
 Multiverse.prototype.collapseAsRandom = function(playerName, resourceIndex)
 {
-    console.assert(resourceIndex !== this.getResourceIndex("unknown"), "Bayes update is for known cards only");
+    console.assert(resourceIndex !== Multiverse.getResourceIndex("unknown"), "Bayes update is for known cards only");
     const playerIdx = this.getPlayerIndex(playerName);
     this.worlds = this.worlds.filter(world =>
     {
         return 0 !==
             ( world[playerIdx][resourceIndex]
-            + world[playerIdx][this.getResourceIndex("unknown")] );
+            + world[playerIdx][Multiverse.getResourceIndex("unknown")] );
     });
 
     this.worlds = this.worlds.map((world) =>
     {
-        const total = this.sliceTotal(world[playerIdx]);
+        const total = Multiverse.sliceTotal(world[playerIdx]);
         const specific = world[playerIdx][resourceIndex]
-                       + world[playerIdx][this.getResourceIndex("unknown")];
+                       + world[playerIdx][Multiverse.getResourceIndex("unknown")];
         const bayesianUpdate = specific / total;
         world["chance"] = world["chance"] * bayesianUpdate;
         return world;
@@ -684,7 +665,7 @@ Multiverse.prototype.removeDuplicateWorlds = function()
     {
         // Arbitrary sort order
         for (let p = 0; p < this.players.length; ++p)
-        for (let r = 0; r < this.resources.length; ++r)
+        for (let r = 0; r < Multiverse.resources.length; ++r)
             if (w1[p][r] !== w2[p][r])
                 return w1[p][r] < w2[p][r] ? -1 : 1;
         return 0;
@@ -697,7 +678,7 @@ Multiverse.prototype.removeDuplicateWorlds = function()
         let other = others[pos-1];
         for (let p = 0; p < this.players.length; ++p)
         {
-            if (!this.sliceEquals(item[p], other[p]))
+            if (!Multiverse.sliceEquals(item[p], other[p]))
                 return true;
         }
         other["chance"] += item["chance"]; // TODO I hope this is legitimate
@@ -741,12 +722,12 @@ Multiverse.prototype.mwUpdateStats = function()
     console.assert(Object.keys(this.worlds[0]).length >= 2, `${this.mwUpdateStats.name}: Expected at least 2 world entries, got ${Object.keys(this.worlds[0]).length}`);
     for (const player of this.players)
     {
-        this.mwSteals[player] = deepCopy(this.zeroResourcesByName);
-        this.mwBuildsProb[player] = deepCopy(this.costs);
+        this.mwSteals[player] = deepCopy(Multiverse.zeroResourcesByName);
+        this.mwBuildsProb[player] = deepCopy(Multiverse.costs);
         Object.keys(this.mwBuildsProb[player]).forEach(k => this.mwBuildsProb[player][k] = 0);
         this.mwDistribution[player] = {};
         this.mwDistribution[player].cardSum = {}; // {[N]: chance_of_N, ...
-        for (const res of this.resources)
+        for (const res of Multiverse.resources)
         {
             // At most 19 cards because there are only 19 cards per resource
             //  Accumulated chance of player having exactly 4 of this resource
@@ -765,12 +746,12 @@ Multiverse.prototype.mwUpdateStats = function()
         for (const player of this.players)
         {
             const playerIdx = this.getPlayerIndex(player);
-            const totalPlayerRes = this.sliceTotal(w[playerIdx]);
+            const totalPlayerRes = Multiverse.sliceTotal(w[playerIdx]);
             this.mwDistribution[player].cardSum[totalPlayerRes] =
                 (this.mwDistribution[player].cardSum[totalPlayerRes] || 0) + w["chance"];
-            for (const res of this.resources)
+            for (const res of Multiverse.resources)
             {
-                const resIndx = this.getResourceIndex(res);
+                const resIndx = Multiverse.getResourceIndex(res);
                 // For distribution
                 const countInWorld = w[playerIdx][resIndx];
                 // FIXME IF distr[][][] does not exist yet, this does not set it
@@ -783,11 +764,11 @@ Multiverse.prototype.mwUpdateStats = function()
                     this.mwSteals[player][res] += (countInWorld / totalPlayerRes) * w["chance"];
             }
             // For builds
-            for (const [name, cost] of Object.entries(this.costs))
+            for (const [name, cost] of Object.entries(Multiverse.costs))
             {
                 // 'costs' contains negative values
-                const ifBought = this.sliceAdd(w[playerIdx], cost);
-                if (!this.sliceHasNegative(ifBought))
+                const ifBought = Multiverse.sliceAdd(w[playerIdx], cost);
+                if (!Multiverse.sliceHasNegative(ifBought))
                     this.mwBuildsProb[player][name] += w["chance"];
             }
         }
@@ -797,7 +778,7 @@ Multiverse.prototype.mwUpdateStats = function()
     // TODO Possibly add different statistics: Mean, mode, other percentiles
     for (const player of this.players)
     {
-        for (const res of this.resources)
+        for (const res of Multiverse.resources)
         {
             if (res === "unknown")
             {
@@ -834,7 +815,7 @@ Multiverse.prototype.mwUpdateStats = function()
     }
     // For total card stats (doesnt matter which world is used)
     // FIXME: It can matter in recovery mode
-    this.mwTotals = this.generateFullNamesFromWorld(this.worlds[0]);
+    this.mwTotals = Multiverse.generateFullNamesFromWorld(this.worlds[0]);
 }
 
 // Return manyworlds data in human readable notation instead of slices. Use
@@ -849,7 +830,7 @@ Multiverse.prototype.mwHumanReadableWorld = function()
         for (let p = 0; p < this.players.length; ++p)
         {
             const name = this.getPlayerName(p);
-            mwClone[i][name] = this.asNames(this.worlds[i][p]);
+            mwClone[i][name] = Multiverse.asNames(this.worlds[i][p]);
         }
     }
     return mwClone;
@@ -927,5 +908,26 @@ function sliceCompare(s1, s2)
     }
     return true;
 }
+
+//==============================================================================
+// Static data members
+//==============================================================================
+
+Multiverse.resources = ["wood", "brick", "sheep", "wheat", "ore", "cloth", "coin", "paper", "unknown"];
+Multiverse.resourceIndices = Object.fromEntries(Multiverse.resources.map((value, index) => [value, index]));
+Multiverse.zeroResources = new Array(Multiverse.resources.length).fill(0);
+Multiverse.zeroResourcesByName = Multiverse.asNames(Multiverse.zeroResources);
+Multiverse.costs =
+{
+    road:       new Array(Multiverse.resources.length).fill(0).fill(-1, 0, 2),
+    settlement: new Array(Multiverse.resources.length).fill(0).fill(-1, 0, 4),
+    devcard:    new Array(Multiverse.resources.length).fill(0).fill(-1, 2, 5),
+    city:       new Array(Multiverse.resources.length).fill(0),
+    ship:       new Array(Multiverse.resources.length).fill(0),
+};
+Multiverse.costs["city"][Multiverse.getResourceIndex("wheat")] = -2;
+Multiverse.costs["city"][Multiverse.getResourceIndex("ore"  )] = -3;
+Multiverse.costs["ship"][Multiverse.getResourceIndex("wood" )] = -1;
+Multiverse.costs["ship"][Multiverse.getResourceIndex("sheep")] = -1;
 
 // vim: shiftwidth=4:softtabstop=4:expandtab

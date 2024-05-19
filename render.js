@@ -10,8 +10,6 @@ class Render
         playerNames,
         // Colours must be consistent to ManyWorldsObject
         colour_map,
-        // Usually just bind the local state to appropriate callback closures
-        updateCallback,
         //haltCallback, // At log element currently
         //continueCallback, // At log element currently
         resetCallback, // Currently does nothing
@@ -34,9 +32,6 @@ class Render
         this.iconElements = iconAssets;
         this.context =
         {
-            // I think the interfering main calls should only run after any
-            // running main call has finished in the JS anti-concurrency model
-            updateCallback: updateCallback,
             // TODO: Previously didnt exist. The new moduling thing means we can
             // more easily reset the tracker state completely. This would help
             // a lot for debugging because we can replay the same log messages
@@ -47,7 +42,28 @@ class Render
             // Previously was 'mwManualFullRecovery' bound to the MW object
             recoverNamesCallback: recoverNamesCallback
         };
+
+        // Next render() will redraw, else will just update()
+        this.mustRedraw = false;
+        // Render toggles
+        this.config =
+        {
+            // The main table is always drawn because it contains onclick events
+            bubbles: true,
+            rolls: true,
+            robs: true,
+        };
     }
+
+    toggle(which)
+    {
+        if (typeof(which) === "number") which = Object.keys(this.config)[which];
+        console.log(`🖥 Toggling ${which}: Now ${this.config[which]}`);
+        this.config[which] = !this.config[which];
+        this.mustRedraw = true;
+        this.render();
+    }
+
 
     unrender()
     {
@@ -76,7 +92,7 @@ class Render
         // Display resource plot
         //----------------------------------------------------------------------
 
-        if (configPlotBubbles === true)
+        if (this.config.bubbles === true)
         {
             let plt = document.getElementById(this.ids.bubblePlot);
             fillElementWithPlot(plt, this.manyWorlds, this.colour_map);
@@ -86,7 +102,7 @@ class Render
         // Dispaly rolls histogram
         //----------------------------------------------------------------------
 
-        if (configPlotRolls === true)
+        if (this.config.rolls === true)
         {
             let plt = document.getElementById(this.ids.rollsPlot);
             this.track.fillRollPlot(plt);
@@ -106,9 +122,9 @@ class Render
         let headerRow = header.rows[0];
         let playerHeaderCell = headerRow.cells[0];
         playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
-        for (let i = 0; i < this.manyWorlds.resources.length; i++)
+        for (let i = 0; i < Multiverse.resources.length; i++)
         { // TODO use spans to separate number from icon
-            let resourceType = this.manyWorlds.getResourceName(i);
+            let resourceType = Multiverse.getResourceName(i);
             let resourceHeaderCell = headerRow.cells[i + 1];
             const total = this.manyWorlds.mwTotals[resourceType];
             const numberString = total > 0 ? `${total}` : "";
@@ -120,14 +136,15 @@ class Render
         //----------------------------------------------------------------------
 
         let tblBody = tbl.tBodies[0];
-        for (let i = 0; i < this.playerNames.length; i++) {
+        for (let i = 0; i < this.playerNames.length; i++)
+        {
             const player = this.playerNames[i];
             let row = tblBody.rows[i];
             let playerRowCell = row.cells[0];
             playerRowCell.innerHTML = this.renderPlayerCell(player); // TODO Remove?
-            for (let j = 0; j < this.manyWorlds.resources.length; j++)
+            for (let j = 0; j < Multiverse.resources.length; j++)
             {
-                const res = this.manyWorlds.getResourceName(j);
+                const res = Multiverse.getResourceName(j);
                 let cell = row.cells[j + 1];
                 const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
                 const fraction = this.manyWorlds.worldGuessAndRange[player][res][1]; // Fraction
@@ -142,7 +159,7 @@ class Render
                 //    cell.style.background = shadowColour;
             }
             // Copy the cell-adding for resource
-            let j = this.manyWorlds.resources.length + 1;
+            let j = Multiverse.resources.length + 1;
             let addBuildFunc = b =>
             {
                 const chance = this.manyWorlds.mwBuildsProb[player][b];
@@ -156,14 +173,14 @@ class Render
                     cell.style.background = "";
                 ++j;
             };
-            Object.keys(this.manyWorlds.costs).forEach(addBuildFunc);
+            Object.keys(Multiverse.costs).forEach(addBuildFunc);
         }
 
         //----------------------------------------------------------------------
         // Display rob table
         //----------------------------------------------------------------------
 
-        if (configShowRobs === true)
+        if (this.config.robs === true)
         {
             this.updateRobTable();
         }
@@ -186,10 +203,10 @@ class Render
             return;
         }
 
-        if (document.getElementById(this.ids.resourceTable))
+        if (!this.mustRedraw && document.getElementById(this.ids.resourceTable))
         {
             console.log("🖥 Delegating to update()");
-            this.update(renderIf);
+            this.update();
             return;
         }
 
@@ -205,7 +222,7 @@ class Render
         // Display resource plot
         //----------------------------------------------------------------------
 
-        if (configPlotBubbles === true)
+        if (this.mustRedraw || this.config.bubbles === true)
         {
             let existingPlot = document.getElementById(this.ids.bubblePlot);
             try { if (existingPlot) { existingPlot.remove(); } }
@@ -221,7 +238,7 @@ class Render
         // Dispaly rolls histogram
         //----------------------------------------------------------------------
 
-        if (configPlotRolls === true)
+        if (this.mustRedraw || this.config.rolls === true)
         {
             let existingPlot = document.getElementById(this.ids.rollsPlot);
             try { if (existingPlot) { existingPlot.remove(); } }
@@ -255,18 +272,22 @@ class Render
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.addEventListener("click", this.context.recoverNamesCallback, false);
         playerHeaderCell.className = "explorer-tbl-player-col-header";
-        for (let i = 0; i < this.manyWorlds.resources.length; i++)
+        for (let i = 0; i < Multiverse.resources.length; i++)
         {
-            let resourceType = this.manyWorlds.getResourceName(i);
+            let resourceType = Multiverse.getResourceName(i);
             let resourceHeaderCell = headerRow.insertCell(i + 1);
             resourceHeaderCell.addEventListener("click", this.context.recoverCardsCallback, false);
             resourceHeaderCell.className = "explorer-tbl-cell";
         }
-        for (const [i, name] of Object.keys(this.manyWorlds.costs).entries())
+        for (const [i, name] of Object.keys(Multiverse.costs).entries())
         {
-            let headerCell = headerRow.insertCell(i + 1 + this.manyWorlds.resources.length);
+            let headerCell = headerRow.insertCell(i + 1 + Multiverse.resources.length);
             headerCell.className = "explorer-tbl-cell";
             headerCell.innerHTML = this.iconElements[name];
+
+            // Abuse the building header cells to toggle subplots. We do not
+            // particularly care how the mapping is.
+            headerCell.addEventListener("click", () => this.toggle(i), false);
         }
 
         // TODO Make labdas to data members?
@@ -283,7 +304,7 @@ class Render
 
         const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
         {
-            const resourceName = this.manyWorlds.getResourceName(resourceIndex);
+            const resourceName = Multiverse.getResourceName(resourceIndex);
             const icon = resourceIcons[resourceName];
             const guessStr = prompt(`How many ${icon} has ${playerName}?`, defaultCount.toString());
 
@@ -314,7 +335,7 @@ class Render
         };
         const guessHasNoBuilding = (playerName, buildingName) =>
         {
-            this.manyWorlds.mwWeightGuessNotavailable(playerName, this.manyWorlds.costs[buildingName]);
+            this.manyWorlds.mwWeightGuessNotavailable(playerName, Multiverse.costs[buildingName]);
             this.render();
         };
 
@@ -332,15 +353,15 @@ class Render
             playerRowCell.className = "explorer-tbl-player-col-cell";   // Same as for rob table
             playerRowCell.addEventListener("click", measureTotalCountFunction.bind(null, player), false);
             // Resources
-            for (let j = 0; j < this.manyWorlds.resources.length; j++)
+            for (let j = 0; j < Multiverse.resources.length; j++)
             {
-                const res = this.manyWorlds.getResourceName(j);
+                const res = Multiverse.getResourceName(j);
                 let cell = row.insertCell(j + 1);
                 cell.className = "explorer-tbl-cell";   // Same as for rob table
                 cell.addEventListener("click", guessCardCountFunction.bind(null, player, j, this.manyWorlds.worldGuessAndRange[player][res][2]), false);
             }
             // Buildings
-            let j = this.manyWorlds.resources.length + 1;
+            let j = Multiverse.resources.length + 1;
             let addBuildFunc = b =>
             {
                 const chance = this.manyWorlds.mwBuildsProb[player][b];
@@ -349,14 +370,14 @@ class Render
                 cell.className = "explorer-tbl-cell";
                 ++j;
             };
-            Object.keys(this.manyWorlds.costs).forEach(addBuildFunc);
+            Object.keys(Multiverse.costs).forEach(addBuildFunc);
         }
 
         //----------------------------------------------------------------------
         // Display rob table
         //----------------------------------------------------------------------
 
-        if (configShowRobs === true)
+        if (this.mustRedraw || this.config.robs === true)
         {
             const robTable = this.generateRobTable();
             body.appendChild(robTable);
@@ -368,7 +389,8 @@ class Render
 
         console.debug("🖥 Inserted display");
 
-        console.log("🖥 Delegating to update()");
+        this.mustRedraw = false;
+        console.log("🖥 Continuing with update()");
         this.update(renderIf);
     }
 
@@ -496,7 +518,6 @@ class Render
         let cell = row.insertCell(j + 1);
         cell.className = "explorer-tbl-total-cell";
 
-        robTable.addEventListener("click", this.context.updateCallback, false);
         return robTable;
     }
 
