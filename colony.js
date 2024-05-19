@@ -334,1454 +334,1454 @@ class Colony
 
     }
 
-    //=====================================================================
-    // Messages
-    //=====================================================================
+} // class Colony
 
-    getAllMessages()
-    {
-        if (!this.logElement)
-        {
-            alertIf(41);
-            throw Error("Log element hasn't been found yet.");
-        }
-        return collectionToArray(this.logElement.children);
-    }
+//=====================================================================
+// Messages
+//=====================================================================
 
-    getNewMessages(asIndex = false)
+Colony.prototype.getAllMessages = function()
+{
+    if (!this.logElement)
     {
-        const index = this.MSG_OFFSET;
-        const allMessages = this.getAllMessages();
-        this.MSG_OFFSET = allMessages.length;
-        if (asIndex === false)
-            return allMessages.slice(index);
-        else if(asIndex === true)
-            return [allMessages, index];
-        else
-            console.assert(false, "unreachable");
+        alertIf(41);
+        throw Error("Log element hasn't been found yet.");
     }
+    return collectionToArray(this.logElement.children);
+}
 
-    // ❗ Has the sideeffect of updating a checkpoint message number (separate
-    // from MSG_INDEX).
-    // TODO This is essentially the same as MSG_INDEX, but for the rendering.
-    //      Consolidate the similarities.
-    isNewMessage(msgNumber)
+Colony.prototype.getNewMessages = function(asIndex = false)
+{
+    const index = this.MSG_OFFSET;
+    const allMessages = this.getAllMessages();
+    this.MSG_OFFSET = allMessages.length;
+    if (asIndex === false)
+        return allMessages.slice(index);
+    else if(asIndex === true)
+        return [allMessages, index];
+    else
+        console.assert(false, "unreachable");
+}
+
+// ❗ Has the sideeffect of updating a checkpoint message number (separate
+// from MSG_INDEX).
+// TODO This is essentially the same as MSG_INDEX, but for the rendering.
+//      Consolidate the similarities.
+Colony.prototype.isNewMessage = function(msgNumber)
+{
+    if (msgNumber > this.messageNumberDone)
     {
-        if (msgNumber > this.messageNumberDone)
-        {
-            this.messageNumberDone = msgNumber;
-            return true;
-        }
-        return false;
+        this.messageNumberDone = msgNumber;
+        return true;
     }
+    return false;
+}
 
     //=====================================================================
     // Program flow
     //=====================================================================
 
-    restartTracker(tasks =
-    [
-        { "funct": this.reset.bind(this),                             "ok": false },
-        { "funct": this.findPlayerName.bind(this),                    "ok": false },
-        { "funct": this.findTranscription.bind(this),                 "ok": false },
-        { "funct": this.waitForInitialPlacement.bind(this),           "ok": false },
-        { "funct": this.recoverUsers.bind(this),                      "ok": false },
-        { "funct": this.initializeTracker.bind(this),                 "ok": false },
-        { "funct": () => { this.MSG_OFFSET = 0; return true; },       "ok": false },
-        { "funct": this.comeMrTallyManTallinitialResource.bind(this), "ok": false },
-        { "funct": this.restartMainLoop.bind(this),                   "ok": false },
-    ])
+Colony.prototype.restartTracker = function(tasks =
+[
+    { "funct": this.reset.bind(this),                             "ok": false },
+    { "funct": this.findPlayerName.bind(this),                    "ok": false },
+    { "funct": this.findTranscription.bind(this),                 "ok": false },
+    { "funct": this.waitForInitialPlacement.bind(this),           "ok": false },
+    { "funct": this.recoverUsers.bind(this),                      "ok": false },
+    { "funct": this.initializeTracker.bind(this),                 "ok": false },
+    { "funct": () => { this.MSG_OFFSET = 0; return true; },       "ok": false },
+    { "funct": this.comeMrTallyManTallinitialResource.bind(this), "ok": false },
+    { "funct": this.restartMainLoop.bind(this),                   "ok": false },
+])
+{
+    for (let i = 0; i < tasks.length; ++i)
     {
-        for (let i = 0; i < tasks.length; ++i)
-        {
-            if (tasks[i].ok)
-                continue;
-            console.info(`🧭 ( ${i} ) restartTracker:`, tasks[i].funct.name);
-            // Assume we will succeed and remember for when we come back
-            tasks[i].ok = true;
-            // Use 'restartTracker' function as then parameter to setDoInterval().
-            // Once then() is executed, we know to skip this index and continue with
-            // the next one.
-            setDoInterval(tasks[i].funct, Colony.refreshRate, this.restartTracker.bind(this, tasks));
-            // Return, but we imagine that the program flow continues with the
-            // setDoInterval().
-            return; // Continue in new setInterval
-        }
-        console.info("🧭 ( ✔️  ) restartTracker' dispatcher completed");
+        if (tasks[i].ok)
+            continue;
+        console.info(`🧭 ( ${i} ) restartTracker:`, tasks[i].funct.name);
+        // Assume we will succeed and remember for when we come back
+        tasks[i].ok = true;
+        // Use 'restartTracker' function as then parameter to setDoInterval().
+        // Once then() is executed, we know to skip this index and continue with
+        // the next one.
+        setDoInterval(tasks[i].funct, Colony.refreshRate, this.restartTracker.bind(this, tasks));
+        // Return, but we imagine that the program flow continues with the
+        // setDoInterval().
+        return; // Continue in new setInterval
     }
+    console.info("🧭 ( ✔️  ) restartTracker' dispatcher completed");
+}
 
     // Like ctor, but keeps 'activeIndex' and 'lastStarted' intact so we dont
     // orphan the 'mainLoop' 'setDoInterval'.
-    reset()
-    {
-        this.logElement = null;
-        this.playerUsernameElement = null;
+Colony.prototype.reset = function()
+{
+    this.logElement = null;
+    this.playerUsernameElement = null;
 
-        this.playerUsername; // "John"
-        this.players = []; // ["John", "Jane", ...]
-        this.player_colors = {}; // {"John": "blue", "Jane": "rgb(...)", ...}
+    this.playerUsername; // "John"
+    this.players = []; // ["John", "Jane", ...]
+    this.player_colors = {}; // {"John": "blue", "Jane": "rgb(...)", ...}
 
-        this.multiverse = null; // new Multiverse();
-        this.renderObject = null; // new Render();
-        this.trackerCollection = null; // new Track();
+    this.multiverse = null; // new Multiverse();
+    this.renderObject = null; // new Render();
+    this.trackerCollection = null; // new Track();
 
-        this.MSG_OFFSET = 0;
-        this.messageNumberDone = -1;
-        this.startupFlag = true;
+    this.MSG_OFFSET = 0;
+    this.messageNumberDone = -1;
+    this.startupFlag = true;
 
-        return true;
-    }
+    return true;
+}
 
-    findPlayerName()
-    {
-        log("[NOTE] searching profile name");
-        this.playerUsernameElement = document.getElementById("header_profile_username");
-        console.assert(this.playerUsernameElement !== null, "should always be present, during and outside of games");
-        this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
-        console.log("[NOTE] Found profile:", `"${this.playerUsername}"`);
+Colony.prototype.findPlayerName = function()
+{
+    log("[NOTE] searching profile name");
+    this.playerUsernameElement = document.getElementById("header_profile_username");
+    console.assert(this.playerUsernameElement !== null, "should always be present, during and outside of games");
+    this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
+    console.log("[NOTE] Found profile:", `"${this.playerUsername}"`);
 
-        let e = document.getElementById("header_navigation_store");
-        if (e !== null) e.textContent = "CoCaCo " + version_string;
+    let e = document.getElementById("header_navigation_store");
+    if (e !== null) e.textContent = "CoCaCo " + version_string;
 
-        return true;
-    }
+    return true;
+}
 
-    /**
-     * Find the transcription.
-     */
-    findTranscription()
-    {
-        log("[NOTE] Waiting to start");
-        this.logElement = document.getElementById("game-log-text");
-        if (!this.logElement)
-            return false;
-        log("Found game-log-text element");
-        Colony.deleteDiscordSigns(); // TODO remove to later point in case they are not loaded yet
-        this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
-        return true;
-    }
-
-    /**
-     * Wait for players to place initial settlements so we can determine who the
-     * players are. Give them their respective starting resources.
-     *
-     * This part is implemented separately from normal tracking because the
-     * resource tracker must know all players from the start. After the initial
-     * starting phase, the tracker is initialized with all players, and their
-     * resources are added normally.
-     *
-     * The main loop is then started with this.MSG_OFFSET pointing to the first
-     * non-initial placement message.
-     **/
-    waitForInitialPlacement()
-    {
-        const dummyPlayers = ["Awaiting", "First", "Roll", "..."];
-        const dummyColours = {"Awaiting":"black", "First":"red", "Roll":"gold", "...":"white"};
-        this.multiverse = new Multiverse();
-        this.multiverse.initWorlds({"Awaiting":{}, "First":{}, "Roll":{}, "...":{}});
-        this.trackerCollection = new Track();
-        this.trackerCollection.init(dummyPlayers);
-        this.renderObject = new Render
-        (
-            this.multiverse, this.trackerCollection, dummyPlayers, dummyColours,
-            null,
-            null,
-            null,
-            null,
-            configOwnIcons ? alternativeAssets : Colony.colonistAssets
-        );
-        this.renderObject.unrender(); // Remove leftovers during testing
-        this.renderObject.render();
-        return true;
-    }
-
-    // Get new messages until 'playerCount' many player names were found. If
-    // 'playerCount' is null, continue until the first roll instead. Must stop
-    // main loop before running this so they dont interfere. Advances
-    // this.MSG_OFFSET as usual.
-    // At start of the game, set 'palyerCount' to null so the number is deduced.
-    // When recovering from breaking log, or spectating, set 'playerCount' so
-    // the function continues while parsing rolls.
-    // TODO ❔ Split into recoverUsersUntilRoll() and recover_N_Users
-    recoverUsers(playerCount = null)
-    {
-        // NOTE If we make sure not to read initial placement messages, we can set
-        //      MSG_OFFEST to 0, too. Those can appear out-of-player-order, and we
-        //      imply the order from messages.
-        //this.MSG_OFFSET = 0;
-
-        let foundRoll = false;
-        const done = () =>
-        {
-            if (playerCount === null)
-                return foundRoll;
-            else
-                return playerCount - this.players.length === 0;
-        };
-        console.assert(!done()); // Dont come back when done
-
-        log("[NOTE] Detecting player names...");
-        const newMsg = this.getNewMessages();
-        for (const msg of newMsg)
-        {
-            if (msg.textContent.includes(Colony.snippets.rolledSnippet))
-            {
-                foundRoll = true;
-                // If this concludes the recovery we can skip the rest. If this
-                // does not conclude (because 'playerCount' is not reached), we
-                // continue so that we don't have to take the route around
-                // 'setDoInterval' just to end up here again.
-                if (done())
-                    break;
-            }
-
-            const [name, colour] = this.parseTurnName(msg);
-            if (name === null)
-                continue;
-            if (!this.players.includes(name))
-            {
-                this.players.push(name);
-                this.player_colors[name] = colour;
-                log("Recoverd player", name, "with colour", colour);
-                if (done())
-                    break;
-            }
-        }
-
-        if (done())
-        {
-            // Ensure our name is last in the array
-            // Changing username during game would break this
-            // TODO make standalone or static by passing names and a selected last name
-            this.reorderPlayerNames();
-            return true;
-        }
-
-        // Signal "not done" by returning false. So we are called again later.
+/**
+ * Find the transcription.
+ */
+Colony.prototype.findTranscription = function()
+{
+    log("[NOTE] Waiting to start");
+    this.logElement = document.getElementById("game-log-text");
+    if (!this.logElement)
         return false;
-    }
+    log("Found game-log-text element");
+    Colony.deleteDiscordSigns(); // TODO remove to later point in case they are not loaded yet
+    this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
+    return true;
+}
 
-    // Initializes the member objects once the required inputs are ready:
-    // name + colour data must be handed to the member objects for construction.
-    initializeTracker()
+/**
+ * Wait for players to place initial settlements so we can determine who the
+ * players are. Give them their respective starting resources.
+ *
+ * This part is implemented separately from normal tracking because the
+ * resource tracker must know all players from the start. After the initial
+ * starting phase, the tracker is initialized with all players, and their
+ * resources are added normally.
+ *
+ * The main loop is then started with this.MSG_OFFSET pointing to the first
+ * non-initial placement message.
+ **/
+Colony.prototype.waitForInitialPlacement = function()
+{
+    const dummyPlayers = ["Awaiting", "First", "Roll", "..."];
+    const dummyColours = {"Awaiting":"black", "First":"red", "Roll":"gold", "...":"white"};
+    this.multiverse = new Multiverse();
+    this.multiverse.initWorlds({"Awaiting":{}, "First":{}, "Roll":{}, "...":{}});
+    this.trackerCollection = new Track();
+    this.trackerCollection.init(dummyPlayers);
+    this.renderObject = new Render
+    (
+        this.multiverse, this.trackerCollection, dummyPlayers, dummyColours,
+        null,
+        null,
+        null,
+        null,
+        configOwnIcons ? alternativeAssets : Colony.colonistAssets
+    );
+    this.renderObject.unrender(); // Remove leftovers during testing
+    this.renderObject.render();
+    return true;
+}
+
+// Get new messages until 'playerCount' many player names were found. If
+// 'playerCount' is null, continue until the first roll instead. Must stop
+// main loop before running this so they dont interfere. Advances
+// this.MSG_OFFSET as usual.
+// At start of the game, set 'palyerCount' to null so the number is deduced.
+// When recovering from breaking log, or spectating, set 'playerCount' so
+// the function continues while parsing rolls.
+// TODO ❔ Split into recoverUsersUntilRoll() and recover_N_Users
+Colony.prototype.recoverUsers = function(playerCount = null)
+{
+    // NOTE If we make sure not to read initial placement messages, we can set
+    //      MSG_OFFEST to 0, too. Those can appear out-of-player-order, and we
+    //      imply the order from messages.
+    //this.MSG_OFFSET = 0;
+
+    let foundRoll = false;
+    const done = () =>
     {
-        let noResources = {};
-        for (const name of this.players)
-            noResources[name] = {}; // Could be {"wood": 5, ...}
+        if (playerCount === null)
+            return foundRoll;
+        else
+            return playerCount - this.players.length === 0;
+    };
+    console.assert(!done()); // Dont come back when done
 
-        this.multiverse = new Multiverse();
-        this.multiverse.initWorlds(noResources);
-        this.trackerCollection = new Track;
-        this.trackerCollection.init(this.players);
-
-        // TODO Once we wanted to have persistent click bind (to UI or when not
-        // removing the table, we need to create a permanent bind object to
-        // prevent multi binds.
-
-        this.renderObject.unrender(); // Remove table to force redraw over update
-        this.renderObject = new Render
-        (
-            this.multiverse, this.trackerCollection,
-            this.players, this.player_colors,
-            this.mainLoop.bind(this, () => true), // Update function
-            null,
-            this.boundRecoverCards,
-            this.boundRecoverNames,
-            configOwnIcons ? Colony.alternativeAssets : Colony.colonistAssets
-        );
-
-        this.renderObject.render();
-        return true;
-    }
-
-    /**
-     * Parse all messages and distribute initial resources for each player.
-     * Does not wait for new messages; all initial placement messages must be
-     * present beforehand.
-     */
-    comeMrTallyManTallinitialResource(after)
+    log("[NOTE] Detecting player names...");
+    const newMsg = this.getNewMessages();
+    for (const msg of newMsg)
     {
-        let foundRoll = false;
-        log("Polling for initial placement");
-        let [allMessages, i] = this.getNewMessages(true);
-        for (; i < allMessages.length; ++i)
+        if (msg.textContent.includes(Colony.snippets.rolledSnippet))
         {
-            const msg = allMessages[i];
-            if (msg.textContent.includes(Colony.snippets.rolledSnippet))
-            {
-                foundRoll = true;
+            foundRoll = true;
+            // If this concludes the recovery we can skip the rest. If this
+            // does not conclude (because 'playerCount' is not reached), we
+            // continue so that we don't have to take the route around
+            // 'setDoInterval' just to end up here again.
+            if (done())
                 break;
-            }
-            this.parseInitialGotMessage(msg); // Finds resources and adds them
-        };
-        if (!foundRoll)
-            return false;
+        }
 
-        this.MSG_OFFSET = i;
+        const [name, colour] = this.parseTurnName(msg);
+        if (name === null)
+            continue;
+        if (!this.players.includes(name))
+        {
+            this.players.push(name);
+            this.player_colors[name] = colour;
+            log("Recoverd player", name, "with colour", colour);
+            if (done())
+                break;
+        }
+    }
 
-        console.log("Correcting this.MSG_OFFSET to 28 ?==", i);
-        console.assert(this.MSG_OFFSET === 28, "Expecting message offset for initial phase to be 28 for clean 4 player game");
+    if (done())
+    {
+        // Ensure our name is last in the array
+        // Changing username during game would break this
+        // TODO make standalone or static by passing names and a selected last name
+        this.reorderPlayerNames();
         return true;
     }
 
-    /**
-     * Parses the latest messages and re-renders the table.
-     */
-    // @param {function} continueIf - A function that returns true if the main
-    // loop should proceed.
-    mainLoop(continueIf = () => true)
+    // Signal "not done" by returning false. So we are called again later.
+    return false;
+}
+
+// Initializes the member objects once the required inputs are ready:
+// name + colour data must be handed to the member objects for construction.
+Colony.prototype.initializeTracker = function()
+{
+    let noResources = {};
+    for (const name of this.players)
+        noResources[name] = {}; // Could be {"wood": 5, ...}
+
+    this.multiverse = new Multiverse();
+    this.multiverse.initWorlds(noResources);
+    this.trackerCollection = new Track;
+    this.trackerCollection.init(this.players);
+
+    // TODO Once we wanted to have persistent click bind (to UI or when not
+    // removing the table, we need to create a permanent bind object to
+    // prevent multi binds.
+
+    this.renderObject.unrender(); // Remove table to force redraw over update
+    this.renderObject = new Render
+    (
+        this.multiverse, this.trackerCollection,
+        this.players, this.player_colors,
+        this.mainLoop.bind(this, () => true), // Update function
+        null,
+        this.boundRecoverCards,
+        this.boundRecoverNames,
+        configOwnIcons ? Colony.alternativeAssets : Colony.colonistAssets
+    );
+
+    this.renderObject.render();
+    return true;
+}
+
+/**
+ * Parse all messages and distribute initial resources for each player.
+ * Does not wait for new messages; all initial placement messages must be
+ * present beforehand.
+ */
+Colony.prototype.comeMrTallyManTallinitialResource = function(after)
+{
+    let foundRoll = false;
+    log("Polling for initial placement");
+    let [allMessages, i] = this.getNewMessages(true);
+    for (; i < allMessages.length; ++i)
     {
-        if (!continueIf())
-            return true; // Return true to signal completion to setDoInterval
-        if(configUseTimer) console.time("mainLoop");
-
-        console.assert(this.startupFlag === false);
-
-        const [allMessages, index] = this.getNewMessages(true);
-        for (let idx = index; idx < allMessages.length; ++idx)
+        const msg = allMessages[i];
+        if (msg.textContent.includes(Colony.snippets.rolledSnippet))
         {
-            const msg = allMessages[idx];
-            if (configLogMessages === true)
-                console.log("[NOTE] New message:", this.MSG_OFFSET + idx, "|", msg.textContent, msg);
-            const unidentified = this.ALL_PARSERS.every(parser => { return !parser(msg, idx, allMessages); });
-            if (!unidentified)
-                msg.style.background = "LightGreen";
-            if (configLogWorldCount === true)
-                console.log("[NOTE] MW count:", this.multiverse.worlds.length);
-
-            // Abort if card tracking is broken
-            if (0 === this.multiverse.worldCount())
-            {
-                console.error("[ERROR] No world left");
-                alertIf("Tracker OFF: No world left. Try recovery mode.");
-                this.stopMainLoop();
-                return true; // Return true to signal completion
-            }
+            foundRoll = true;
+            break;
         }
-        if (configUseTimer) console.timeEnd("mainLoop");
+        this.parseInitialGotMessage(msg); // Finds resources and adds them
+    };
+    if (!foundRoll)
+        return false;
 
-        if (configUseTimer) console.time("render");
-        this.renderObject.render(() => this.isNewMessage(this.MSG_OFFSET));
-        if (configUseTimer) console.timeEnd("render");
+    this.MSG_OFFSET = i;
+
+    console.log("Correcting this.MSG_OFFSET to 28 ?==", i);
+    console.assert(this.MSG_OFFSET === 28, "Expecting message offset for initial phase to be 28 for clean 4 player game");
+    return true;
+}
+
+/**
+ * Parses the latest messages and re-renders the table.
+ */
+// @param {function} continueIf - A function that returns true if the main
+// loop should proceed.
+Colony.prototype.mainLoop = function(continueIf = () => true)
+{
+    if (!continueIf())
+        return true; // Return true to signal completion to setDoInterval
+    if(configUseTimer) console.time("mainLoop");
+
+    console.assert(this.startupFlag === false);
+
+    const [allMessages, index] = this.getNewMessages(true);
+    for (let idx = index; idx < allMessages.length; ++idx)
+    {
+        const msg = allMessages[idx];
+        if (configLogMessages === true)
+            console.log("[NOTE] New message:", this.MSG_OFFSET + idx, "|", msg.textContent, msg);
+        const unidentified = this.ALL_PARSERS.every(parser => { return !parser(msg, idx, allMessages); });
+        if (!unidentified)
+            msg.style.background = "LightGreen";
+        if (configLogWorldCount === true)
+            console.log("[NOTE] MW count:", this.multiverse.worlds.length);
+
+        // Abort if card tracking is broken
+        if (0 === this.multiverse.worldCount())
+        {
+            console.error("[ERROR] No world left");
+            alertIf("Tracker OFF: No world left. Try recovery mode.");
+            this.stopMainLoop();
+            return true; // Return true to signal completion
+        }
+    }
+    if (configUseTimer) console.timeEnd("mainLoop");
+
+    if (configUseTimer) console.time("render");
+    this.renderObject.render(() => this.isNewMessage(this.MSG_OFFSET));
+    if (configUseTimer) console.timeEnd("render");
+}
+
+// Recovers MW state from unknown cards. Player array is used and assumed
+// correct.
+Colony.prototype.recoverCards = function()
+{
+    // Save index at moment of click
+    const allMessages = this.getAllMessages();
+    const momentIndex = allMessages.length;
+    if (momentIndex >= 1) allMessages[momentIndex - 1].style.background = "Orange";
+
+    console.log("[NOTE] Starting manual card recovery");
+    const activeBefore = this.isActiveMainLoop();
+    this.stopMainLoop();
+    // Confirm AFTER stopping main loop so that card counts can be timed
+    if (!confirm(`Reset cards after »${allMessages.at(momentIndex-1).textContent}« (${activeBefore ? "active" : "inactive"})?`))
+    {
+        log("[NOTE] Aborting manual card recovery");
+        if (activeBefore)
+            this.restartMainLoop();
+        return;
     }
 
-    // Recovers MW state from unknown cards. Player array is used and assumed
-    // correct.
-    recoverCards()
+    this.MSG_OFFSET = momentIndex;
+    let counts = {};
+    for (const player of this.players)
     {
-        // Save index at moment of click
-        const allMessages = this.getAllMessages();
-        const momentIndex = allMessages.length;
-        if (momentIndex >= 1) allMessages[momentIndex - 1].style.background = "Orange";
+        const count = prompt(`${player} number of cards:`, 0);
+        counts[player] = Number(count);
+    }
+    this.multiverse.mwCardRecovery(counts);
 
-        console.log("[NOTE] Starting manual card recovery");
-        const activeBefore = this.isActiveMainLoop();
-        this.stopMainLoop();
-        // Confirm AFTER stopping main loop so that card counts can be timed
-        if (!confirm(`Reset cards after »${allMessages.at(momentIndex-1).textContent}« (${activeBefore ? "active" : "inactive"})?`))
-        {
-            log("[NOTE] Aborting manual card recovery");
-            if (activeBefore)
-                this.restartMainLoop();
-            return;
-        }
+    this.renderObject.render();
+    this.restartMainLoop();
+}
 
-        this.MSG_OFFSET = momentIndex;
-        let counts = {};
-        for (const player of this.players)
-        {
-            const count = prompt(`${player} number of cards:`, 0);
-            counts[player] = Number(count);
-        }
-        this.multiverse.mwCardRecovery(counts);
-
-        this.renderObject.render();
-        this.restartMainLoop();
+// Waits 1 round to collect all player names. Use recoverCards() to
+// set unknown card counts, entering manyWorlds recovery mode.
+Colony.prototype.recoverNames = function()
+{
+    if (this.startupFlag === true)
+    {
+        console.warn(`${recoverNames.name}: Suppressed! startupFlag === true`);
+        return;
+    }
+    log("[NOTE] Starting manual name recovery");
+    const playerCount = Number(prompt("Player count (0 to abort):", 0));
+    if (playerCount < 1 || 8 < playerCount)
+    {
+        console.error("Invalid player count:", playerCount, "(1-8). Aborting name recovery.");
+        return;
     }
 
-    // Waits 1 round to collect all player names. Use recoverCards() to
-    // set unknown card counts, entering manyWorlds recovery mode.
-    recoverNames()
-    {
-        if (this.startupFlag === true)
-        {
-            console.warn(`${recoverNames.name}: Suppressed! startupFlag === true`);
-            return;
-        }
-        log("[NOTE] Starting manual name recovery");
-        const playerCount = Number(prompt("Player count (0 to abort):", 0));
-        if (playerCount < 1 || 8 < playerCount)
-        {
-            console.error("Invalid player count:", playerCount, "(1-8). Aborting name recovery.");
-            return;
-        }
+    this.stopMainLoop();
+    this.renderObject.unrender();
 
+    this.restartTracker(
+    [
+        { "funct": this.reset.bind(this), "ok": false },
+        { "funct": this.findPlayerName.bind(this), "ok": false },
+        { "funct": this.findTranscription.bind(this), "ok": false },
+        { "funct": this.waitForInitialPlacement.bind(this), "ok": false },
+        { "funct": this.recoverUsers.bind(this, playerCount), "ok": false },
+        { "funct": this.initializeTracker.bind(this), "ok": false },
+        { "funct": () => { this.renderObject.render(); return true; }, "ok": false },
+    ]);
+}
+
+//=====================================================================
+// Main loop
+//=====================================================================
+
+Colony.prototype.isActiveMainLoop = function()
+{
+    return this.lastStarted === this.activeIndex;
+}
+
+// Returns true if existing main loop interval was cleared, otherwise false
+Colony.prototype.stopMainLoop = function()
+{
+    log("stopMainLoop()");
+    this.activeIndex += 1;
+
+    if (configUseTimer) console.timeEnd("mainLoop");
+}
+
+Colony.prototype.restartMainLoop = function()
+{
+    this.stopMainLoop(); // Sanitize
+    log("restartMainLoop()");
+    this.startupFlag = false;
+    this.lastStarted = deepCopy(this.activeIndex);
+    const currentIndex = deepCopy(this.activeIndex); // Passed to closure
+    setDoInterval
+    (
+        this.mainLoop.bind
+        (
+            this,
+            () => this.activeIndex === currentIndex // Continue condition
+        ),
+        Colony.refreshRate
+    );
+
+    return true;
+}
+
+Colony.prototype.mainLoopToggle = function()
+{
+    if (this.startupFlag === true)
+    {
+        console.warn("this.mainLoopToggle() suppressed: this.startupFlag === true");
+        return;
+    }
+    if (this.isActiveMainLoop())
+    {
         this.stopMainLoop();
         this.renderObject.unrender();
-
-        this.restartTracker(
-        [
-            { "funct": this.reset.bind(this), "ok": false },
-            { "funct": this.findPlayerName.bind(this), "ok": false },
-            { "funct": this.findTranscription.bind(this), "ok": false },
-            { "funct": this.waitForInitialPlacement.bind(this), "ok": false },
-            { "funct": this.recoverUsers.bind(this, playerCount), "ok": false },
-            { "funct": this.initializeTracker.bind(this), "ok": false },
-            { "funct": () => { this.renderObject.render(); return true; }, "ok": false },
-        ]);
     }
-
-    //=====================================================================
-    // Main loop
-    //=====================================================================
-
-    isActiveMainLoop()
+    else
     {
-        return this.lastStarted === this.activeIndex;
+        this.restartMainLoop();
+        this.renderObject.render(); // Render also if no new message found
     }
+}
 
-    // Returns true if existing main loop interval was cleared, otherwise false
-    stopMainLoop()
+//=====================================================================
+// Parsers
+//=====================================================================
+
+/**
+ * Process initial resource message after placing first settlement.
+ */
+Colony.prototype.parseInitialGotMessage = function(element)
+{
+    const textContent = element.textContent;
+    if (!textContent.includes(Colony.snippets.receivedInitialResourcesSnippet))
     {
-        log("stopMainLoop()");
-        this.activeIndex += 1;
-
-        if (configUseTimer) console.timeEnd("mainLoop");
+        return false;
     }
+    const player = textContent.replace(Colony.snippets.receivedInitialResourcesSnippet, "").split(" ")[0];
+    if (!verifyPlayers(this.players, player)) return false;
 
-    restartMainLoop()
+    const initialResourceTypes = Colony.findAllResourceCardsInHtml(element.innerHTML);
+    const asSlice = mw.generateWorldSlice(initialResourceTypes);
+    logs("[INFO] First settlement resources:", player, "<-", initialResourceTypes);
+    if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
+    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(initialResourceTypes));
+
+    return true;
+}
+
+Colony.prototype.parseTradeOffer = function(element)
+{
+    const txt = element.textContent;
+    if (!txt.includes(Colony.snippets.tradeOfferSnippet)) return false;
+    const player = txt.substring(0, txt.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+
+    const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
+    const offer = Colony.findAllResourceCardsInHtml(offerHtml);
+    const asSlice = mw.generateWorldSlice(offer);
+    logs("[INFO] Trade offer:", player, "->", offer);
+    this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseTradeOfferCounter = function(element)
+{
+    // "John1 proposed counter offer to John2 [wood][brick] for [sheep]"
+    const txt = element.textContent;
+    if (!txt.includes(Colony.snippets.tradeOfferCounterSnippet)) return false;
+
+    const player = txt.substring(0, txt.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false;
+
+    const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
+    const offer = Colony.findAllResourceCardsInHtml(offerHtml);
+    const asSlice = mw.generateWorldSlice(offer);
+    logs("[INFO] Trade counter offer:", player, "->", offer);
+    this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseYearOfPlenty = function(element)
+{
+    let textContent = element.textContent;
+    if (!textContent.includes(Colony.snippets.yearOfPlentySnippet)) return false;
+
+    // Determine player
+    let beneficiary = textContent.substring(0, textContent.indexOf(Colony.snippets.yearOfPlentySnippet));
+    if (!verifyPlayers(this.players, beneficiary)) return false; // Sanity check
+
+    // ManyWorlds version
+    let obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
+    logs("[INFO] Year of Plenty:", beneficiary, "<-", obtainedResources);
+    const asSlice = mw.generateWorldSlice(obtainedResources);
+    this.multiverse.mwTransformSpawn(beneficiary, this.multiverse.asSlice(obtainedResources));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+/**
+ * Process a "got resource" message: [user icon] [user] got: ...[resource images]
+ */
+Colony.prototype.parseGotMessage = function(element)
+{
+    let textContent = element.textContent;
+    if (textContent.includes(Colony.snippets.receivedResourcesSnippet))
     {
-        this.stopMainLoop(); // Sanitize
-        log("restartMainLoop()");
-        this.startupFlag = false;
-        this.lastStarted = deepCopy(this.activeIndex);
-        const currentIndex = deepCopy(this.activeIndex); // Passed to closure
-        setDoInterval
-        (
-            this.mainLoop.bind
-            (
-                this,
-                () => this.activeIndex === currentIndex // Continue condition
-            ),
-            Colony.refreshRate
-        );
-
-        return true;
-    }
-
-    mainLoopToggle()
-    {
-        if (this.startupFlag === true)
-        {
-            console.warn("this.mainLoopToggle() suppressed: this.startupFlag === true");
-            return;
-        }
-        if (this.isActiveMainLoop())
-        {
-            this.stopMainLoop();
-            this.renderObject.unrender();
-        }
-        else
-        {
-            this.restartMainLoop();
-            this.renderObject.render(); // Render also if no new message found
-        }
-    }
-
-    //=====================================================================
-    // Parsers
-    //=====================================================================
-
-    /**
-     * Process initial resource message after placing first settlement.
-     */
-    parseInitialGotMessage(element)
-    {
-        const textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.receivedInitialResourcesSnippet))
-        {
-            return false;
-        }
-        const player = textContent.replace(Colony.snippets.receivedInitialResourcesSnippet, "").split(" ")[0];
-        if (!verifyPlayers(this.players, player)) return false;
-
-        const initialResourceTypes = Colony.findAllResourceCardsInHtml(element.innerHTML);
-        const asSlice = mw.generateWorldSlice(initialResourceTypes);
-        logs("[INFO] First settlement resources:", player, "<-", initialResourceTypes);
-        if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
-        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(initialResourceTypes));
-
-        return true;
-    }
-
-    parseTradeOffer(element)
-    {
-        const txt = element.textContent;
-        if (!txt.includes(Colony.snippets.tradeOfferSnippet)) return false;
-        const player = txt.substring(0, txt.indexOf(" "));
+        const player = textContent.substring(0, textContent.indexOf(Colony.snippets.receivedResourcesSnippet));
         if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
-        const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
-        const offer = Colony.findAllResourceCardsInHtml(offerHtml);
-        const asSlice = mw.generateWorldSlice(offer);
-        logs("[INFO] Trade offer:", player, "->", offer);
-        this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parseTradeOfferCounter(element)
-    {
-        // "John1 proposed counter offer to John2 [wood][brick] for [sheep]"
-        const txt = element.textContent;
-        if (!txt.includes(Colony.snippets.tradeOfferCounterSnippet)) return false;
-
-        const player = txt.substring(0, txt.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false;
-
-        const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
-        const offer = Colony.findAllResourceCardsInHtml(offerHtml);
-        const asSlice = mw.generateWorldSlice(offer);
-        logs("[INFO] Trade counter offer:", player, "->", offer);
-        this.multiverse.mwCollapseMin(player, this.multiverse.asSlice(offer));
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parseYearOfPlenty(element)
-    {
-        let textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.yearOfPlentySnippet)) return false;
-
-        // Determine player
-        let beneficiary = textContent.substring(0, textContent.indexOf(Colony.snippets.yearOfPlentySnippet));
-        if (!verifyPlayers(this.players, beneficiary)) return false; // Sanity check
 
         // ManyWorlds version
         let obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
-        logs("[INFO] Year of Plenty:", beneficiary, "<-", obtainedResources);
-        const asSlice = mw.generateWorldSlice(obtainedResources);
-        this.multiverse.mwTransformSpawn(beneficiary, this.multiverse.asSlice(obtainedResources));
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    /**
-     * Process a "got resource" message: [user icon] [user] got: ...[resource images]
-     */
-    parseGotMessage(element)
-    {
-        let textContent = element.textContent;
-        if (textContent.includes(Colony.snippets.receivedResourcesSnippet))
-        {
-            const player = textContent.substring(0, textContent.indexOf(Colony.snippets.receivedResourcesSnippet));
-            if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
-            // ManyWorlds version
-            let obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
-            let asSlice = mw.generateWorldSlice(obtainedResources);
-            logs("[INFO] Got resources:", player, "<-", obtainedResources);
-            this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
-            this.multiverse.printWorlds();
-
-            return true;
-        }
-
-        return false;
-    }
-
-    // "John selected 🂠 🂠 🂠 from gold tile"
-    parseGoldTile(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.gold.present))
-            return false;
-        if (element.textContent.includes(Colony.snippets.gold.absent))
-            return false;
-        const player = element.textContent.substring(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
-        const obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
-        logs("[INFO] Selected gold tile:", player, "<-", obtainedResources);
-
+        let asSlice = mw.generateWorldSlice(obtainedResources);
+        logs("[INFO] Got resources:", player, "<-", obtainedResources);
         this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
         this.multiverse.printWorlds();
 
         return true;
     }
 
-    /**
-     * Process a "built" message: [user icon] [user] built a [building/road]
-     */
-    parseBuiltMessage(element, index, array)
+    return false;
+}
+
+// "John selected 🂠 🂠 🂠 from gold tile"
+Colony.prototype.parseGoldTile = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.gold.present))
+        return false;
+    if (element.textContent.includes(Colony.snippets.gold.absent))
+        return false;
+    const player = element.textContent.substring(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+
+    const obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
+    logs("[INFO] Selected gold tile:", player, "<-", obtainedResources);
+
+    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(obtainedResources));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+/**
+ * Process a "built" message: [user icon] [user] built a [building/road]
+ */
+Colony.prototype.parseBuiltMessage = function(element, index, array)
+{
+    let textContent = element.textContent;
+    if (!textContent.includes(Colony.snippets.builtSnippet)) return false;
+    let images = collectionToArray(element.getElementsByTagName('img'));
+    let player = textContent.split(" ")[0];
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    let buildResources = null;
+    for (let img of images)
     {
-        let textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.builtSnippet)) return false;
-        let images = collectionToArray(element.getElementsByTagName('img'));
-        let player = textContent.split(" ")[0];
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        let buildResources = null;
-        for (let img of images)
+        if (img.src.includes("road"))
         {
-            if (img.src.includes("road"))
+            buildResources = {wood: -1, brick: -1};
+            if (this.turnState.diplomatReposition === true)
             {
-                buildResources = {wood: -1, brick: -1};
-                if (this.turnState.diplomatReposition === true)
-                {
-                    this.turnState.diplomatReposition = false;
-                    console.log(`[INFO] (Diplomat: free road for ${player})`);
-                    buildResources = {};
-                    break;
-                }
+                this.turnState.diplomatReposition = false;
+                console.log(`[INFO] (Diplomat: free road for ${player})`);
+                buildResources = {};
                 break;
             }
-            else if (img.src.includes("settlement"))
+            break;
+        }
+        else if (img.src.includes("settlement"))
+        {
+            buildResources = {wood: -1, brick: -1, sheep: -1, wheat: -1};
+            break;
+        }
+        // Must be before city because "city" is a substring
+        else if (img.src.includes("city_wall"))
+        {
+            buildResources = {brick: -2};
+            if (this.turnState.engineer === true)
             {
-                buildResources = {wood: -1, brick: -1, sheep: -1, wheat: -1};
-                break;
+                this.turnState.engineer = false;
+                console.log(`[INFO] Engineer for ${player}: Free city wall`);
+                buildResources = {};
             }
-            // Must be before city because "city" is a substring
-            else if (img.src.includes("city_wall"))
+            else
             {
-                buildResources = {brick: -2};
-                if (this.turnState.engineer === true)
-                {
-                    this.turnState.engineer = false;
-                    console.log(`[INFO] Engineer for ${player}: Free city wall`);
-                    buildResources = {};
-                }
-                else
-                {
-                    console.log("[INFO] No engineer for city wall", player);
-                }
-                break;
+                console.log("[INFO] No engineer for city wall", player);
             }
-            else if (img.src.includes("city"))
+            break;
+        }
+        else if (img.src.includes("city"))
+        {
+            buildResources = {wheat: -2, ore: -3};
+            if (this.turnState.medicine === true)
             {
-                buildResources = {wheat: -2, ore: -3};
-                if (this.turnState.medicine === true)
-                {
-                    this.turnState.medicine = false;
-                    log(`[INFO] Medicine for ${player}: Cheaper city`);
-                    buildResources = {wheat: -1, ore: -2};
-                }
-                break;
+                this.turnState.medicine = false;
+                log(`[INFO] Medicine for ${player}: Cheaper city`);
+                buildResources = {wheat: -1, ore: -2};
             }
-            else if (img.src.includes("ship"))
-            {
-                console.assert(false, "unreachable");
-                debugger; // Make sure this does not trigger in seafarers mode
-            }
+            break;
         }
-        if (buildResources === null)
+        else if (img.src.includes("ship"))
         {
-            console.error("[ERROR] Failed to detect building in found message");
-            alertIf(31);
+            console.assert(false, "unreachable");
+            debugger; // Make sure this does not trigger in seafarers mode
         }
-
-        console.log("[INFO] Built:", player, JSON.stringify(buildResources));
-        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(buildResources));
-        this.multiverse.printWorlds();
-
-        return true;
+    }
+    if (buildResources === null)
+    {
+        console.error("[ERROR] Failed to detect building in found message");
+        alertIf(31);
     }
 
-    parseRolls(element)
-    {
-        const textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.rolledSnippet)) return false;
-        const player = textContent.split(" ")[0];
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
-        const diceSum = Colony.extractDiceSumOfChildren(element);
-        log("[INFO] Player", player, "rolled a", diceSum);
-
-        this.trackerCollection.addRoll(diceSum);
-        if (diceSum === 7)
-            // TODO If the player does not steal from their robber this number
-            // is misleading. We could track if a rob comes from a 7 or a robber
-            // by checking which happened the message before.
-            this.trackerCollection.addSeven(player);   // Affects seven counter but not rob stats
-
-        this.turnState = Colony.emptyTurnState;
-        if (diceSum === 7)
-            this.turnState.nextSteal = "robber";
-
-        return true;
-    }
-
-    /**
-     * For dev cards. parseDevCard
-     */
-    parseBoughtMessage(element)
-    {
-        let textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.boughtSnippet)) return false;
-        let images = collectionToArray(element.getElementsByTagName('img'));
-        let player = textContent.split(" ")[0];
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
-        // ManyWorlds version
-        // TODO use structure cost array from mw
-        let devCardResources = deepCopy(mw.emptyResourcesByNameWithU);
-        devCardResources[sheep] = -1;
-        devCardResources[wheat] = -1;
-        devCardResources[ore  ] = -1;
-        const devCardSlice = mw.generateWorldSlice(devCardResources);
-        logs("[INFO] Baught dev card:", player, "->", devCardResources);
-        this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(devCardResources));
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    /**
-     * Process a trade with the bank message: [user icon] [user] gave bank: ...[resources] and took ...[resources]
-     */
-    parseTradeBankMessage(element)
-    {
-        let textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.tradeBankGaveSnippet))
-        {
-            return false;
-        }
-        let player = textContent.split(" ")[0];
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        let innerHTML = element.innerHTML;
-        let gavebank = innerHTML.slice(innerHTML.indexOf(Colony.snippets.tradeBankGaveSnippet), innerHTML.indexOf(Colony.snippets.tradeBankTookSnippet)).split("<img");
-        let andtook = innerHTML.slice(innerHTML.indexOf(Colony.snippets.tradeBankTookSnippet)).split("<img");
-
-        // ManyWorlds version
-        const gaveAndTook = element.innerHTML.split(" and took ");
-        if (gaveAndTook.length !== 2)
-        {
-            log("[ERROR] Expected 2 substrings after split in dev card parser");
-            alertIf(27);
-            return;
-        }
-        const giveResources = Colony.findAllResourceCardsInHtml(gaveAndTook[0]);
-        const takeResources = Colony.findAllResourceCardsInHtml(gaveAndTook[1]);
-        const giveSlice     = mw.generateWorldSlice(giveResources);
-        const takeSlice     = mw.generateWorldSlice(takeResources);
-        logs("[INFO] Traded with bank:", player, giveResources, "->", takeResources);
-        this.multiverse.mwTransformSpawn(player, this.multiverse.sliceSubtract( this.multiverse.asSlice(takeResources)
-                                                                              , this.multiverse.asSlice(giveResources) ));
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    // Parse monopoly steals
-    //
-    // Monopoly lines contain "stole" but do NOT contain a "from:" since they steal
-    // from everyone.
-    // Note: I dont know what happens with a 0-cards mono.
-    parseMonopoly(element)
-    {
-        // Identify if a monopoly message is found
-        let textContent = element.textContent;
-        if (  !textContent.includes(Colony.snippets.mono.present)
-           ||  textContent.includes(Colony.snippets.mono.absent ))
-        {
-            return false;
-        }
-        if (this.turnState.nextSteal === "commodityMonopoly") return false;
-        if (this.turnState.nextSteal === "resourceMonopoly") return false;
-
-        // This line should only be reached outside of C&K
-
-        // Identify thief
-        const thief = textContent.substring(0, textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, thief)) return false; // Sanity check
-
-        // ManyWorlds version
-        const stolenResource = Colony.findSingularResourceImageInElement(element);
-        logs("[INFO] Monopoly:", thief, "<-", stolenResource);
-        this.multiverse.transformMonopoly(thief, this.multiverse.getResourceIndex(stolenResource));
-        this.multiverse.printWorlds();
-
-        // TODO What to do with turnstate here?
-
-        return true;
-    }
-
-    /**
-     * When the user has to discard cards because of a robber.
-     */
-    parseDiscardedMessage(element)
-    {
-        let textContent = element.textContent;
-        if (!textContent.includes(Colony.snippets.discardedSnippet)) {
-            return false;
-        }
-        const player = textContent.substring(0, textContent.indexOf(Colony.snippets.discardedSnippet));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
-        const discarded = Colony.findAllResourceCardsInHtml(element.innerHTML);
-        logs("[INFO] Discarded:", player, "->", discarded);
-
-        const slice = this.multiverse.asSlice(discarded);
-        if (this.multiverse.sliceTotal(slice) === 0)
-        {
-            console.log("[INFO] Discard slice empty: Assuming progress cards (skipping)");
-            return true;
-        }
-        if (this.turnState.saboteur === false) // Typically the case
-        {
-            // TODO does not consider city walls, because city walls may get
-            //this.multiverse.mwCollapseMinTotal(player);
-            // TODO We can deduce opponents cards count: they discard half of
-            // their cards (eiher 2x or 2x+1 ❔)
-        }
-        this.multiverse.mwTransformSpawn(player,
-            this.multiverse.sliceNegate(this.multiverse.asSlice(discarded)));
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    // .outerHTML: <div><img><span><span>TradingPlayer<> traded <img> <img>  for <img>  with <span>OtherPlayer<><><>
-    // .textContent: "TradingPlayer traded    for   with OtherPlayer"
-    // Has whitespace between cards.
-    parseTradeMessage(element)
-    {
-        // Collapse whitespace into single space
-        const textContent = element.textContent.replace(/\s+/g, ' ');
-        if (!textContent.includes(Colony.snippets.trade.detect)) return false;
-
-        const involvedPlayers = textContent.split(Colony.snippets.trade.detect);
-        const tradingPlayer = involvedPlayers[0];
-        const otherPlayer = involvedPlayers[1].trim(); // Remove trailing space
-        if (!verifyPlayers(this.players, tradingPlayer, otherPlayer)) return false;
-
-        const split = element.innerHTML.split(Colony.snippets.trade.split);
-        if (split.length !== 2) // Sanity check
-        {
-            console.error("Expected 2 parts when parsing trading message");
-            console.debug("Split:", split);
-            console.debug("InnerHTML:", element.innerHTML);
-            alertIf(7);
-            return false;
-        }
-        const offer = Colony.findAllResourceCardsInHtml(split[0]);
-        const demand = Colony.findAllResourceCardsInHtml(split[1]);
-        console.log("[INFO] Trade:", offer, tradingPlayer, "--> | <--", otherPlayer, demand);
-
-        this.multiverse.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    // <div><img><span><span>Stealer</span> stole <img>  from you</span></div>
-    // "You stole   from VictimPlayer"
-    stealKnown(element)
-    {
-        const textContent = element.textContent.replace(/\s+/g, " ");
-        const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
-                           || textContent.includes(Colony.snippets.steal.you[1]);
-        const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
-        if (!containsYou || !containsStealSnippet) return false;
-
-        debugger; // Verify known steal for C&K / Seafarers
-
-        if (this.turnState.nextSteal === "spy")
-        {
-            debugger; // Test if indeed a spy
-            console.log("[INFO] Discarding stealing message as spy");
-            this.turnState.nextSteal = null;
-            return true;
-        }
-
-        const involvedPlayers = textContent
-            .replace(Colony.snippets.steal.detect, " ") // After this only the names are left
-            .split(" ");
-        // Replace [Yy]ou with our name
-        if      (involvedPlayers[0] === "You" || involvedPlayers[0] === "you")
-        {        involvedPlayers[0] = this.playerUsername; }
-        else if (involvedPlayers[1] === "You" || involvedPlayers[1] === "you")
-        {        involvedPlayers[1] = this.playerUsername; }
-        else
-        {
-            console.error("Expected \"[Yy]ou\" for", this.playerUsername, "in known steal");
-            alertIf(33);
-            return;
-        }
-
-        // The " stole " message can mean many things. We use the turnState to
-        // differentiate them.
-
-        const stealingPlayer = involvedPlayers[0];
-        const targetPlayer = involvedPlayers[1];
-        if (!verifyPlayers(this.players, stealingPlayer, targetPlayer)) return false; // Sanity check
-        const stolenResourceType = Colony.findSingularResourceImageInElement(element);
-        const stolenResourceIndex = this.multiverse.getResourceIndex(stolenResourceType);
-
-        if (this.turnState.nextSteal === "masterMerchant")
-        {
-            debugger; // Verify known merchant
-            const merchantStolen = Colony.extractResourcesFromElement(element);
-            console.assert(merchantStolen["unknown"] === 0, "Known steals have no unknown cards");
-            console.log("[INFO] Non-random known steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
-
-            this.multiverse.transformExchange(targetPlayer, stealingPlayer, // source, target
-                this.multiverse.asSlice(merchantStolen));
-
-            // TODO Add robs to trackerCollection
-
-            this.turnState.nextSteal = null;
-
-            return true;
-        }
-
-        if (this.turnState.nextSteal === "wedding")
-        {
-            debugger; // Verify known wedding
-            const weddingStolen = Colony.extractResourcesFromElement(element);
-            console.assert(weddingStolen["unknown"] === 0, "Known steals have no unknown cards");
-            console.log("[INFO] Non-random known steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
-
-            this.multiverse.transformExchange(targetPlayer, stealingPlayer, // source, target
-                this.multiverse.asSlice(weddingStolen));
-
-            // TODO Add robs to trackerCollection
-
-            // ❕ Leaving 'nextSteal' unchanged because wedding can cause
-            // multiple steals. Has to be overwritten by other steal (or end of
-            // turn).
-
-            return true;
-        }
-
-        console.assert(this.turnState.nextSteal === "robber", "Should set next steal before entering here");
-
-        console.log("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
-
-        this.trackerCollection.addRob(stealingPlayer, targetPlayer);
-
-        this.multiverse.collapseAsRandom(targetPlayer,
-            this.multiverse.getResourceIndex(stolenResourceType));
-        this.multiverse.mwTransformExchange
-        (
-            targetPlayer, stealingPlayer, // source, target
-            this.multiverse.asSlice({ [stolenResourceType]: 1 })
-        );
-        this.multiverse.printWorlds(); // TODO maybe print in the parser loop
-
-        return true;
-    }
-
-    // <div><img><span><span>StealingPlayer</span> stole <img>  from <span>VictimPlayer</span></span></div>
-    // "StealingPlayer stole   from VictimPlayer"
-    stealUnknown(element)
-    {
-        const textContent = element.textContent.replace(/\s+/g, " ");
-        const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
-                          || textContent.includes(Colony.snippets.steal.you[1]);
-        const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
-        if (containsYou || !containsStealSnippet) return false;
-
-        if (this.turnState.nextSteal === "spy")
-        {
-            this.turnState.nextSteal = null;
-            console.log("[NOTE] Treating steal as spy");
-            return true;
-        }
-
-        const involvedPlayers = textContent
-            .replace(Colony.snippets.steal.detect, " ") // After this only the names are left
-            .split(" ");
-        if (  involvedPlayers[0] === "You"
-           || involvedPlayers[0] === "you"
-           || involvedPlayers[1] === "You"
-           || involvedPlayers[1] === "you" )
-        {
-            console.error("Did not expect \"[Yy]ou\" in unknown steal");
-            alertIf(28);
-            // Fallthrough in case an actual name is "[Yy]ou"
-        }
-        const stealingPlayer = involvedPlayers[0];
-        const targetPlayer = involvedPlayers[1];
-        if (!verifyPlayers(this.players, stealingPlayer, targetPlayer)) return false;
-
-        if (this.turnState.nextSteal === "masterMerchant")
-        {
-            const merchantStolen = Colony.extractResourcesFromElement(element);
-            const asSlice = this.multiverse.asSlice(merchantStolen);
-            const stolenCount = this.multiverse.sliceTotal(asSlice);
-            console.assert(merchantStolen["unknown"] === stolenCount, "Unknown steals have only unknown cards");
-            console.log("[INFO] Non-random unknown steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
-
-            this.multiverse.mwCollapseMinTotal(targetPlayer, stolenCount);
-            for (let i = 0; i < stolenCount; i++)
-            {
-                this.multiverse.branchSteal(targetPlayer, stealingPlayer, true);
-                this.trackerCollection.addRob(stealingPlayer, targetPlayer);
-            }
-
-            // TODO Add robs to trackerCollection
-
-            this.turnState.nextSteal = null;
-
-            return true;
-        }
-
-        if (this.turnState.nextSteal === "wedding")
-        {
-            const weddingStolen = Colony.extractResourcesFromElement(element);
-            const asSlice = this.multiverse.asSlice(weddingStolen);
-            const stolenCount = this.multiverse.sliceTotal(asSlice);
-            console.assert(weddingStolen["unknown"] === stolenCount, "Unknown steals have only unknown cards");
-            console.log("[INFO] Non-random unknown steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
-
-            this.multiverse.mwCollapseMinTotal(targetPlayer, stolenCount);
-            for (let i = 0; i < stolenCount; i++)
-            {
-                this.multiverse.branchSteal(targetPlayer, stealingPlayer, true);
-                this.trackerCollection.addRob(stealingPlayer, targetPlayer);
-            }
-
-            // TODO Add robs to trackerCollection
-
-            // ❕ Leaving 'nextSteal' unchanged because wedding can cause
-            // multiple steals. Has to be overwritten by other steal (or end of
-            // turn).
-
-            return true;
-        }
-
-        if (this.turnState.nextSteal !== "robber")
-        {
-            alertIf("Unexpected nextSteal: " + this.turnState.nextSteal);
-            debugger; // Unreachable
-            return false;
-        }
-
-        console.log("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
-
-        // Bishop, knight and 7 steals use a common update:
-
-        this.trackerCollection.addRob(stealingPlayer, targetPlayer);
-
-        this.multiverse.branchSteal(targetPlayer, stealingPlayer);
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parseMoveRobber(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.movedRobber))
-            return false;
-
-        console.log("[NOTE] Moved robber");
-
+    console.log("[INFO] Built:", player, JSON.stringify(buildResources));
+    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(buildResources));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseRolls = function(element)
+{
+    const textContent = element.textContent;
+    if (!textContent.includes(Colony.snippets.rolledSnippet)) return false;
+    const player = textContent.split(" ")[0];
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+
+    const diceSum = Colony.extractDiceSumOfChildren(element);
+    log("[INFO] Player", player, "rolled a", diceSum);
+
+    this.trackerCollection.addRoll(diceSum);
+    if (diceSum === 7)
+        // TODO If the player does not steal from their robber this number
+        // is misleading. We could track if a rob comes from a 7 or a robber
+        // by checking which happened the message before.
+        this.trackerCollection.addSeven(player);   // Affects seven counter but not rob stats
+
+    this.turnState = Colony.emptyTurnState;
+    if (diceSum === 7)
         this.turnState.nextSteal = "robber";
 
+    return true;
+}
+
+/**
+ * For dev cards. parseDevCard
+ */
+Colony.prototype.parseBoughtMessage = function(element)
+{
+    let textContent = element.textContent;
+    if (!textContent.includes(Colony.snippets.boughtSnippet)) return false;
+    let images = collectionToArray(element.getElementsByTagName('img'));
+    let player = textContent.split(" ")[0];
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+
+    // ManyWorlds version
+    // TODO use structure cost array from mw
+    let devCardResources = deepCopy(mw.emptyResourcesByNameWithU);
+    devCardResources[sheep] = -1;
+    devCardResources[wheat] = -1;
+    devCardResources[ore  ] = -1;
+    const devCardSlice = mw.generateWorldSlice(devCardResources);
+    logs("[INFO] Baught dev card:", player, "->", devCardResources);
+    this.multiverse.mwTransformSpawn(player, this.multiverse.asSlice(devCardResources));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+/**
+ * Process a trade with the bank message: [user icon] [user] gave bank: ...[resources] and took ...[resources]
+ */
+Colony.prototype.parseTradeBankMessage = function(element)
+{
+    let textContent = element.textContent;
+    if (!textContent.includes(Colony.snippets.tradeBankGaveSnippet))
+    {
+        return false;
+    }
+    let player = textContent.split(" ")[0];
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    let innerHTML = element.innerHTML;
+    let gavebank = innerHTML.slice(innerHTML.indexOf(Colony.snippets.tradeBankGaveSnippet), innerHTML.indexOf(Colony.snippets.tradeBankTookSnippet)).split("<img");
+    let andtook = innerHTML.slice(innerHTML.indexOf(Colony.snippets.tradeBankTookSnippet)).split("<img");
+
+    // ManyWorlds version
+    const gaveAndTook = element.innerHTML.split(" and took ");
+    if (gaveAndTook.length !== 2)
+    {
+        log("[ERROR] Expected 2 substrings after split in dev card parser");
+        alertIf(27);
+        return;
+    }
+    const giveResources = Colony.findAllResourceCardsInHtml(gaveAndTook[0]);
+    const takeResources = Colony.findAllResourceCardsInHtml(gaveAndTook[1]);
+    const giveSlice     = mw.generateWorldSlice(giveResources);
+    const takeSlice     = mw.generateWorldSlice(takeResources);
+    logs("[INFO] Traded with bank:", player, giveResources, "->", takeResources);
+    this.multiverse.mwTransformSpawn(player, this.multiverse.sliceSubtract( this.multiverse.asSlice(takeResources)
+                                                                          , this.multiverse.asSlice(giveResources) ));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+// Parse monopoly steals
+//
+// Monopoly lines contain "stole" but do NOT contain a "from:" since they steal
+// from everyone.
+// Note: I dont know what happens with a 0-cards mono.
+Colony.prototype.parseMonopoly = function(element)
+{
+    // Identify if a monopoly message is found
+    let textContent = element.textContent;
+    if (  !textContent.includes(Colony.snippets.mono.present)
+       ||  textContent.includes(Colony.snippets.mono.absent ))
+    {
+        return false;
+    }
+    if (this.turnState.nextSteal === "commodityMonopoly") return false;
+    if (this.turnState.nextSteal === "resourceMonopoly") return false;
+
+    // This line should only be reached outside of C&K
+
+    // Identify thief
+    const thief = textContent.substring(0, textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, thief)) return false; // Sanity check
+
+    // ManyWorlds version
+    const stolenResource = Colony.findSingularResourceImageInElement(element);
+    logs("[INFO] Monopoly:", thief, "<-", stolenResource);
+    this.multiverse.transformMonopoly(thief, this.multiverse.getResourceIndex(stolenResource));
+    this.multiverse.printWorlds();
+
+    // TODO What to do with turnstate here?
+
+    return true;
+}
+
+/**
+ * When the user has to discard cards because of a robber.
+ */
+Colony.prototype.parseDiscardedMessage = function(element)
+{
+    let textContent = element.textContent;
+    if (!textContent.includes(Colony.snippets.discardedSnippet)) {
+        return false;
+    }
+    const player = textContent.substring(0, textContent.indexOf(Colony.snippets.discardedSnippet));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+
+    const discarded = Colony.findAllResourceCardsInHtml(element.innerHTML);
+    logs("[INFO] Discarded:", player, "->", discarded);
+
+    const slice = this.multiverse.asSlice(discarded);
+    if (this.multiverse.sliceTotal(slice) === 0)
+    {
+        console.log("[INFO] Discard slice empty: Assuming progress cards (skipping)");
+        return true;
+    }
+    if (this.turnState.saboteur === false) // Typically the case
+    {
+        // TODO does not consider city walls, because city walls may get
+        //this.multiverse.mwCollapseMinTotal(player);
+        // TODO We can deduce opponents cards count: they discard half of
+        // their cards (eiher 2x or 2x+1 ❔)
+    }
+    this.multiverse.mwTransformSpawn(player,
+        this.multiverse.sliceNegate(this.multiverse.asSlice(discarded)));
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+// .outerHTML: <div><img><span><span>TradingPlayer<> traded <img> <img>  for <img>  with <span>OtherPlayer<><><>
+// .textContent: "TradingPlayer traded    for   with OtherPlayer"
+// Has whitespace between cards.
+Colony.prototype.parseTradeMessage = function(element)
+{
+    // Collapse whitespace into single space
+    const textContent = element.textContent.replace(/\s+/g, ' ');
+    if (!textContent.includes(Colony.snippets.trade.detect)) return false;
+
+    const involvedPlayers = textContent.split(Colony.snippets.trade.detect);
+    const tradingPlayer = involvedPlayers[0];
+    const otherPlayer = involvedPlayers[1].trim(); // Remove trailing space
+    if (!verifyPlayers(this.players, tradingPlayer, otherPlayer)) return false;
+
+    const split = element.innerHTML.split(Colony.snippets.trade.split);
+    if (split.length !== 2) // Sanity check
+    {
+        console.error("Expected 2 parts when parsing trading message");
+        console.debug("Split:", split);
+        console.debug("InnerHTML:", element.innerHTML);
+        alertIf(7);
+        return false;
+    }
+    const offer = Colony.findAllResourceCardsInHtml(split[0]);
+    const demand = Colony.findAllResourceCardsInHtml(split[1]);
+    console.log("[INFO] Trade:", offer, tradingPlayer, "--> | <--", otherPlayer, demand);
+
+    this.multiverse.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+// <div><img><span><span>Stealer</span> stole <img>  from you</span></div>
+// "You stole   from VictimPlayer"
+Colony.prototype.stealKnown = function(element)
+{
+    const textContent = element.textContent.replace(/\s+/g, " ");
+    const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
+                       || textContent.includes(Colony.snippets.steal.you[1]);
+    const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
+    if (!containsYou || !containsStealSnippet) return false;
+
+    debugger; // Verify known steal for C&K / Seafarers
+
+    if (this.turnState.nextSteal === "spy")
+    {
+        debugger; // Test if indeed a spy
+        console.log("[INFO] Discarding stealing message as spy");
+        this.turnState.nextSteal = null;
         return true;
     }
 
-    parseMoveShip(element)
+    const involvedPlayers = textContent
+        .replace(Colony.snippets.steal.detect, " ") // After this only the names are left
+        .split(" ");
+    // Replace [Yy]ou with our name
+    if      (involvedPlayers[0] === "You" || involvedPlayers[0] === "you")
+    {        involvedPlayers[0] = this.playerUsername; }
+    else if (involvedPlayers[1] === "You" || involvedPlayers[1] === "you")
+    {        involvedPlayers[1] = this.playerUsername; }
+    else
     {
-        if (!element.textContent.includes(Colony.snippets.movedShip))
-            return false;
-        const type = element.querySelectorAll("img")[1].alt;
-        if (type !== "pirate") return false;
-
-        console.log("[NOTE] Moved pirate");
-
-        this.turnState.nextSteal = "robber";
-
-        return true;
+        console.error("Expected \"[Yy]ou\" for", this.playerUsername, "in known steal");
+        alertIf(33);
+        return;
     }
 
-    parsePlaceShipRoad(element)
+    // The " stole " message can mean many things. We use the turnState to
+    // differentiate them.
+
+    const stealingPlayer = involvedPlayers[0];
+    const targetPlayer = involvedPlayers[1];
+    if (!verifyPlayers(this.players, stealingPlayer, targetPlayer)) return false; // Sanity check
+    const stolenResourceType = Colony.findSingularResourceImageInElement(element);
+    const stolenResourceIndex = this.multiverse.getResourceIndex(stolenResourceType);
+
+    if (this.turnState.nextSteal === "masterMerchant")
     {
-        if (!element.textContent.includes(Colony.snippets.placeShipRoad.text))
-            return false;
-        const alt = element.querySelectorAll("img")[1].alt;
-        if (!Colony.snippets.placeShipRoad.alt.includes(alt))
-            return false;
+        debugger; // Verify known merchant
+        const merchantStolen = Colony.extractResourcesFromElement(element);
+        console.assert(merchantStolen["unknown"] === 0, "Known steals have no unknown cards");
+        console.log("[INFO] Non-random known steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
 
-        const player = element.textContent.substring(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        let costs = null;
-        if (alt === "ship")
-        {
-            costs = { wood: -1, sheep: -1 };
-        }
-        else if(alt === "road")
-        {
-            costs = { wood:  1, brick:  1 };
-        }
-        console.assert(costs !== null, "Unexpected alt: " + alt);
-        if (this.turnState.roadBuilding > 0)
-        {
-            console.log("[INFO] Road builder: free", alt);
-            costs = {};
-            this.turnState.roadBuilding -= 1;
-        }
-        else
-        {
-            console.assert(alt === "ship", "Unreachable: Roads should be 'built', not placed, unless free");
-            if (alt !== "ship")
-                debugger;
-        }
-        const asSlice = this.multiverse.asSlice(costs);
-        log("[INFO] Place Ship:", player, "->", costs);
+        this.multiverse.transformExchange(targetPlayer, stealingPlayer, // source, target
+            this.multiverse.asSlice(merchantStolen));
 
-        this.multiverse.mwTransformSpawn(player, asSlice);
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parsePlaceKnight(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.placeKnight.text))
-            return false;
-        if (element.children[1].children[1].alt !== Colony.snippets.placeKnight.alt)
-            return false;
-
-        const player = element.textContent.substring(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        const costSlice = this.turnState.deserter === true
-            ? this.multiverse.zeroResources
-            : this.multiverse.asSlice({ sheep: -1, ore: -1 });
-        if (this.turnState.deserter === true)
-            console.log("[INFO] Deserter: ", player, "gets a free knight");
-        log("[INFO] Place Knight:", player, "->", costSlice);
-
-        this.multiverse.mwTransformSpawn(player, costSlice);
-        this.multiverse.printWorlds();
-
-        this.turnState.deserter = false;
-
-        return true;
-    }
-
-    parseActivateKnight(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.activateKnight))
-            return false;
-
-        const player = element.textContent.substr(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        const cost = { wheat: -1 };
-        log(`[INFO] Activate Knight: ${player} ➜ ${JSON.stringify(cost)}`);
-
-        this.multiverse.mwTransformSpawn
-        (
-            player,
-            this.multiverse.asSlice(cost)
-        );
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parseUpgradeKnight(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.upgradeKnight.text))
-            return false;
-        if (element.children[1].children[1].alt !== Colony.snippets.upgradeKnight.alt)
-            return false;
-
-        const player = element.textContent.substr(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
-        let cost = { sheep: -1, ore: -1 };
-        if (this.turnState.smith > 0)
-        {
-            console.log("[INFO] Smith: ", player, "gets a free knight upgrade");
-            cost = {};
-            this.turnState.smith -= 1;
-        }
-        log(`[INFO] Upgrade Knight: ${player} ➜ ${JSON.stringify(cost)}`);
-        const asSlice = this.multiverse.asSlice(cost);
-
-        this.multiverse.mwTransformSpawn
-        (
-            player,
-            asSlice
-        );
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parseAqueduct(element)
-    {
-        if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.aqueduct))
-            return false;
-
-        const player = element.textContent.substr(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        const obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
-        log(`[INFO] Aqueduct: ${player} <- ${JSON.stringify(obtainedResources)}`);
-
-        this.multiverse.mwTransformSpawn
-        (
-            player,
-            this.multiverse.asSlice(obtainedResources)
-        );
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parseUpgradeCity(element)
-    {
-        if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.upgradeCity))
-            return false;
-
-        const player = element.textContent.substr(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        const resourceType = Colony.upgradeMap[element.children[1].children[1].alt];
-        const level = Number(element.textContent.slice(-1));
-        console.assert(level > 0);
-        let resources = { [resourceType]: -level };
-        if (this.turnState.crane === true)
-        {
-            resources[resourceType] += 1;
-            console.log("[INFO] Crane: ", player, "gets a city upgrade cheaper by 1");
-            this.turnState.crane = false;
-        }
-        const slice = this.multiverse.asSlice(resources);
-        log(`[INFO] Upgrade City: ${player} -> ${JSON.stringify(resources)} (${resourceType} ✕ ${level})`);
-
-        this.multiverse.mwTransformSpawn(player, slice);
-        this.multiverse.printWorlds();
-
-        return true;
-    }
-
-    parseProgressCard(element)
-    {
-        if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.progressCard.text))
-            return false;
-        const card = element.querySelectorAll("img")[1].alt;
-        if (!Colony.snippets.progressCard.alts.includes(card))
-            return false;
-        const player = element.textContent.substring(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        log(`[INFO] Progress Card: ${player} -> ${card}`);
-
-        switch (card)
-        {
-            case "Commodity Monopoly":
-                this.turnState.nextSteal = "commodityMonopoly";
-                break;
-            case "Crane":
-                this.turnState.crane = true;
-                break;
-            case "Deserter":
-                this.turnState.deserter = true;
-                break;
-            case "Engineer":
-                this.turnState.engineer = true;
-                break;
-            case "Master Merchant":
-                this.turnState.nextSteal = "masterMerchant";
-                break;
-            case "Medicine":
-                this.turnState.medicine = true;
-                break;
-            case "Resource Monopoly":
-                this.turnState.nextSteal = "resourceMonopoly";
-                break;
-            case "Road Building": // Fallthrough
-            case "card road building":
-                this.turnState.roadBuilding = 2;
-                break;
-            case "Saboteur":
-                this.turnState.saboteur = true;
-                break;
-            case "Smith":
-                this.turnState.smith = 2;
-                break;
-            case "Spy":
-                this.turnState.nextSteal = "spy";
-                break;
-            case "Wedding":
-                this.turnState.nextSteal = "wedding";
-                break;
-            default:
-                console.assert(false, `Progress card not implemented: ${card}`);
-                alertIf("Catched progress card but did not implement it");
-        }
-
-        return true;
-    }
-
-    parseResourceMonopoly(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.resourceMonopoly))
-            return false;
-        if (this.turnState.nextSteal !== "resourceMonopoly") // TODO can this be played before rolling?
-            return false;
-
-        const player = element.textContent.slice(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        const resourceName = Colony.findSingularResourceImageInElement(element);
-        log(`[INFO] Resource Monopoly: ${player} <- ${resourceName}`);
-
-        this.multiverse.transformMonopoly
-        (
-            player,
-            this.multiverse.getResourceIndex(resourceName),
-            2 // Steal at most 2
-        );
-        this.multiverse.printWorlds();
+        // TODO Add robs to trackerCollection
 
         this.turnState.nextSteal = null;
 
         return true;
     }
+
+    if (this.turnState.nextSteal === "wedding")
+    {
+        debugger; // Verify known wedding
+        const weddingStolen = Colony.extractResourcesFromElement(element);
+        console.assert(weddingStolen["unknown"] === 0, "Known steals have no unknown cards");
+        console.log("[INFO] Non-random known steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
+
+        this.multiverse.transformExchange(targetPlayer, stealingPlayer, // source, target
+            this.multiverse.asSlice(weddingStolen));
+
+        // TODO Add robs to trackerCollection
+
+        // ❕ Leaving 'nextSteal' unchanged because wedding can cause
+        // multiple steals. Has to be overwritten by other steal (or end of
+        // turn).
+
+        return true;
+    }
+
+    console.assert(this.turnState.nextSteal === "robber", "Should set next steal before entering here");
+
+    console.log("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
+
+    this.trackerCollection.addRob(stealingPlayer, targetPlayer);
+
+    this.multiverse.collapseAsRandom(targetPlayer,
+        this.multiverse.getResourceIndex(stolenResourceType));
+    this.multiverse.mwTransformExchange
+    (
+        targetPlayer, stealingPlayer, // source, target
+        this.multiverse.asSlice({ [stolenResourceType]: 1 })
+    );
+    this.multiverse.printWorlds(); // TODO maybe print in the parser loop
+
+    return true;
+}
+
+// <div><img><span><span>StealingPlayer</span> stole <img>  from <span>VictimPlayer</span></span></div>
+// "StealingPlayer stole   from VictimPlayer"
+Colony.prototype.stealUnknown = function(element)
+{
+    const textContent = element.textContent.replace(/\s+/g, " ");
+    const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
+                      || textContent.includes(Colony.snippets.steal.you[1]);
+    const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
+    if (containsYou || !containsStealSnippet) return false;
+
+    if (this.turnState.nextSteal === "spy")
+    {
+        this.turnState.nextSteal = null;
+        console.log("[NOTE] Treating steal as spy");
+        return true;
+    }
+
+    const involvedPlayers = textContent
+        .replace(Colony.snippets.steal.detect, " ") // After this only the names are left
+        .split(" ");
+    if (  involvedPlayers[0] === "You"
+       || involvedPlayers[0] === "you"
+       || involvedPlayers[1] === "You"
+       || involvedPlayers[1] === "you" )
+    {
+        console.error("Did not expect \"[Yy]ou\" in unknown steal");
+        alertIf(28);
+        // Fallthrough in case an actual name is "[Yy]ou"
+    }
+    const stealingPlayer = involvedPlayers[0];
+    const targetPlayer = involvedPlayers[1];
+    if (!verifyPlayers(this.players, stealingPlayer, targetPlayer)) return false;
+
+    if (this.turnState.nextSteal === "masterMerchant")
+    {
+        const merchantStolen = Colony.extractResourcesFromElement(element);
+        const asSlice = this.multiverse.asSlice(merchantStolen);
+        const stolenCount = this.multiverse.sliceTotal(asSlice);
+        console.assert(merchantStolen["unknown"] === stolenCount, "Unknown steals have only unknown cards");
+        console.log("[INFO] Non-random unknown steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
+
+        this.multiverse.mwCollapseMinTotal(targetPlayer, stolenCount);
+        for (let i = 0; i < stolenCount; i++)
+        {
+            this.multiverse.branchSteal(targetPlayer, stealingPlayer, true);
+            this.trackerCollection.addRob(stealingPlayer, targetPlayer);
+        }
+
+        // TODO Add robs to trackerCollection
+
+        this.turnState.nextSteal = null;
+
+        return true;
+    }
+
+    if (this.turnState.nextSteal === "wedding")
+    {
+        const weddingStolen = Colony.extractResourcesFromElement(element);
+        const asSlice = this.multiverse.asSlice(weddingStolen);
+        const stolenCount = this.multiverse.sliceTotal(asSlice);
+        console.assert(weddingStolen["unknown"] === stolenCount, "Unknown steals have only unknown cards");
+        console.log("[INFO] Non-random unknown steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
+
+        this.multiverse.mwCollapseMinTotal(targetPlayer, stolenCount);
+        for (let i = 0; i < stolenCount; i++)
+        {
+            this.multiverse.branchSteal(targetPlayer, stealingPlayer, true);
+            this.trackerCollection.addRob(stealingPlayer, targetPlayer);
+        }
+
+        // TODO Add robs to trackerCollection
+
+        // ❕ Leaving 'nextSteal' unchanged because wedding can cause
+        // multiple steals. Has to be overwritten by other steal (or end of
+        // turn).
+
+        return true;
+    }
+
+    if (this.turnState.nextSteal !== "robber")
+    {
+        alertIf("Unexpected nextSteal: " + this.turnState.nextSteal);
+        debugger; // Unreachable
+        return false;
+    }
+
+    console.log("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
+
+    // Bishop, knight and 7 steals use a common update:
+
+    this.trackerCollection.addRob(stealingPlayer, targetPlayer);
+
+    this.multiverse.branchSteal(targetPlayer, stealingPlayer);
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseMoveRobber = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.movedRobber))
+        return false;
+
+    console.log("[NOTE] Moved robber");
+
+    this.turnState.nextSteal = "robber";
+
+    return true;
+}
+
+Colony.prototype.parseMoveShip = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.movedShip))
+        return false;
+    const type = element.querySelectorAll("img")[1].alt;
+    if (type !== "pirate") return false;
+
+    console.log("[NOTE] Moved pirate");
+
+    this.turnState.nextSteal = "robber";
+
+    return true;
+}
+
+Colony.prototype.parsePlaceShipRoad = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.placeShipRoad.text))
+        return false;
+    const alt = element.querySelectorAll("img")[1].alt;
+    if (!Colony.snippets.placeShipRoad.alt.includes(alt))
+        return false;
+
+    const player = element.textContent.substring(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    let costs = null;
+    if (alt === "ship")
+    {
+        costs = { wood: -1, sheep: -1 };
+    }
+    else if(alt === "road")
+    {
+        costs = { wood:  1, brick:  1 };
+    }
+    console.assert(costs !== null, "Unexpected alt: " + alt);
+    if (this.turnState.roadBuilding > 0)
+    {
+        console.log("[INFO] Road builder: free", alt);
+        costs = {};
+        this.turnState.roadBuilding -= 1;
+    }
+    else
+    {
+        console.assert(alt === "ship", "Unreachable: Roads should be 'built', not placed, unless free");
+        if (alt !== "ship")
+            debugger;
+    }
+    const asSlice = this.multiverse.asSlice(costs);
+    log("[INFO] Place Ship:", player, "->", costs);
+
+    this.multiverse.mwTransformSpawn(player, asSlice);
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parsePlaceKnight = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.placeKnight.text))
+        return false;
+    if (element.children[1].children[1].alt !== Colony.snippets.placeKnight.alt)
+        return false;
+
+    const player = element.textContent.substring(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    const costSlice = this.turnState.deserter === true
+        ? this.multiverse.zeroResources
+        : this.multiverse.asSlice({ sheep: -1, ore: -1 });
+    if (this.turnState.deserter === true)
+        console.log("[INFO] Deserter: ", player, "gets a free knight");
+    log("[INFO] Place Knight:", player, "->", costSlice);
+
+    this.multiverse.mwTransformSpawn(player, costSlice);
+    this.multiverse.printWorlds();
+
+    this.turnState.deserter = false;
+
+    return true;
+}
+
+Colony.prototype.parseActivateKnight = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.activateKnight))
+        return false;
+
+    const player = element.textContent.substr(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    const cost = { wheat: -1 };
+    log(`[INFO] Activate Knight: ${player} ➜ ${JSON.stringify(cost)}`);
+
+    this.multiverse.mwTransformSpawn
+    (
+        player,
+        this.multiverse.asSlice(cost)
+    );
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseUpgradeKnight = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.upgradeKnight.text))
+        return false;
+    if (element.children[1].children[1].alt !== Colony.snippets.upgradeKnight.alt)
+        return false;
+
+    const player = element.textContent.substr(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+
+    let cost = { sheep: -1, ore: -1 };
+    if (this.turnState.smith > 0)
+    {
+        console.log("[INFO] Smith: ", player, "gets a free knight upgrade");
+        cost = {};
+        this.turnState.smith -= 1;
+    }
+    log(`[INFO] Upgrade Knight: ${player} ➜ ${JSON.stringify(cost)}`);
+    const asSlice = this.multiverse.asSlice(cost);
+
+    this.multiverse.mwTransformSpawn
+    (
+        player,
+        asSlice
+    );
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseAqueduct = function(element)
+{
+    if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.aqueduct))
+        return false;
+
+    const player = element.textContent.substr(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    const obtainedResources = Colony.findAllResourceCardsInHtml(element.innerHTML);
+    log(`[INFO] Aqueduct: ${player} <- ${JSON.stringify(obtainedResources)}`);
+
+    this.multiverse.mwTransformSpawn
+    (
+        player,
+        this.multiverse.asSlice(obtainedResources)
+    );
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseUpgradeCity = function(element)
+{
+    if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.upgradeCity))
+        return false;
+
+    const player = element.textContent.substr(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    const resourceType = Colony.upgradeMap[element.children[1].children[1].alt];
+    const level = Number(element.textContent.slice(-1));
+    console.assert(level > 0);
+    let resources = { [resourceType]: -level };
+    if (this.turnState.crane === true)
+    {
+        resources[resourceType] += 1;
+        console.log("[INFO] Crane: ", player, "gets a city upgrade cheaper by 1");
+        this.turnState.crane = false;
+    }
+    const slice = this.multiverse.asSlice(resources);
+    log(`[INFO] Upgrade City: ${player} -> ${JSON.stringify(resources)} (${resourceType} ✕ ${level})`);
+
+    this.multiverse.mwTransformSpawn(player, slice);
+    this.multiverse.printWorlds();
+
+    return true;
+}
+
+Colony.prototype.parseProgressCard = function(element)
+{
+    if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.progressCard.text))
+        return false;
+    const card = element.querySelectorAll("img")[1].alt;
+    if (!Colony.snippets.progressCard.alts.includes(card))
+        return false;
+    const player = element.textContent.substring(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    log(`[INFO] Progress Card: ${player} -> ${card}`);
+
+    switch (card)
+    {
+        case "Commodity Monopoly":
+            this.turnState.nextSteal = "commodityMonopoly";
+            break;
+        case "Crane":
+            this.turnState.crane = true;
+            break;
+        case "Deserter":
+            this.turnState.deserter = true;
+            break;
+        case "Engineer":
+            this.turnState.engineer = true;
+            break;
+        case "Master Merchant":
+            this.turnState.nextSteal = "masterMerchant";
+            break;
+        case "Medicine":
+            this.turnState.medicine = true;
+            break;
+        case "Resource Monopoly":
+            this.turnState.nextSteal = "resourceMonopoly";
+            break;
+        case "Road Building": // Fallthrough
+        case "card road building":
+            this.turnState.roadBuilding = 2;
+            break;
+        case "Saboteur":
+            this.turnState.saboteur = true;
+            break;
+        case "Smith":
+            this.turnState.smith = 2;
+            break;
+        case "Spy":
+            this.turnState.nextSteal = "spy";
+            break;
+        case "Wedding":
+            this.turnState.nextSteal = "wedding";
+            break;
+        default:
+            console.assert(false, `Progress card not implemented: ${card}`);
+            alertIf("Catched progress card but did not implement it");
+    }
+
+    return true;
+}
+
+Colony.prototype.parseResourceMonopoly = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.resourceMonopoly))
+        return false;
+    if (this.turnState.nextSteal !== "resourceMonopoly") // TODO can this be played before rolling?
+        return false;
+
+    const player = element.textContent.slice(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    const resourceName = Colony.findSingularResourceImageInElement(element);
+    log(`[INFO] Resource Monopoly: ${player} <- ${resourceName}`);
+
+    this.multiverse.transformMonopoly
+    (
+        player,
+        this.multiverse.getResourceIndex(resourceName),
+        2 // Steal at most 2
+    );
+    this.multiverse.printWorlds();
+
+    this.turnState.nextSteal = null;
+
+    return true;
+}
 
     // TODO Merge with resource monopoly parser
-    parseCommodityMonopoly(element)
+Colony.prototype.parseCommodityMonopoly = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.commodityMonopoly))
+        return false;
+    if (this.turnState.nextSteal !== "commodityMonopoly") // TODO can this be played before rolling?
+        return false;
+
+    const player = element.textContent.slice(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    const type = element.children[1].children[1].alt;
+    const resIndex = this.multiverse.getResourceIndex(type);
+    log(`[INFO] Commodity Monopoly: ${player} <- ${type}`);
+
+    // Steal at most 1
+    this.multiverse.transformMonopoly(player, resIndex, 1);
+    this.multiverse.printWorlds();
+
+    this.turnState.nextSteal = null;
+
+    return true;
+}
+
+Colony.prototype.parseCommercialHarbor = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.commercialHarbor.text))
+        return false;
+
+    const both = element.textContent
+        .replace(Colony.snippets.commercialHarbor.split, "")
+        .split(" ");
+    const player = both[0];
+    const other = both[1];
+    if (!verifyPlayers(this.players, player, other)) return false; // Sanity check
+    log(`[INFO] Commercial Harbor: ${player} (res) ↔ (com) ${other}`);
+
+    this.multiverse.branchHarbor(player, other);
+    this.multiverse.printWorlds();
+}
+
+Colony.prototype.parseSpecialBuildPhase = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.specialBuildPhase))
+        return false;
+
+    console.log("[NOTE] Start of special build phase");
+
+    this.turnState = Colony.emptyTurnState;
+
+    return true;
+}
+
+Colony.prototype.parseDiplomatReposition = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.diplomatReposition))
+        return false;
+
+    const player = element.textContent.slice(0, element.textContent.indexOf(" "));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    console.log(`[INFO] Diplomat: ${player} repositioning road`);
+
+    this.turnState.diplomatReposition = true;
+
+    debugger; // Test if the repositioned-road message is captured
+
+    return true;
+}
+
+Colony.prototype.parseWin = function(element)
+{
+    if (!element.textContent.includes(Colony.snippets.winSnippet))
+        return false;
+
+    console.log("[INFO] End of Game");
+    this.stopMainLoop();
+
+    return true;
+}
+
+// (!) Returns name of the player who's turn it is (not true/false like the
+// other parsers). Returns null if no player found. This is useful to keep the
+// order of occurence constant.
+Colony.prototype.parseTurnName = function(element)
+{
+    // Include only snippets that identify current user by name
+    const txt = element.textContent;
+    if (  txt.includes(Colony.snippets.yearOfPlentySnippet)
+        || txt.includes(Colony.snippets.builtSnippet)
+        || txt.includes(Colony.snippets.boughtSnippet)
+        || txt.includes(Colony.snippets.rolledSnippet)
+        || txt.includes(Colony.snippets.placeInitialSettlementSnippet) )
     {
-        if (!element.textContent.includes(Colony.snippets.commodityMonopoly))
-            return false;
-        if (this.turnState.nextSteal !== "commodityMonopoly") // TODO can this be played before rolling?
-            return false;
-
-        const player = element.textContent.slice(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        const type = element.children[1].children[1].alt;
-        const resIndex = this.multiverse.getResourceIndex(type);
-        log(`[INFO] Commodity Monopoly: ${player} <- ${type}`);
-
-        // Steal at most 1
-        this.multiverse.transformMonopoly(player, resIndex, 1);
-        this.multiverse.printWorlds();
-
-        this.turnState.nextSteal = null;
-
-        return true;
+        const actor = txt.substring(0, txt.indexOf(" "));
+        const html = element.innerHTML;
+        const colStr = "color:";
+        const start = html.indexOf(colStr) + colStr.length;
+        const stop = html.indexOf("\"", start + 1);
+        const colour = html.substring(start, stop);
+        return [actor, colour];
     }
+    return [null, null];
+}
 
-    parseCommercialHarbor(element)
+//=====================================================================
+// Helpers
+//=====================================================================
+
+// Assumes this.playerUsername has been set. Rotates that player to last position.
+Colony.prototype.reorderPlayerNames = function()
+{
+    // Determine our own name
+    if (configFixedPlayerName || !this.playerUsername)
     {
-        if (!element.textContent.includes(Colony.snippets.commercialHarbor.text))
-            return false;
-
-        const both = element.textContent
-            .replace(Colony.snippets.commercialHarbor.split, "")
-            .split(" ");
-        const player = both[0];
-        const other = both[1];
-        if (!verifyPlayers(this.players, player, other)) return false; // Sanity check
-        log(`[INFO] Commercial Harbor: ${player} (res) ↔ (com) ${other}`);
-
-        this.multiverse.branchHarbor(player, other);
-        this.multiverse.printWorlds();
-    }
-
-    parseSpecialBuildPhase(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.specialBuildPhase))
-            return false;
-
-        console.log("[NOTE] Start of special build phase");
-
-        this.turnState = Colony.emptyTurnState;
-
-        return true;
-    }
-
-    parseDiplomatReposition(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.diplomatReposition))
-            return false;
-
-        const player = element.textContent.slice(0, element.textContent.indexOf(" "));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        console.log(`[INFO] Diplomat: ${player} repositioning road`);
-
-        this.turnState.diplomatReposition = true;
-
-        debugger; // Test if the repositioned-road message is captured
-
-        return true;
-    }
-
-    parseWin(element)
-    {
-        if (!element.textContent.includes(Colony.snippets.winSnippet))
-            return false;
-
-        console.log("[INFO] End of Game");
-        this.stopMainLoop();
-
-        return true;
-    }
-
-    // (!) Returns name of the player who's turn it is (not true/false like the
-    // other parsers). Returns null if no player found. This is useful to keep the
-    // order of occurence constant.
-    parseTurnName(element)
-    {
-        // Include only snippets that identify current user by name
-        const txt = element.textContent;
-        if (  txt.includes(Colony.snippets.yearOfPlentySnippet)
-            || txt.includes(Colony.snippets.builtSnippet)
-            || txt.includes(Colony.snippets.boughtSnippet)
-            || txt.includes(Colony.snippets.rolledSnippet)
-            || txt.includes(Colony.snippets.placeInitialSettlementSnippet) )
+        if (!configFixedPlayerName)
         {
-            const actor = txt.substring(0, txt.indexOf(" "));
-            const html = element.innerHTML;
-            const colStr = "color:";
-            const start = html.indexOf(colStr) + colStr.length;
-            const stop = html.indexOf("\"", start + 1);
-            const colour = html.substring(start, stop);
-            return [actor, colour];
+            console.warn("Username not found. Using fixed name.");
         }
-        return [null, null];
+        this.playerUsername = configPlayerName;
     }
 
-    //=====================================================================
-    // Helpers
-    //=====================================================================
-
-    // Assumes this.playerUsername has been set. Rotates that player to last position.
-    reorderPlayerNames()
+    // Rotate 'this.players' so that we are in 4th position
+    const ourPosition = this.players.indexOf(this.playerUsername);
+    const rotation = this.players.length - ourPosition - 1;
+    if (ourPosition < 0)
     {
-        // Determine our own name
-        if (configFixedPlayerName || !this.playerUsername)
-        {
-            if (!configFixedPlayerName)
-            {
-                console.warn("Username not found. Using fixed name.");
-            }
-            this.playerUsername = configPlayerName;
-        }
-
-        // Rotate 'this.players' so that we are in 4th position
-        const ourPosition = this.players.indexOf(this.playerUsername);
-        const rotation = this.players.length - ourPosition - 1;
-        if (ourPosition < 0)
-        {
-            console.error(`reorderPlayerNames: Username "${this.playerUsername}" not part of this.players`);
-            console.warn("Skip reordering");
-            return;
-        }
-        const unrotatedCopy = deepCopy(this.players);
-        for (let i = 0; i < this.players.length; ++i)
-        {
-            this.players[(i + rotation) % this.players.length] = unrotatedCopy[i];
-        }
-        for (const p of this.players)
-        {
-            log("[NOTE] Found player:", p);
-        }
-        log("[NOTE] You are:", this.playerUsername);
+        console.error(`reorderPlayerNames: Username "${this.playerUsername}" not part of this.players`);
+        console.warn("Skip reordering");
+        return;
     }
-
-} // class Colony
+    const unrotatedCopy = deepCopy(this.players);
+    for (let i = 0; i < this.players.length; ++i)
+    {
+        this.players[(i + rotation) % this.players.length] = unrotatedCopy[i];
+    }
+    for (const p of this.players)
+    {
+        log("[NOTE] Found player:", p);
+    }
+    log("[NOTE] You are:", this.playerUsername);
+}
 
 // vim: shiftwidth=4:softtabstop=4:expandtab
