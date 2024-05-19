@@ -923,8 +923,10 @@ class Colony
         // ManyWorlds version
         const discarded = Colony.findAllResourceCardsInHtml(element.innerHTML);
         const discardedCardsAsSlie = mw.generateWorldSlice(discarded);
+        const discardCount = mw.getResourceSumOfSlice(discardedCardsAsSlie);
         logs("[INFO] Discarded:", player, "->", discarded);
-        this.trackerObject.mwCollapseMinTotal(player); // Total can be unknown to MW after monopoly
+        // Total can be unknown to MW after monopoly
+        this.trackerObject.mwCollapseTotal(player, (x) => x >> 1 === discardCount);
         this.trackerObject.mwTransformSpawn(player, -discardedCardsAsSlie);
         this.trackerObject.printWorlds();
 

@@ -1092,12 +1092,14 @@ parsers:
         if (!verifyPlayers(twosheep.players, player)) return false; // Sanity check
 
         const discarded = twosheep.extractResourcesFromLogMessage(element.innerHTML);
-        const discardedCardsAsSlie = mw.generateWorldSlice(discarded);
+        const discardedCardsAsSlice = mw.generateWorldSlice(discarded);
+        const discardedCount = mw.getResourceSumOfSlice(discardedCardsAsSlice);
         //console.log(`🗑 %c${player}%c → ${resourcesAsUtf8(discarded)}`, twosheep.consoleCss(player), "");
         //logs("[INFO] Discarded:", player, "->", discarded);
 
+        twosheep.worlds.mwCollapseTotal(player, (x) => x >> 1 === discardedCount);
         twosheep.worlds.mwCollapseMinTotal(player); // Total can be unknown to MW after monopoly
-        twosheep.worlds.mwTransformSpawn(player, -discardedCardsAsSlie);
+        twosheep.worlds.mwTransformSpawn(player, -discardedCardsAsSlice);
 
         return true;
     },

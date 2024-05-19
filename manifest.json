@@ -4,7 +4,7 @@
     "manifest_version": 3,
     "author": "Lolligerhans",
     "description": "Correctly correlated Colonist card chance counter",
-    "version": "2.2.9",
+    "version": "2.2.10",
     "icons":
     {
         "512": "assets/catan2.jpg"

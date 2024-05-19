@@ -733,13 +733,12 @@ class ManyWorlds
         this.mwTransformSpawn(player, slice);
     }
 
-    // Discard if 8 or more cards
-    mwCollapseMinTotal(player, count = 8)
+    mwCollapseTotal(player, predicate = (x) => x >= 8)
     {
         this.manyWorlds = this.manyWorlds.filter(world =>
         {
             // No recovery needed since card count is known in each world
-            return mw.getResourceSumOfSlice(world[player]) >= count;
+            return predicate( mw.getResourceSumOfSlice(world[player]) );
         });
     }
 
@@ -1276,7 +1275,7 @@ class ManyWorlds
         this.transformMonopoly("A", mw.worldResourceIndex(wood));
         log("After A monos wood. 5 worlds"); this.printWorlds();
         if (this.manyWorlds.length !== 5) passedTest = false;
-        this.mwCollapseMinTotal("B", 2);
+        this.mwCollapseTotal("B", (x) => x >= 2);
         log("After B reveals total count >= 2. 2 worlds left"); this.printWorlds();
         if (this.manyWorlds.length !== 2) passedTest = false;
         const sheepOffer = {wood: 0, brick: 0, sheep:1, wheat: 0, ore:0, "unknown": 0};
