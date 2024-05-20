@@ -11,15 +11,19 @@
 //      ◦ diplomat?
 //  • (I think medicine and crane are safe)
 
+// TODO Open tests
+//   • harbor (ours) (both directions)
+//   • spy to ignore known steals in stealKnown (both directions)
+
 "use strict";
 
 class Colony
 {
     static refreshRate = 3000;
 
-    //=====================================================================
+    //==========================================================================
     // Static
-    //=====================================================================
+    //==========================================================================
 
     // Returns resource type of any resource card found in the element. Use when
     // there is only one resource card.
@@ -31,7 +35,7 @@ class Colony
         if (keys.length !== 1)
         {
             console.error("Expected 1 resource card in element", element);
-            debugger;
+            alertIf("Expected at least 1 resource card in element (unreachable)");
         }
         return keys[0];
     }
@@ -104,21 +108,24 @@ class Colony
         return total;
     }
 
-    static deleteDiscordSigns()
+    static deleteSomeElements()
     {
         const ids = [ "remove_ad_in_game_left", "remove_ad_in_game_right",
-            "in_game_ab_right", "in_game_ab_left" ];
+                      "in_game_ab_right", "in_game_ab_left" ];
         for (const id of ids)
         {
             let element = document.getElementById(id);
-            if (element) element.remove();
+            if (element)
+            {
+                element.remove();
+                console.debug("◦ Deleted", id);
+            }
         }
-        console.log("Removed elements");
     }
 
-    //=====================================================================
+    //==========================================================================
     // Constants
-    //=====================================================================
+    //==========================================================================
 
     static snippets =
     {
@@ -294,69 +301,13 @@ class Colony
         // C&K has stateful messages. We add flags and reset after each roll
         this.turnState = Colony.emptyTurnState;
 
-        // The parser 'parseInitialGotMessage()' is not included in this list. We
-        // call use it once at the start, not regularly. The parseTurnName() parse
-        // is also not included. Used for recovery.
-        //
-        // Structural convention:
-        //  1) Match message type
-        //  2) Read message elements (log result)
-        //  3) Compute elements into slices
-        //  4) Update 'multiverse'
-        //  5) Update 'turnState'
-        //  6) Return true if message type matched. Else return false.
-        this.ALL_PARSERS =
-        [
-            this.parseAlways.bind(this),
-            this.parseGotMessage.bind(this),
-            this.parseGoldTile.bind(this),
-            this.parseTradeOffer.bind(this),
-            this.parseTradeOfferCounter.bind(this),
-            this.parseRolls.bind(this),
-
-            this.stealUnknown.bind(this),
-            this.stealKnown.bind(this),
-            this.parseTradeBankMessage.bind(this),
-            this.parseTradeMessage.bind(this),
-            this.parseDiscardedMessage.bind(this),
-            this.parseBuiltMessage.bind(this),
-            this.parseBoughtMessage.bind(this), // Dev cards
-            this.parseMonopoly.bind(this), // Regular monopoly only
-            this.parseYearOfPlenty.bind(this),
-
-            this.parseWin.bind(this),
-
-            // -----------
-            // C&K
-            // -----------
-            // TODO Decide on parse order
-
-            this.parseMoveRobber.bind(this),
-            this.parseMoveShip.bind(this),
-            // Ships always have "place", roads only from road building
-            this.parsePlaceShipRoad.bind(this),
-            this.parsePlaceKnight.bind(this),
-            this.parseActivateKnight.bind(this),
-            this.parseUpgradeKnight.bind(this),
-            this.parseAqueduct.bind(this),
-            this.parseUpgradeCity.bind(this),
-            // For all (relevant) progress activation messages
-            this.parseProgressCard.bind(this),
-            this.parseResourceMonopoly.bind(this),
-            this.parseCommodityMonopoly.bind(this),
-            this.parseCommercialHarbor.bind(this),
-            this.parseCommercialHarborOurs.bind(this),
-            this.parseSpecialBuildPhase.bind(this),
-            this.parseDiplomatReposition.bind(this),
-        ];
-
     } // ctor
 
 } // class Colony
 
-//=====================================================================
+//==============================================================================
 // Messages
-//=====================================================================
+//==============================================================================
 
 Colony.prototype.getAllMessages = function()
 {
@@ -399,17 +350,17 @@ Colony.prototype.isNewMessage = function(msgNumber)
 // Program flow
 //==============================================================================
 
-Colony.prototype.restartTracker = function(tasks =
+Colony.prototype.restartTracker = function Colony_prototype_restartTracker(tasks =
 [
-    { "funct": this.reset.bind(this),                             "ok": false },
-    { "funct": this.findPlayerName.bind(this),                    "ok": false },
-    { "funct": this.findLog.bind(this),                 "ok": false },
-    { "funct": this.waitForInitialPlacement.bind(this),           "ok": false },
-    { "funct": this.recoverUsers.bind(this),                      "ok": false },
-    { "funct": this.initializeTracker.bind(this),                 "ok": false },
+    { "funct": Colony.prototype.reset.bind(this),                             "ok": false },
+    { "funct": Colony.prototype.findPlayerName.bind(this),                    "ok": false },
+    { "funct": Colony.prototype.findLog.bind(this),                 "ok": false },
+    { "funct": Colony.prototype.waitForInitialPlacement.bind(this),           "ok": false },
+    { "funct": Colony.prototype.recoverUsers.bind(this),                      "ok": false },
+    { "funct": Colony.prototype.initializeTracker.bind(this),                 "ok": false },
     { "funct": () => { this.MSG_OFFSET = 0; return true; },       "ok": false },
-    { "funct": this.comeMrTallyManTallinitialResource.bind(this), "ok": false },
-    { "funct": this.restartMainLoop.bind(this),                   "ok": false },
+    { "funct": Colony.prototype.comeMrTallyManTallinitialResource.bind(this), "ok": false },
+    { "funct": Colony.prototype.restartMainLoop.bind(this),                   "ok": false },
 ])
 {
     for (let i = 0; i < tasks.length; ++i)
@@ -432,7 +383,7 @@ Colony.prototype.restartTracker = function(tasks =
 
     // Like ctor, but keeps 'activeIndex' and 'lastStarted' intact so we dont
     // orphan the 'mainLoop' 'setDoInterval'.
-Colony.prototype.reset = function()
+Colony.prototype.reset = function Colony_prototype_reset()
 {
     this.logElement = null;
     this.playerUsernameElement = null;
@@ -452,13 +403,12 @@ Colony.prototype.reset = function()
     return true;
 }
 
-Colony.prototype.findPlayerName = function()
+Colony.prototype.findPlayerName = function Colony_prototype_findPlayerName()
 {
-    console.log("[NOTE] searching profile name");
     this.playerUsernameElement = document.getElementById("header_profile_username");
     console.assert(this.playerUsernameElement !== null, "should always be present, during and outside of games");
     this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
-    console.log("[NOTE] Found profile:", `"${this.playerUsername}"`);
+    console.log("• You are:", this.playerUsername);
 
     let e = document.getElementById("header_navigation_store");
     if (e !== null) e.textContent = "CoCaCo " + version_string;
@@ -466,17 +416,20 @@ Colony.prototype.findPlayerName = function()
     return true;
 }
 
-Colony.prototype.findLog = function()
+Colony.prototype.findLog = function Colony_prototype_findLog()
 {
-    console.log("[NOTE] Waiting to start");
-
+    console.assert(!this.logElement);
     this.logElement = document.getElementById("game-log-text");
     if (!this.logElement)
+    {
+        //console.debug("• No #game-log-text found");
         return false;
-    console.log("Found game-log-text element");
-    Colony.deleteDiscordSigns();
+    }
+    console.log("• Found #game-log-text");
+    Colony.deleteSomeElements();
     this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
 
+    // Reset background after extension restart. Has no effect the first time.
     for (e of this.logElement.children)
         e.style.background = "";
 
@@ -495,7 +448,7 @@ Colony.prototype.findLog = function()
  * The main loop is then started with this.MSG_OFFSET pointing to the first
  * non-initial placement message.
  **/
-Colony.prototype.waitForInitialPlacement = function()
+Colony.prototype.waitForInitialPlacement = function Colony_prototype_waitForInitialPlacement()
 {
     const dummyPlayers = ["Awaiting", "First", "Roll", "..."];
     const dummyColours = {"Awaiting":"black", "First":"red", "Roll":"gold", "...":"white"};
@@ -523,7 +476,7 @@ Colony.prototype.waitForInitialPlacement = function()
 // At start of the game, set 'palyerCount' to null so the number is deduced.
 // When recovering from breaking log, or spectating, set 'playerCount' so
 // the function continues while parsing rolls.
-Colony.prototype.recoverUsers = function(playerCount = null)
+Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers(playerCount = null)
 {
     // NOTE If we make sure not to read initial placement messages, we can set
     //      MSG_OFFEST to 0, too. Those can appear out-of-player-order, and we
@@ -540,7 +493,6 @@ Colony.prototype.recoverUsers = function(playerCount = null)
     };
     console.assert(!done()); // Dont come back when done
 
-    console.log("[NOTE] Detecting player names...");
     const newMsg = this.getNewMessages();
     for (const msg of newMsg)
     {
@@ -562,7 +514,7 @@ Colony.prototype.recoverUsers = function(playerCount = null)
         {
             this.players.push(name);
             this.playerColours[name] = colour;
-            console.log("Recoverd player", name, "with colour", colour);
+            console.log(`• Found player %c${name}%c with colour ${colour}`, this.cssColour(name), "");
             if (done())
                 break;
         }
@@ -576,7 +528,7 @@ Colony.prototype.recoverUsers = function(playerCount = null)
 
 // Initializes the member objects once the required inputs are ready:
 // name + colour data must be handed to the member objects for construction.
-Colony.prototype.initializeTracker = function()
+Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker()
 {
     let noResources = {};
     for (const name of this.players)
@@ -611,10 +563,9 @@ Colony.prototype.initializeTracker = function()
  * Does not wait for new messages; all initial placement messages must be
  * present beforehand.
  */
-Colony.prototype.comeMrTallyManTallinitialResource = function(after)
+Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_comeMrTallyManTallinitialResource()
 {
     let foundRoll = false;
-    console.log("Polling for initial placement");
     let [allMessages, i] = this.getNewMessages(true);
     for (; i < allMessages.length; ++i)
     {
@@ -627,12 +578,14 @@ Colony.prototype.comeMrTallyManTallinitialResource = function(after)
         this.parseInitialGotMessage(msg); // Finds resources and adds them
     };
     if (!foundRoll)
+    {
+        console.debug("◦ Waiting for first roll");
         return false;
+    }
+    this.multiverse.printWorlds();
 
     this.MSG_OFFSET = i;
-
-    console.log("Correcting this.MSG_OFFSET to 28 ?==", i);
-    console.assert(this.MSG_OFFSET === 28, "Expecting message offset for initial phase to be 28 for clean 4 player game");
+    console.debug(`• Starting from message ${i}`); // 28 for normal base game
     return true;
 }
 
@@ -649,14 +602,14 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
     for (let idx = index; idx < allMessages.length; ++idx)
     {
         const msg = allMessages[idx];
-        const unidentified = this.ALL_PARSERS.every(parser =>
+        const unidentified = Colony.allParsers.every(parser =>
         {
-            return !parser(msg, idx, allMessages);
+            return !parser.call(this, msg, idx, allMessages);
         });
 
         msg.style.background = unidentified ? "LightGoldenRodYellow" : "PaleGreen";
         this.multiverse.printWorlds();
-        if (configLogWorldCount === true) console.log("[NOTE] MW count:", this.multiverse.worlds.length);
+        if (configLogWorldCount) console.log("🌎", this.multiverse.worlds.length);
         if (0 === this.multiverse.worldCount()) // Implies error
         {
             msg.style.background = "LightCoral";
@@ -677,28 +630,32 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
 // correct.
 Colony.prototype.recoverCards = function()
 {
+    //console.debug("🩹 Considering card recovery");
     // Save index at moment of click
     const allMessages = this.getAllMessages();
     const momentIndex = allMessages.length;
     if (momentIndex >= 1) allMessages[momentIndex - 1].style.background = "Orange";
 
-    console.log("[NOTE] Starting manual card recovery");
     const activeBefore = this.isActiveMainLoop();
     this.stopMainLoop();
     // Confirm AFTER stopping main loop so that card counts can be timed
-    if (!confirm(`Reset cards after »${allMessages.at(momentIndex-1).textContent}« (${activeBefore ? "active" : "inactive"})?`))
+    if (!confirm(`🩹 ${activeBefore ? "[active]" : "[inactive]"} Reset cards?  Last message: »${allMessages.at(momentIndex-1).textContent}«`))
     {
-        console.log("[NOTE] Aborting manual card recovery");
+        console.debug("🩹 Declining card recovery");
         if (activeBefore)
+        {
+            console.info("🩹 Re-entering main loop without card recovery");
             this.restartMainLoop();
+        }
         return;
     }
+    console.info("🩹 Entering card recovery");
 
     this.MSG_OFFSET = momentIndex;
     let counts = {};
     for (const player of this.players)
     {
-        const count = prompt(`${player} number of cards:`, 0);
+        const count = prompt(`🩹 ${player} number of cards:`, 0);
         counts[player] = Number(count);
     }
     this.multiverse.mwCardRecovery(counts);
@@ -711,18 +668,19 @@ Colony.prototype.recoverCards = function()
 // set unknown card counts, entering manyWorlds recovery mode.
 Colony.prototype.recoverNames = function()
 {
+    //console.debug("💉 Considering name recovery");
     if (this.startupFlag === true)
     {
         console.warn(`${recoverNames.name}: Suppressed! startupFlag === true`);
         return;
     }
-    console.log("[NOTE] Starting manual name recovery");
-    const playerCount = Number(prompt("Player count (0 to abort):", 0));
+    const playerCount = Number(prompt("💉 New players count?", 0));
     if (playerCount < 1 || 8 < playerCount)
     {
-        console.error("Invalid player count:", playerCount, "(1-8). Aborting name recovery.");
+        console.error("💉 Invalid player count:", playerCount, " Expected (1-8). Aborting name recovery.");
         return;
     }
+    console.log(`💉 Entering name recovery for ${playerCount} players`);
 
     this.stopMainLoop();
     this.renderObject.unrender();
@@ -739,9 +697,9 @@ Colony.prototype.recoverNames = function()
     ]);
 }
 
-//=====================================================================
+//==============================================================================
 // Main loop
-//=====================================================================
+//==============================================================================
 
 Colony.prototype.isActiveMainLoop = function()
 {
@@ -751,16 +709,16 @@ Colony.prototype.isActiveMainLoop = function()
 // Returns true if existing main loop interval was cleared, otherwise false
 Colony.prototype.stopMainLoop = function()
 {
-    console.log("stopMainLoop()");
+    console.info("• Stopping main loop ", this.activeIndex);
     this.activeIndex += 1;
 
     if (configUseTimer) console.timeEnd("mainLoop");
 }
 
-Colony.prototype.restartMainLoop = function()
+Colony.prototype.restartMainLoop = function Colony_prototype_restartMainLoop()
 {
     this.stopMainLoop(); // Sanitize
-    console.log("restartMainLoop()");
+    console.log("• (Re)starting main loop ", this.activeIndex);
     this.startupFlag = false;
     this.lastStarted = deepCopy(this.activeIndex);
     const currentIndex = deepCopy(this.activeIndex); // Passed to closure
@@ -796,9 +754,33 @@ Colony.prototype.mainLoopToggle = function()
     }
 }
 
-//=====================================================================
+//==============================================================================
+// Misc (any but messages, program flow, main loop, parsers)
+//==============================================================================
+
+// Assumes this.playerUsername has been set. Rotates that player to last position.
+Colony.prototype.reorderPlayerNames = function()
+{
+    // Determine our own name
+    if (configFixedPlayerName || !this.playerUsername)
+    {
+        if (!configFixedPlayerName)
+            console.warn("Username not found. Using fixed name.");
+        this.playerUsername = configPlayerName;
+    }
+
+    this.players = rotateToLastPosition(this.players, this.playerUsername);
+}
+
+Colony.prototype.cssColour = function(playerName)
+{
+    return `background: ${this.playerColours[playerName]}; padding: 3px; border-radius: 5px; font-weight: bold;`;
+}
+
+
+//==============================================================================
 // Parsers
-//=====================================================================
+//==============================================================================
 
 /**
  * Process initial resource message after placing first settlement.
@@ -835,7 +817,8 @@ Colony.prototype.parseTradeOffer = function(element)
     const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
     const asSlice = mw.generateWorldSlice(offer);
-    logs("[INFO] Trade offer:", player, "->", offer);
+    console.log(`%c${player}%c ➡️ ${resourcesAsUtf8(offer)} ⇄️ <resources>`, this.cssColour(player), "");
+
     this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
 
     return true;
@@ -854,7 +837,7 @@ Colony.prototype.parseTradeOfferCounter = function(element)
     const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
     const asSlice = mw.generateWorldSlice(offer);
-    logs("[INFO] Trade counter offer:", player, "->", offer);
+    console.log(`⬅️ <resources> ⇄️ ${resourcesAsUtf8(offer)} %c${player}%c`, this.cssColour(player), "");
     this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
 
     return true;
@@ -868,38 +851,36 @@ Colony.prototype.parseYearOfPlenty = function(element)
     const beneficiary = textContent.substring(0, textContent.indexOf(Colony.snippets.yearOfPlentySnippet));
     if (!verifyPlayers(this.players, beneficiary)) return false; // Sanity check
     const resources = Colony.extractResourcesFromElement(element);
-    logs("[INFO] Year of Plenty:", beneficiary, "<-", resources);
+    console.log(`📯 %c${beneficiary}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(beneficiary), "");
 
     this.multiverse.mwTransformSpawn(beneficiary, Multiverse.asSlice(resources));
 
     return true;
 }
 
+// Put the per-every-message things here. Always returns false with no-op
+// (except logging).
 Colony.prototype.parseAlways = function(element, idx)
 {
     if (!configLogMessages) return false;
-    console.info(`👁 Message ${idx} | »${element.textContent}«`);
-    //console.debug(`🔍 Message ${idx} object:`, msg);
+    console.info(`Message [${idx}] ${element.textContent} 🔍`, element);
     return false;
 }
 
-/**
- * Process a "got resource" message: [user icon] [user] got: ...[resource images]
- */
 Colony.prototype.parseGotMessage = function(element)
 {
-    let textContent = element.textContent;
+    const textContent = element.textContent;
     if (textContent.includes(Colony.snippets.receivedResourcesSnippet))
     {
         const player = textContent.substring(0, textContent.indexOf(Colony.snippets.receivedResourcesSnippet));
         if (!verifyPlayers(this.players, player)) return false; // Sanity check
         const resources = Colony.extractResourcesFromElement(element);
-        logs("[INFO] Got resources:", player, "<-", resources);
+        console.log(`%c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
         if ((resources.unknown || 0) !== 0)
         { // TODO
             console.error("Probably not the intended effect. If this happens we should zero unknown resources");
-            debugger;
+            alertIf("Implementation lacks handling this case");
         }
 
         this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(resources));
@@ -921,12 +902,12 @@ Colony.prototype.parseGoldTile = function(element)
     const player = element.textContent.substring(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const resources = Colony.extractResourcesFromElement(element);
-    logs("[INFO] Selected gold tile:", player, "<-", resources);
+    console.log(`💰 %c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     if ((resources.unknown || 0) !== 0)
     { // TODO
         console.error("Probably not the intended effect. If this happens we should zero unknown resources");
-        debugger;
+        alertIf("Implementation lacks handling this case");
     }
 
     this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(resources));
@@ -934,9 +915,6 @@ Colony.prototype.parseGoldTile = function(element)
     return true;
 }
 
-/**
- * Process a "built" message: [user icon] [user] built a [building/road]
- */
 Colony.prototype.parseBuiltMessage = function(element, index, array)
 {
     let textContent = element.textContent;
@@ -953,7 +931,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
             if (this.turnState.diplomatReposition === true)
             {
                 this.turnState.diplomatReposition = false;
-                console.log(`[INFO] (Diplomat: free road for ${player})`);
+                console.log(`🆓 ${player} ← ${utf8Symbols.road}`);
                 buildResources = {};
                 break;
             }
@@ -971,12 +949,12 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
             if (this.turnState.engineer === true)
             {
                 this.turnState.engineer = false;
-                console.log(`[INFO] Engineer for ${player}: Free city wall`);
+                console.log(`${utf8Symbols.free} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
                 buildResources = {};
             }
             else
             {
-                console.log("[INFO] No engineer for city wall", player);
+                console.log(`${utf8Symbold.build} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
             }
             break;
         }
@@ -986,7 +964,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
             if (this.turnState.medicine === true)
             {
                 this.turnState.medicine = false;
-                console.log(`[INFO] Medicine for ${player}: Cheaper city`);
+                console.log(`💊 ${player} ${utf8Symbols.discount} ${utf8Symbols.city}`);
                 buildResources = {wheat: -1, ore: -2};
             }
             break;
@@ -994,16 +972,17 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
         else if (img.src.includes("ship"))
         {
             console.assert(false, "unreachable");
-            debugger; // Make sure this does not trigger in seafarers mode
+            // TODO If in seafarers ships are built we would need to add it here
+            alertIf("Ships should be placed (I think)");
         }
     }
     if (buildResources === null)
     {
-        console.error("[ERROR] Failed to detect building in found message");
+        console.error("Failed to detect building in found message");
         alertIf(31);
     }
+    console.log(`${utf8Symbols.build} %c${player}%c ← ${resourcesAsUtf8(buildResources)}`, this.cssColour(player), "");
 
-    console.log("[INFO] Built:", player, JSON.stringify(buildResources));
     this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(buildResources));
 
     return true;
@@ -1013,11 +992,11 @@ Colony.prototype.parseRolls = function(element)
 {
     const textContent = element.textContent;
     if (!textContent.includes(Colony.snippets.rolledSnippet)) return false;
+
     const player = textContent.split(" ")[0];
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
     const diceSum = Colony.extractDiceSumOfChildren(element);
-    console.log("[INFO] Player", player, "rolled a", diceSum);
+    console.log(`🎲 ${diceSum} %c${player}%c`, this.cssColour(player), "");
 
     this.trackerCollection.addRoll(diceSum);
     if (diceSum === 7)
@@ -1040,18 +1019,15 @@ Colony.prototype.parseBoughtMessage = function(element)
 
     const player = textContent.split(" ")[0];
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
     const resources = {sheep: -1, wheat: -1, ore: -1};
     const asSlice = Multiverse.asSlice(resources);
-    console.log("[INFO] Baught dev card:", player, "->", resources);
+    console.log(`${utf8Symbols.buy} ${utf8Symbols.devcard} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+
     this.multiverse.mwTransformSpawn(player, asSlice);
 
     return true;
 }
 
-/**
- * Process a trade with the bank message: [user icon] [user] gave bank: ...[resources] and took ...[resources]
- */
 Colony.prototype.parseTradeBankMessage = function(element)
 {
     let textContent = element.textContent;
@@ -1078,7 +1054,7 @@ Colony.prototype.parseTradeBankMessage = function(element)
     const takeResources = Colony.findAllResourceCardsInHtml(gaveAndTook[1]);
     const giveSlice     = mw.generateWorldSlice(giveResources);
     const takeSlice     = mw.generateWorldSlice(takeResources);
-    logs("[INFO] Traded with bank:", player, giveResources, "->", takeResources);
+    console.log(`${utf8Symbols.bank} %c${player}%c ${resourcesAsUtf8(giveResources)} ↔ ${resourcesAsUtf8(takeResources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, Multiverse.sliceSubtract( Multiverse.asSlice(takeResources)
                                                                      , Multiverse.asSlice(giveResources) ));
@@ -1099,10 +1075,11 @@ Colony.prototype.parseMonopoly = function(element)
 
     // This line should only be reached outside of C&K
 
+    // TODO Detect count
     const thief = textContent.substring(0, textContent.indexOf(" "));
     if (!verifyPlayers(this.players, thief)) return false; // Sanity check
     const stolenResource = Colony.findSingularResourceImageInElement(element);
-    console.log("[INFO] Monopoly:", thief, "<-", stolenResource);
+    console.log(`${utf8Symbols.monopoly} (regular) %c${thief}%c ${resourceIcons[stolenResource]}`, this.cssColour(thief), "");
 
     this.multiverse.transformMonopoly(thief, Multiverse.getResourceIndex(stolenResource));
 
@@ -1111,9 +1088,7 @@ Colony.prototype.parseMonopoly = function(element)
     return true;
 }
 
-/**
- * When the user has to discard cards because of a robber.
- */
+// Discarding is always 50% (round down)
 Colony.prototype.parseDiscardedMessage = function(element)
 {
     let textContent = element.textContent;
@@ -1125,17 +1100,17 @@ Colony.prototype.parseDiscardedMessage = function(element)
     const discarded = Colony.extractResourcesFromElement(element);
     const slice = Multiverse.asSlice(discarded);
     const sliceTotal = Multiverse.sliceTotal(slice);
-    logs("[INFO] Discarded:", player, "->", discarded);
+    console.log(`${utf8Symbols.discard} %c${player}%c → ${resourcesAsUtf8(discarded)}`, this.cssColour(player), "");
 
     if ((discarded.unknown || 0) !== 0)
     {
+        alertIf("We thought we do not need to account for unknowns but apparently we do");
         discarded.unknown = 0; // TODO needed?
-        debugger;
     }
 
     if (sliceTotal === 0)
     {
-        console.log("[INFO] Discard slice empty: Assuming progress cards (skipping)");
+        console.debug("◦ Discard slice empty: Assuming progress cards (skipping)");
         return true;
     }
 
@@ -1148,7 +1123,6 @@ Colony.prototype.parseDiscardedMessage = function(element)
 
 // .outerHTML: <div><img><span><span>TradingPlayer<> traded <img> <img>  for <img>  with <span>OtherPlayer<><><>
 // .textContent: "TradingPlayer traded    for   with OtherPlayer"
-// Has whitespace between cards.
 Colony.prototype.parseTradeMessage = function(element)
 {
     // Collapse whitespace into single space
@@ -1172,7 +1146,7 @@ Colony.prototype.parseTradeMessage = function(element)
     // TODO Can we use structural parsing over strings?
     const offer = Colony.findAllResourceCardsInHtml(split[0]);
     const demand = Colony.findAllResourceCardsInHtml(split[1]);
-    console.log("[INFO] Trade:", offer, tradingPlayer, "--> | <--", otherPlayer, demand);
+    console.log(`↔️ %c${tradingPlayer}%c ${resourcesAsUtf8(offer)} ⇄️ ${resourcesAsUtf8(demand)} %c${otherPlayer}%c`, this.cssColour(tradingPlayer), "", this.cssColour(otherPlayer), "");
 
     this.multiverse.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
 
@@ -1192,7 +1166,7 @@ Colony.prototype.stealKnown = function(element)
     if (this.turnState.nextSteal === "spy")
     {
         debugger; // Test if indeed a spy
-        console.log("[INFO] Discarding stealing message as spy");
+        console.debug("◦ Ignoring stel message (spy)");
         this.turnState.nextSteal = null;
         return true;
     }
@@ -1221,7 +1195,7 @@ Colony.prototype.stealKnown = function(element)
         const count = Multiverse.sliceTotal(slice);
         console.assert([1,2].includes(count));
         console.assert((merchantStolen["unknown"] || -1) !== 0, "Known steals have no unknown cards");
-        console.log("[INFO] Non-random known steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
+        console.log(`${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         this.multiverse.mwTransformExchange(targetPlayer, stealingPlayer, // source, target
             Multiverse.asSlice(merchantStolen));
@@ -1240,7 +1214,7 @@ Colony.prototype.stealKnown = function(element)
         const count = Multiverse.sliceTotal(slice);
         console.assert([1,2].includes(count));
         console.assert((weddingStolen["unknown"] || -1) !== 0, "Known steals have no unknown cards");
-        console.log("[INFO] Non-random known steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
+        console.log(`${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         this.multiverse.mwTransformExchange(targetPlayer, stealingPlayer, slice);
 
@@ -1258,7 +1232,7 @@ Colony.prototype.stealKnown = function(element)
 
     console.assert(this.turnState.nextSteal === "robber", "Should set next steal before entering here");
 
-    console.log("[INFO] Steal:", targetPlayer, "->", stealingPlayer, "(", stolenResourceType, ")");
+    console.log(`${utf8Symbols.steal} %c${stealingPlayer}%c ← ${resourceIcons[stolenResourceType]} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
     this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
@@ -1286,7 +1260,7 @@ Colony.prototype.stealUnknown = function(element)
     if (this.turnState.nextSteal === "spy")
     {
         this.turnState.nextSteal = null;
-        console.log("[NOTE] Treating steal as spy");
+        console.debug("◦ Ignoring steal from spy");
         return true;
     }
 
@@ -1312,7 +1286,7 @@ Colony.prototype.stealUnknown = function(element)
         const asSlice = Multiverse.asSlice(merchantStolen);
         const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(merchantStolen["unknown"] === stolenCount, "Unknown merchant steals have only unknown cards");
-        console.log("[INFO] Non-random unknown steal by master merchant: ", targetPlayer, "->", stealingPlayer, "(", merchantStolen, ")");
+        console.log(`${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         // Steal less than 2 only if not enough available
         if (stolenCount < 2)
@@ -1329,11 +1303,12 @@ Colony.prototype.stealUnknown = function(element)
 
     if (this.turnState.nextSteal === "wedding")
     {
+        // TODO Can we extract resources once and use em in each case?
         const weddingStolen = Colony.extractResourcesFromElement(element);
         const asSlice = Multiverse.asSlice(weddingStolen);
         const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(weddingStolen["unknown"] === stolenCount, "Unknown wedding steals have only unknown cards");
-        console.log("[INFO] Non-random unknown steal by wedding: ", targetPlayer, "->", stealingPlayer, "(", weddingStolen, ")");
+        console.log(`${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         // Steal less than 2 only if not enough available
         if (stolenCount < 2)
@@ -1351,16 +1326,16 @@ Colony.prototype.stealUnknown = function(element)
         return true;
     }
 
+    // Bishop, knight and 7 steals (i.e., robber steals):
+
     if (this.turnState.nextSteal !== "robber")
     {
-        alertIf("Unexpected nextSteal: " + this.turnState.nextSteal);
-        debugger; // Unreachable
+        alertIf("Unexpected nextSteal (unreachable): " + this.turnState.nextSteal);
         return false;
     }
 
-    console.log("[INFO] Steal:", targetPlayer, "->", stealingPlayer);
+    console.log(`${utf8Symbols.steal} %c${stealingPlayer}%c ← ${resourceIcons.unknown} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
-    // Bishop, knight and 7 steals use a common update:
 
     this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
@@ -1374,7 +1349,7 @@ Colony.prototype.parseMoveRobber = function(element)
     if (!element.textContent.includes(Colony.snippets.movedRobber))
         return false;
 
-    console.log("[NOTE] Moved robber");
+    console.log(`${utf8Symbols.robber} ${utf8Symbols.move}`);
 
     this.turnState.nextSteal = "robber";
 
@@ -1388,7 +1363,7 @@ Colony.prototype.parseMoveShip = function(element)
     const type = element.querySelectorAll("img")[1].alt;
     if (type !== "pirate") return false;
 
-    console.log("[NOTE] Moved pirate");
+    console.log(`${utf8Symbols.pirate} ${utf8Symbols.move}`);
 
     this.turnState.nextSteal = "robber";
 
@@ -1417,7 +1392,8 @@ Colony.prototype.parsePlaceShipRoad = function(element)
     console.assert(costs !== null, "Unexpected alt: " + alt);
     if (this.turnState.roadBuilding > 0)
     {
-        console.log("[INFO] Road builder: free", alt);
+        console.assert(alt === "road", "Unreachable: Expected road after road buider");
+        console.log(`${utf8Symbols.roadBuilder} %c${player}%c`, this.cssColour(player), "");
         costs = {};
         this.turnState.roadBuilding -= 1;
     }
@@ -1425,10 +1401,10 @@ Colony.prototype.parsePlaceShipRoad = function(element)
     {
         console.assert(alt === "ship", "Unreachable: Roads should be 'built', not placed, unless free");
         if (alt !== "ship")
-            debugger;
+            alertIf("Unexpected alt: " + alt);
     }
     const asSlice = Multiverse.asSlice(costs);
-    console.log("[INFO] Place Ship:", player, "->", costs);
+    console.log(`${utf8Symbols.build} ${utf8Symbols[alt]} %c${player}%c → ${resourcesAsUtf8(costs)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, asSlice);
 
@@ -1447,9 +1423,12 @@ Colony.prototype.parsePlaceKnight = function(element)
     const costSlice = this.turnState.deserter === true
         ? Multiverse.zeroResources
         : Multiverse.asSlice({ sheep: -1, ore: -1 });
+    const resources = Multiverse.asNames(costSlice);
     if (this.turnState.deserter === true)
-        console.log("[INFO] Deserter: ", player, "gets a free knight");
-    console.log("[INFO] Place Knight:", player, "->", costSlice);
+    {
+        console.log(`${utf8Symbols.free} ${utf8Symbols.knight} ( ${utf8Symbols.deserter} )`);
+    }
+    console.log(`${utf8Symbols.build} ${utf8Symbols.knight} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, costSlice);
 
@@ -1466,7 +1445,7 @@ Colony.prototype.parseActivateKnight = function(element)
     const player = element.textContent.substr(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const cost = { wheat: -1 };
-    console.log(`[INFO] Activate Knight: ${player} ➜ ${JSON.stringify(cost)}`);
+    console.log(`${utf8Symbols.activate} ${utf8Symbols.knight} %c${player}%c ← ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn
     (
@@ -1486,22 +1465,17 @@ Colony.prototype.parseUpgradeKnight = function(element)
 
     const player = element.textContent.substr(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-
     let cost = { sheep: -1, ore: -1 };
     if (this.turnState.smith > 0)
     {
-        console.log("[INFO] Smith: ", player, "gets a free knight upgrade");
+        console.log(`${utf8Symbols.free} ( ${utf8Symbols.smith} ):`);
         cost = {};
         this.turnState.smith -= 1;
     }
-    console.log(`[INFO] Upgrade Knight: ${player} ➜ ${JSON.stringify(cost)}`);
     const asSlice = Multiverse.asSlice(cost);
+    console.log(`${utf8Symbols.upgrade} ${utf8Symbols.knight} %c${player}%c → ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
 
-    this.multiverse.mwTransformSpawn
-    (
-        player,
-        asSlice
-    );
+    this.multiverse.mwTransformSpawn(player, asSlice);
 
     return true;
 }
@@ -1514,12 +1488,11 @@ Colony.prototype.parseAqueduct = function(element)
     const player = element.textContent.substr(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const resources = Colony.extractResourcesFromElement(element);
-    console.log(`[INFO] Aqueduct: ${player} <- ${JSON.stringify(resources)}`);
+    console.log(`${utf8Symbols.aqueduct} %c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     if ((resources.unknown || 0) !== 0)
-    { // TODO
-        console.error("Probably not the intended effect. (?) If this happens we should zero unknown resources");
-        debugger;
+    {
+        alertIf("Aqueduct should never have unknown resources (unreachable)");
     }
 
     this.multiverse.mwTransformSpawn
@@ -1544,18 +1517,20 @@ Colony.prototype.parseUpgradeCity = function(element)
     let resources = { [resourceType]: -level };
     if (this.turnState.crane === true)
     {
-        resources[resourceType] += 1;
-        console.log("[INFO] Crane: ", player, "gets a city upgrade cheaper by 1");
         this.turnState.crane = false;
+        resources[resourceType] += 1;
+        console.log(`${utf8Symbols.discount} ( ${utf8Symbols.crane} ):`);
     }
     const slice = Multiverse.asSlice(resources);
-    console.log(`[INFO] Upgrade City: ${player} -> ${JSON.stringify(resources)} (${resourceType} ✕ ${level})`);
+    console.log(`${utf8Symbols.upgrade} ${utf8Symbols.city} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, slice);
 
     return true;
 }
 
+// Some progress cards are ignored. For these we return false. This allows
+// a separate parser to catch them if desired.
 Colony.prototype.parseProgressCard = function(element)
 {
     if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.progressCard.text))
@@ -1565,8 +1540,7 @@ Colony.prototype.parseProgressCard = function(element)
         return false;
     const player = element.textContent.substring(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-    console.log(`[INFO] Progress Card: ${player} -> ${card}`);
-
+    console.log(`${utf8Symbols.progress} %c${player}%c ${card}`, this.cssColour(player), "");
     switch (card)
     {
         case "Commodity Monopoly":
@@ -1623,7 +1597,7 @@ Colony.prototype.parseResourceMonopoly = function(element)
     const resourceName = Colony.findSingularResourceImageInElement(element);
     const countStr = element.textContent.trim().split(" ").at(-1);
     const count = Number(countStr);
-    console.log(`[INFO] Resource Monopoly: ${player} <- ${count} * ${resourceName}`);
+    console.log(`${utf8Symbols.monopoly} (resource) %c${player}%c ← ${count}∙${resourceName}`, this.cssColour(player), "");
 
     this.multiverse.transformMonopoly
     (
@@ -1652,7 +1626,7 @@ Colony.prototype.parseCommodityMonopoly = function(element)
     const resIndex = Multiverse.getResourceIndex(type);
     const countStr = element.textContent.trim().split(" ").at(-1);
     const count = Number(countStr);
-    console.log(`[INFO] Commodity Monopoly: ${player} <- ${type}`);
+    console.log(`${utf8Symbols.monopoly} (commodity) %c${player}%c ← ${count}∙${esourceIcons[type]}`, this.cssColour(player), "");
 
     // Steal at most 1
     this.multiverse.transformMonopoly(player, resIndex, 1, count);
@@ -1662,7 +1636,7 @@ Colony.prototype.parseCommodityMonopoly = function(element)
     return true;
 }
 
-Colony.prototype.parseCommercialHarbor = function(element)
+Colony.prototype.parseCommercialHarborTheirs = function(element)
 {
     if (!element.textContent.includes(Colony.snippets.commercialHarbor.text))
         return false;
@@ -1673,7 +1647,7 @@ Colony.prototype.parseCommercialHarbor = function(element)
     const player = both[0].replace(/[Yy]ou/, this.playerUsername);
     const other = both[1].replace(/[Yy]ou/, this.playerUsername);
     if (!verifyPlayers(this.players, player, other)) return false; // Sanity check
-    console.log(`[INFO] Commercial Harbor (by them): ${player} (res) ↔ (com) ${other}`);
+    console.log(`${utf8Symbols.harbor} (them) %c${player}%c (res) ${resourceIcons.unknown} ↔ ${resourceIcons.unknown} (com) ${other}`, this.cssColour(player), "", this.cssColour(other), "");
 
     this.multiverse.branchHarbor(player, other);
 }
@@ -1691,11 +1665,11 @@ Colony.prototype.parseCommercialHarborOurs = function(element)
     const us = this.playerUsername;
     const otherPlayer = element.children[1].children[1].textContent;
     if (!verifyPlayers(this.players, us, otherPlayer)) return false; // Sanity check
-    console.log(`[INFO] Commercial Harbor (by us): ${us} (res) ↔ (com) ${otherPlayer}`);
     let gave = element.children[1].children[0]
     let took = element.children[1].children[2];
     gave = Colony.imageAltMap[gave.alt];
     took = Colony.imageAltMap[took.alt];
+    console.log(`${utf8Symbols.harbor} (us) %c${us}%c (res) ${resourceIcons[gave]} ↔ ${resourceIcons[took]} (com) ${otherPlayer}`, this.cssColour(us), "", this.cssColour(otherPlayer), "");
 
     this.multiverse.transformTradeByName(us, otherPlayer, {[gave]: 1}, {[took]: 1});
 
@@ -1707,7 +1681,7 @@ Colony.prototype.parseSpecialBuildPhase = function(element)
     if (!element.textContent.includes(Colony.snippets.specialBuildPhase))
         return false;
 
-    console.log("[NOTE] Start of special build phase");
+    console.log("◦ Special build phase");
 
     this.turnState = Colony.emptyTurnState;
 
@@ -1721,7 +1695,7 @@ Colony.prototype.parseDiplomatReposition = function(element)
 
     const player = element.textContent.slice(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-    console.log(`[INFO] Diplomat: ${player} repositioning road`);
+    console.log(`${utf8Symbols.diplomat} %c${player}%c ${utf8Symbols.move} ${utf8Symbols.road}`, this.cssColour(player), "");
 
     this.turnState.diplomatReposition = true;
 
@@ -1733,7 +1707,8 @@ Colony.prototype.parseWin = function(element)
     if (!element.textContent.includes(Colony.snippets.winSnippet))
         return false;
 
-    console.log("[INFO] End of Game");
+    console.log(`${utf8Symbols.win}`);
+
     this.stopMainLoop();
 
     return true;
@@ -1763,30 +1738,75 @@ Colony.prototype.parseTurnName = function(element)
     return [null, null];
 }
 
-//=====================================================================
+// By convention:
+//      • At most 1 parser accepts any message
+//      • An accepting parser returns true
+//      • A rejecting parser returns false
+//      • A rejecting parser is a no-op (it may log things)
+// Typical parser structure
+//      1) Verify message type (else return false)
+//      2) Determine semantic content
+//          • parse element
+//          • transform data formats
+//          • log
+//          • sanity checks
+//      3) Update Multiverse+Track objects
+//      4) Update 'turnState'
+//      5) Return true to indicate completion
+//
+// The parser 'parseInitialGotMessage()' is not included because it is only used
+// separately during initial placement phase.
+Colony.allParsers =
+[
+    // The order is so that more common events are matched earlier
+    // TODO: Not yet for expansion parsers
+
+    Colony.prototype.parseAlways, // Must come first
+
+    // --------------------------------------
+    // Basegame parsers
+    // --------------------------------------
+    Colony.prototype.parseGotMessage,
+    Colony.prototype.parseGoldTile,
+    Colony.prototype.parseTradeOffer,
+    Colony.prototype.parseTradeOfferCounter,
+    Colony.prototype.parseRolls,
+
+    Colony.prototype.stealUnknown,
+    Colony.prototype.stealKnown,
+    Colony.prototype.parseTradeBankMessage,
+    Colony.prototype.parseTradeMessage,
+    Colony.prototype.parseDiscardedMessage,
+    Colony.prototype.parseBuiltMessage,
+    Colony.prototype.parseBoughtMessage,
+    Colony.prototype.parseMonopoly, // Regular monopoly only
+    Colony.prototype.parseYearOfPlenty,
+
+    Colony.prototype.parseWin, // Stops main loop
+
+    // --------------------------------------
+    // Expansion parsers
+    // --------------------------------------
+    Colony.prototype.parseMoveRobber,
+    Colony.prototype.parseMoveShip,
+    Colony.prototype.parsePlaceShipRoad,
+    Colony.prototype.parsePlaceKnight,
+    Colony.prototype.parseActivateKnight,
+    Colony.prototype.parseUpgradeKnight,
+    Colony.prototype.parseAqueduct,
+    Colony.prototype.parseUpgradeCity,
+    Colony.prototype.parseProgressCard, // The activation only, not the effects
+    Colony.prototype.parseResourceMonopoly,
+    Colony.prototype.parseCommodityMonopoly,
+    Colony.prototype.parseCommercialHarborTheirs,
+    Colony.prototype.parseCommercialHarborOurs,
+    Colony.prototype.parseSpecialBuildPhase,
+    Colony.prototype.parseDiplomatReposition,
+];
+
+
+//==============================================================================
 // Helpers
-//=====================================================================
-
-// Assumes this.playerUsername has been set. Rotates that player to last position.
-Colony.prototype.reorderPlayerNames = function()
-{
-    // Determine our own name
-    if (configFixedPlayerName || !this.playerUsername)
-    {
-        if (!configFixedPlayerName)
-            console.warn("Username not found. Using fixed name.");
-        this.playerUsername = configPlayerName;
-    }
-
-    this.players = rotateToLastPosition(this.players, this.playerUsername);
-    for (const [i, p] of Object.entries(this.players))
-        console.log(`[NOTE] Player ${i}:`, p);
-    console.log("[NOTE] You are:", this.playerUsername);
-}
-
-Colony.prototype.cssColour = function(playerName)
-{
-    return `background: ${this.playerColours[playerName]}; padding: 3px; border-radius: 5px; font-weight: bold;`;
-}
+//==============================================================================
 
 // vim: shiftwidth=4:softtabstop=4:expandtab

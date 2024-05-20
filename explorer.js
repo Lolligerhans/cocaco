@@ -24,7 +24,7 @@ const configLogMessages = true;
 const configOwnIcons = false;
 const configUseTimer = true;
 
-console.log("[INFO]",
+console.info("Explorer config:",
     "| configDoAlert:", configDoAlert,
     "| configPrintWorlds:", configPrintWorlds,
     "| configRunManyWorldsTest:", configRunManyWorldsTest,
@@ -40,6 +40,8 @@ e = document.querySelector(".betaTag")
 if (e !== null) { e.textContent = "CoCaCo " + version_string; e.style.background = "LightGreen"; }
 
 // The text symbols are for outputting only ;)
+// TODO Not sure if we have to keep resources separately. Check if we can merge
+//      with resourcesAsUtf8 below.
 const resourceIcons =
 {
     wood:"🪵",
@@ -52,6 +54,7 @@ const resourceIcons =
     paper: "📜",
     unknown: "🂠",
 };
+// TODO rename to "utf"
 const utf8Symbols =
 {
     "2": "②",
@@ -68,24 +71,49 @@ const utf8Symbols =
     "settlement": "🛖",
     "city": "🏢",
     "road": "🛣", // Lane symbols: ⛙ ⛜
-    "devcard": "🂠",
+    "devcard": "🃏",
     "ship": "⛵",
+    cityWall: "⛩️",
+    discard: "🗑",
+    trade: "↔️",
+    build: "👷",
+    buy: "🛒",
+    activate: "🔘",
+    free: "🆓",
+    bank: "🏦",
+    monopoly: "📈",
+    discount: "％",
+    diplomat: "🤝",
+    known: "👀",
+    steal: "🥷",
+    merchant: "™️",
+    wedding: "💒",
+    spy: "🕵",
+    robber: "🥖", // French club
+    pirate: "☠️",
+    roadBuilder: "🚧",
+    deserter: "🏜",
+    knight: "♞",
+    smith: "🔥",
+    upgrade: "🆙",
+    aqueduct: "💧",
+    crane: "🏗",
+    harbor: "⚓",
+    move: "🧳",
+    win: "🎉",
 };
 
 // @param resources: ...
 function resourcesAsUtf8(resources)
 {
     let s = "";
-    let notFirst = false;
     for (const entry of Object.entries(resources))
     {
         if (entry[1] === 0) continue;
-        if (notFirst) s += " ";
-        s += resourceIcons[entry[0]].repeat(entry[1]);
-        notFirst = true;
+        s += resourceIcons[entry[0]].repeat(Math.abs(entry[1]));
+        s += " ";
     }
-    // Keep extra front space
-    return s;
+    return s.trim();
 }
 
 const alternativeAssets =

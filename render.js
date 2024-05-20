@@ -18,6 +18,8 @@ class Render
         iconAssets // {"road": '<img src=...>', ...}
     )
     {
+        // Callbacks may be null
+        console.assert(![ManyWorldsObject, TrackObject, playerNames, colour_map, iconAssets].includes(null));
         this.ids =
         {
             resourceTable: "explorer-tbl",
@@ -58,9 +60,9 @@ class Render
     toggle(which)
     {
         if (typeof(which) === "number") which = Object.keys(this.config)[which];
-        console.log(`🖥 Toggling ${which}: Now ${this.config[which]}`);
         this.config[which] = !this.config[which];
         this.mustRedraw = true;
+        console.info(`🖥 Toggling ${which} ➜ ${this.config[which]}`);
         this.render();
     }
 
@@ -78,14 +80,14 @@ class Render
         {
             // We don't really care if this fails at the moment, but it might help
             // identify bugs.
-            console.warn("[WARNING] Exception in unrender():", e);
+            console.warn("Exception in unrender():", e);
             alertIf(46);
         }
     }
 
     update()
     {
-        console.debug("🖥 Updating...");
+        //console.debug("🖥 Updating...");
         this.manyWorlds.mwUpdateStats();
 
         //----------------------------------------------------------------------
@@ -185,32 +187,25 @@ class Render
             this.updateRobTable();
         }
 
-        console.debug("🖥 Updated display");
+        //console.debug("🖥 Updated display");
     }
 
     render(renderIf = () => true)
     {
-        if (this.manyWorlds === null)
-            console.error(`${this.name} this.manyWorlds is null`);
-        if (this.colour_map === null)
-            console.error(`${this.name} colour_map is null`);
-        if (renderIf === null)
-            console.error(`${this.name} renderIf is null`);
-
         if (!renderIf())
         {
-            console.debug("🖥 Skip display render");
+            //console.debug("🖥 Skip display render");
             return;
         }
 
         if (!this.mustRedraw && document.getElementById(this.ids.resourceTable))
         {
-            console.log("🖥 Delegating to update()");
+            //console.log("🖥 Delegating to update()");
             this.update();
             return;
         }
 
-        console.debug("🖥 Inserting display...");
+        //console.debug("🖥 Inserting display...");
 
         // TODO generate and return stats object?
         this.manyWorlds.mwUpdateStats();
@@ -386,7 +381,7 @@ class Render
         }
         catch(e)
         {
-            console.warn("[WARNING] Exception in unrender():", e);
+            console.warn("Exception in unrender():", e);
             alertIf(46);
         }
 
@@ -400,10 +395,10 @@ class Render
 
         tbl.setAttribute("border", "2"); // (?)
 
-        console.debug("🖥 Inserted display");
+        //console.debug("🖥 Inserted display");
 
         this.mustRedraw = false;
-        console.log("🖥 Continuing with update()");
+        //console.log("🖥 Continuing with update()");
         this.update(renderIf);
     }
 

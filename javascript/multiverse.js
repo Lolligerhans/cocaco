@@ -190,16 +190,16 @@ Multiverse.prototype.printWorlds = function()
         console.log("🌎 > 1000 worlds (suppressing print)");
         return;
     }
-    log2("🌎 Multiverse:", this.worlds);
+    console.log("🌎 Multiverse:", this.worlds.length, this.worlds);
     if (this.worlds.length === 0)
         console.log("🌎 No worlds left!");
     for (let i = 0; i < this.worlds.length; ++i)
     {
-        log(`\t----- 🌌 ${i}/${this.worlds.length}: ${this.worlds[i]["chance"]} -----`);
+        console.debug(`\t----- 🌌 ${i}/${this.worlds.length}: ${this.worlds[i]["chance"]} -----`);
         for (const pl of this.players)
         {
             const pIndx = this.getPlayerIndex(pl);
-            log(`\t\t[${i}][${pl}] =`, Multiverse.asNames(this.worlds[i][pIndx]));
+            console.debug(`\t\t[${i}][${pl}] =`, Multiverse.asNames(this.worlds[i][pIndx]));
         }
     }
 }
@@ -591,9 +591,6 @@ Multiverse.prototype.mwCollapseMin = function(playerName, slice)
         return;
     }
     console.assert(slice[Multiverse.getResourceIndex("unknown")] === 0, "Argument 'slice' must not contain unknown cards");
-
-    // debugging
-    console.log(`Collapsing player ${playerName} to with at least this slice: ${slice}`);
 
     // Remove offending worlds
     this.mwTransformSpawn(playerName, Multiverse.sliceNegate(slice));

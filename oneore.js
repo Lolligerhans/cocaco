@@ -344,7 +344,7 @@ findNames: function()
     for (e of document.getElementsByClassName("scoreName"))
         twosheep.players.push(e.textContent);
     console.assert(twosheep.players.length > 0);
-    console.log(`• Found ${twosheep.players.length} players: `, twosheep.players);
+    console.log(`• Found ${twosheep.players.length} players:`, twosheep.players);
     return true;
 },
 
@@ -680,7 +680,7 @@ recoverCards: function()
     let counts = {};
     for (const player of twosheep.players)
     {
-        const count = prompt(`${player} number of cards:`, 0);
+        const count = prompt(`🩹 ${player} number of cards:`, 0);
         counts[player] = count;
     }
     twosheep.worlds.mwCardRecovery(counts);
@@ -878,7 +878,7 @@ parsers:
         const obtainedResources = twosheep.extractResourcesFromLogMessage(element.innerHTML);
         let asSlice = mw.generateWorldSlice(obtainedResources);
         console.log(`%c${player}%c ← ${resourcesAsUtf8(obtainedResources)}`, twosheep.consoleCss(player), "");
-        console.log("Got resources:", player, "<-", obtainedResources);
+        //console.log("Got resources:", player, "<-", obtainedResources);
 
         twosheep.worlds.mwTransformSpawn(player, asSlice);
         twosheep.multiverse.mwTransformSpawn(player, Multiverse.asSlice(obtainedResources));
@@ -947,7 +947,6 @@ parsers:
 
         const devCardResources = mw.generateFullNamesFromSlice(mw.mwBuilds.devcard);
         console.log(`🂠 %c${player}%c → ${resourcesAsUtf8(devCardResources)}`, twosheep.consoleCss(player), "");
-        //logs("[INFO] Baught dev card:", player, "->", devCardResources);
 
         const asSlice = -mw.mwBuilds.devcard;
         twosheep.worlds.mwTransformSpawn(player, asSlice);
@@ -971,7 +970,6 @@ parsers:
         const giveSlice = mw.generateWorldSlice(gave);
         const takeSlice = mw.generateWorldSlice(took);
         console.log(`🏦 %c${player}%c ${resourcesAsUtf8(gave)} ↔ ${resourcesAsUtf8(took)}`, twosheep.consoleCss(player), "");
-        console.info("• Bank trade:", player, gave, "->", took);
 
         twosheep.worlds.mwTransformSpawn(player, takeSlice - giveSlice);
         twosheep.multiverse.mwTransformSpawn(player,
