@@ -12,8 +12,7 @@
 //  • (I think medicine and crane are safe)
 
 // TODO Open tests
-//   • harbor (ours) (both directions)
-//   • spy to ignore known steals in stealKnown (both directions)
+//   • harbor (from other player against us)
 
 "use strict";
 
@@ -146,7 +145,7 @@ class Colony
         mono: {present: " stole ", absent: "from"},
         discardedSnippet: " discarded ",
         trade: {detect: " traded for with ", split: " for "},
-        steal: {you: ["You ", " from you"], detect: " stole from "},
+        steal: {known: ["You stole", " from you"], detect: " stole from "},
         winSnippet: "won the game",
         rolledSnippet: " rolled ",
 
@@ -294,9 +293,9 @@ class Colony
         this.reset();
 
         // Bind things so addEventListener can identify them
-        this.boundMainLoopToggle = this.mainLoopToggle.bind(this);
-        this.boundRecoverCards = this.recoverCards.bind(this);
-        this.boundRecoverNames = this.recoverNames.bind(this);
+        this.boundMainLoopToggle = Colony.prototype.mainLoopToggle.bind(this);
+        this.boundRecoverCards = Colony.prototype.recoverCards.bind(this);
+        this.boundRecoverNames = Colony.prototype.recoverNames.bind(this);
 
         // C&K has stateful messages. We add flags and reset after each roll
         this.turnState = Colony.emptyTurnState;
@@ -354,11 +353,11 @@ Colony.prototype.restartTracker = function Colony_prototype_restartTracker(tasks
 [
     { "funct": Colony.prototype.reset.bind(this),                             "ok": false },
     { "funct": Colony.prototype.findPlayerName.bind(this),                    "ok": false },
-    { "funct": Colony.prototype.findLog.bind(this),                 "ok": false },
+    { "funct": Colony.prototype.findLog.bind(this),                           "ok": false },
     { "funct": Colony.prototype.waitForInitialPlacement.bind(this),           "ok": false },
     { "funct": Colony.prototype.recoverUsers.bind(this),                      "ok": false },
     { "funct": Colony.prototype.initializeTracker.bind(this),                 "ok": false },
-    { "funct": () => { this.MSG_OFFSET = 0; return true; },       "ok": false },
+    { "funct": () => { this.MSG_OFFSET = 0; return true; },                   "ok": false },
     { "funct": Colony.prototype.comeMrTallyManTallinitialResource.bind(this), "ok": false },
     { "funct": Colony.prototype.restartMainLoop.bind(this),                   "ok": false },
 ])
@@ -954,7 +953,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
             }
             else
             {
-                console.log(`${utf8Symbold.build} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
+                console.log(`${utf8Symbols.build} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
             }
             break;
         }
@@ -1045,7 +1044,7 @@ Colony.prototype.parseTradeBankMessage = function(element)
     const gaveAndTook = element.innerHTML.split(" and took ");
     if (gaveAndTook.length !== 2)
     {
-        console.log("[ERROR] Expected 2 substrings after split in dev card parser");
+        console.error("Expected 2 substrings after split in dev card parser");
         alertIf(27);
         return;
     }
@@ -1158,14 +1157,12 @@ Colony.prototype.parseTradeMessage = function(element)
 Colony.prototype.stealKnown = function(element)
 {
     const textContent = element.textContent.replace(/\s+/g, " ");
-    const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
-                       || textContent.includes(Colony.snippets.steal.you[1]);
-    const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
-    if (!containsYou || !containsStealSnippet) return false;
+    const containsSnippet =  textContent.includes(Colony.snippets.steal.known[0])
+                          || textContent.includes(Colony.snippets.steal.known[1]);
+    if (!containsSnippet) return false;
 
     if (this.turnState.nextSteal === "spy")
     {
-        debugger; // Test if indeed a spy
         console.debug("◦ Ignoring stel message (spy)");
         this.turnState.nextSteal = null;
         return true;
@@ -1252,10 +1249,10 @@ Colony.prototype.stealKnown = function(element)
 Colony.prototype.stealUnknown = function(element)
 {
     const textContent = element.textContent.replace(/\s+/g, " ");
-    const containsYou =  textContent.includes(Colony.snippets.steal.you[0])
-                      || textContent.includes(Colony.snippets.steal.you[1]);
+    const isKnown =  textContent.includes(Colony.snippets.steal.known[0])
+                  || textContent.includes(Colony.snippets.steal.known[1]);
     const containsStealSnippet = textContent.includes(Colony.snippets.steal.detect);
-    if (containsYou || !containsStealSnippet) return false;
+    if (isKnown || !containsStealSnippet) return false;
 
     if (this.turnState.nextSteal === "spy")
     {
@@ -1626,7 +1623,7 @@ Colony.prototype.parseCommodityMonopoly = function(element)
     const resIndex = Multiverse.getResourceIndex(type);
     const countStr = element.textContent.trim().split(" ").at(-1);
     const count = Number(countStr);
-    console.log(`${utf8Symbols.monopoly} (commodity) %c${player}%c ← ${count}∙${esourceIcons[type]}`, this.cssColour(player), "");
+    console.log(`${utf8Symbols.monopoly} (commodity) %c${player}%c ← ${count}∙${resourceIcons[type]}`, this.cssColour(player), "");
 
     // Steal at most 1
     this.multiverse.transformMonopoly(player, resIndex, 1, count);
@@ -1647,6 +1644,7 @@ Colony.prototype.parseCommercialHarborTheirs = function(element)
     const player = both[0].replace(/[Yy]ou/, this.playerUsername);
     const other = both[1].replace(/[Yy]ou/, this.playerUsername);
     if (!verifyPlayers(this.players, player, other)) return false; // Sanity check
+    console.assert(player !== this.playerUsername); // Separate parser
     console.log(`${utf8Symbols.harbor} (them) %c${player}%c (res) ${resourceIcons.unknown} ↔ ${resourceIcons.unknown} (com) ${other}`, this.cssColour(player), "", this.cssColour(other), "");
 
     this.multiverse.branchHarbor(player, other);
@@ -1657,11 +1655,6 @@ Colony.prototype.parseCommercialHarborOurs = function(element)
     if (!element.textContent.startsWith(Colony.snippets.commercialHarborOur))
         return false;
 
-    debugger; // Test this parser
-
-    // FIXME
-    // Test if this works both when we initiate and not
-
     const us = this.playerUsername;
     const otherPlayer = element.children[1].children[1].textContent;
     if (!verifyPlayers(this.players, us, otherPlayer)) return false; // Sanity check
@@ -1669,7 +1662,7 @@ Colony.prototype.parseCommercialHarborOurs = function(element)
     let took = element.children[1].children[2];
     gave = Colony.imageAltMap[gave.alt];
     took = Colony.imageAltMap[took.alt];
-    console.log(`${utf8Symbols.harbor} (us) %c${us}%c (res) ${resourceIcons[gave]} ↔ ${resourceIcons[took]} (com) ${otherPlayer}`, this.cssColour(us), "", this.cssColour(otherPlayer), "");
+    console.log(`${utf8Symbols.harbor} (them/our) %c${us}%c (r/c) ${resourceIcons[gave]} ↔ ${resourceIcons[took]} (com) ${otherPlayer}`, this.cssColour(us), "", this.cssColour(otherPlayer), "");
 
     this.multiverse.transformTradeByName(us, otherPlayer, {[gave]: 1}, {[took]: 1});
 
@@ -1798,8 +1791,8 @@ Colony.allParsers =
     Colony.prototype.parseProgressCard, // The activation only, not the effects
     Colony.prototype.parseResourceMonopoly,
     Colony.prototype.parseCommodityMonopoly,
-    Colony.prototype.parseCommercialHarborTheirs,
-    Colony.prototype.parseCommercialHarborOurs,
+    Colony.prototype.parseCommercialHarborTheirs, // Without our involvement
+    Colony.prototype.parseCommercialHarborOurs, // With our involvement
     Colony.prototype.parseSpecialBuildPhase,
     Colony.prototype.parseDiplomatReposition,
 ];

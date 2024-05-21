@@ -13,25 +13,28 @@ let stats = new Statistics({}, {});
 //console.log(stats.binomialDistribution);
 //console.log(stats.binomialDistribution(50, 1/6));
 
-const configDoAlert = true;
-const configPrintWorlds = true;
+const configPrintWorlds = false;
+const configUseTimer = false;
+const configLogMessages = true;
 const configLogWorldCount = false;
 const configPrintRobs = false;
-const configRunManyWorldsTest = false;  // Run test and quit. Not a full unit test.
+const configDoAlert = true;
+const configOwnIcons = false;
 const configFixedPlayerName = false;    // Set true to use configPlayerName
 const configPlayerName = "John#1234";
-const configLogMessages = true;
-const configOwnIcons = false;
-const configUseTimer = true;
+const configRunManyWorldsTest = false;  // Run test and quit. Not a full unit test.
 
 console.info("Explorer config:",
-    "| configDoAlert:", configDoAlert,
     "| configPrintWorlds:", configPrintWorlds,
-    "| configRunManyWorldsTest:", configRunManyWorldsTest,
+    "| configUseTimer:", configUseTimer,
+    "| configLogMessages:", configLogMessages,
+    "| configLogWorldCount:", configLogWorldCount,
+    "| configPrintRobs:", configPrintRobs,
+    "| configDoAlert:", configDoAlert,
+    "| configOwnIcons:", configOwnIcons,
     "| configFixedPlayerName:", configFixedPlayerName,
     "| configPlayerName:", configPlayerName,
-    "| configLogMessages:", configLogMessages,
-    "| configLogWorldCount:", configLogWorldCount
+    "| configRunManyWorldsTest:", configRunManyWorldsTest
 );
 
 let e = document.getElementById("header_navigation_store");
@@ -73,6 +76,7 @@ const utf8Symbols =
     "road": "🛣", // Lane symbols: ⛙ ⛜
     "devcard": "🃏",
     "ship": "⛵",
+    progress: "🃟",
     cityWall: "⛩️",
     discard: "🗑",
     trade: "↔️",
