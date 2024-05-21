@@ -117,7 +117,7 @@ class Colony
             if (element)
             {
                 element.remove();
-                console.debug("◦ Deleted", id);
+                //console.debug("◦ Deleted", id);
             }
         }
     }
@@ -407,7 +407,7 @@ Colony.prototype.findPlayerName = function Colony_prototype_findPlayerName()
     this.playerUsernameElement = document.getElementById("header_profile_username");
     console.assert(this.playerUsernameElement !== null, "should always be present, during and outside of games");
     this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
-    console.log("• You are:", this.playerUsername);
+    //console.log("• You are:", this.playerUsername);
 
     let e = document.getElementById("header_navigation_store");
     if (e !== null) e.textContent = "CoCaCo " + version_string;
@@ -424,7 +424,7 @@ Colony.prototype.findLog = function Colony_prototype_findLog()
         //console.debug("• No #game-log-text found");
         return false;
     }
-    console.log("• Found #game-log-text");
+    //console.log("• Found #game-log-text");
     Colony.deleteSomeElements();
     this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
 
@@ -584,7 +584,7 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
     this.multiverse.printWorlds();
 
     this.MSG_OFFSET = i;
-    console.debug(`• Starting from message ${i}`); // 28 for normal base game
+    //console.debug(`• Starting from message ${i}`); // 28 for normal base game
     return true;
 }
 
@@ -640,10 +640,10 @@ Colony.prototype.recoverCards = function()
     // Confirm AFTER stopping main loop so that card counts can be timed
     if (!confirm(`🩹 ${activeBefore ? "[active]" : "[inactive]"} Reset cards?  Last message: »${allMessages.at(momentIndex-1).textContent}«`))
     {
-        console.debug("🩹 Declining card recovery");
+        console.log("🩹 Declining card recovery");
         if (activeBefore)
         {
-            console.info("🩹 Re-entering main loop without card recovery");
+            //console.debug("🩹 Re-entering main loop without card recovery");
             this.restartMainLoop();
         }
         return;
@@ -717,7 +717,7 @@ Colony.prototype.stopMainLoop = function()
 Colony.prototype.restartMainLoop = function Colony_prototype_restartMainLoop()
 {
     this.stopMainLoop(); // Sanitize
-    console.log("• (Re)starting main loop ", this.activeIndex);
+    console.info("• (Re)starting main loop ", this.activeIndex);
     this.startupFlag = false;
     this.lastStarted = deepCopy(this.activeIndex);
     const currentIndex = deepCopy(this.activeIndex); // Passed to closure
@@ -796,7 +796,7 @@ Colony.prototype.parseInitialGotMessage = function(element)
 
     const initialResources = Colony.extractResourcesFromElement(element);
     const asSlice = mw.generateWorldSlice(initialResources);
-    console.log(`▶️ %c${player}%c ${resourcesAsUtf8(initialResources)}`, this.cssColour(player), "");
+    //console.log(`▶️ %c${player}%c ${resourcesAsUtf8(initialResources)}`, this.cssColour(player), "");
     //console.debug(`• Set initial resources for ${name} to`, resources);
     if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
     this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(initialResources));
@@ -816,7 +816,7 @@ Colony.prototype.parseTradeOffer = function(element)
     const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
     const asSlice = mw.generateWorldSlice(offer);
-    console.log(`%c${player}%c ➡️ ${resourcesAsUtf8(offer)} ⇄️ <resources>`, this.cssColour(player), "");
+    //console.log(`%c${player}%c ➡️ ${resourcesAsUtf8(offer)} ⇄️ <resources>`, this.cssColour(player), "");
 
     this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
 
@@ -836,7 +836,7 @@ Colony.prototype.parseTradeOfferCounter = function(element)
     const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
     const asSlice = mw.generateWorldSlice(offer);
-    console.log(`⬅️ <resources> ⇄️ ${resourcesAsUtf8(offer)} %c${player}%c`, this.cssColour(player), "");
+    //console.log(`⬅️ <resources> ⇄️ ${resourcesAsUtf8(offer)} %c${player}%c`, this.cssColour(player), "");
     this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
 
     return true;
@@ -850,7 +850,7 @@ Colony.prototype.parseYearOfPlenty = function(element)
     const beneficiary = textContent.substring(0, textContent.indexOf(Colony.snippets.yearOfPlentySnippet));
     if (!verifyPlayers(this.players, beneficiary)) return false; // Sanity check
     const resources = Colony.extractResourcesFromElement(element);
-    console.log(`📯 %c${beneficiary}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(beneficiary), "");
+    //console.log(`📯 %c${beneficiary}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(beneficiary), "");
 
     this.multiverse.mwTransformSpawn(beneficiary, Multiverse.asSlice(resources));
 
@@ -874,7 +874,7 @@ Colony.prototype.parseGotMessage = function(element)
         const player = textContent.substring(0, textContent.indexOf(Colony.snippets.receivedResourcesSnippet));
         if (!verifyPlayers(this.players, player)) return false; // Sanity check
         const resources = Colony.extractResourcesFromElement(element);
-        console.log(`%c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+        //console.log(`%c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
         if ((resources.unknown || 0) !== 0)
         { // TODO
@@ -901,7 +901,7 @@ Colony.prototype.parseGoldTile = function(element)
     const player = element.textContent.substring(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const resources = Colony.extractResourcesFromElement(element);
-    console.log(`💰 %c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+    //console.log(`💰 %c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     if ((resources.unknown || 0) !== 0)
     { // TODO
@@ -930,7 +930,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
             if (this.turnState.diplomatReposition === true)
             {
                 this.turnState.diplomatReposition = false;
-                console.log(`🆓 ${player} ← ${utf8Symbols.road}`);
+                //console.log(`🆓 ${player} ← ${utf8Symbols.road}`);
                 buildResources = {};
                 break;
             }
@@ -948,12 +948,12 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
             if (this.turnState.engineer === true)
             {
                 this.turnState.engineer = false;
-                console.log(`${utf8Symbols.free} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
+                //console.log(`${utf8Symbols.free} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
                 buildResources = {};
             }
             else
             {
-                console.log(`${utf8Symbols.build} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
+                //console.log(`${utf8Symbols.build} %c${player}%c ← ${utf8Symbols.cityWall}`, this.cssColour(player), "");
             }
             break;
         }
@@ -963,7 +963,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
             if (this.turnState.medicine === true)
             {
                 this.turnState.medicine = false;
-                console.log(`💊 ${player} ${utf8Symbols.discount} ${utf8Symbols.city}`);
+                //console.log(`💊 ${player} ${utf8Symbols.discount} ${utf8Symbols.city}`);
                 buildResources = {wheat: -1, ore: -2};
             }
             break;
@@ -980,7 +980,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
         console.error("Failed to detect building in found message");
         alertIf(31);
     }
-    console.log(`${utf8Symbols.build} %c${player}%c ← ${resourcesAsUtf8(buildResources)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.build} %c${player}%c ← ${resourcesAsUtf8(buildResources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(buildResources));
 
@@ -995,7 +995,7 @@ Colony.prototype.parseRolls = function(element)
     const player = textContent.split(" ")[0];
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const diceSum = Colony.extractDiceSumOfChildren(element);
-    console.log(`🎲 ${diceSum} %c${player}%c`, this.cssColour(player), "");
+    //console.log(`🎲 ${diceSum} %c${player}%c`, this.cssColour(player), "");
 
     this.trackerCollection.addRoll(diceSum);
     if (diceSum === 7)
@@ -1020,7 +1020,7 @@ Colony.prototype.parseBoughtMessage = function(element)
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const resources = {sheep: -1, wheat: -1, ore: -1};
     const asSlice = Multiverse.asSlice(resources);
-    console.log(`${utf8Symbols.buy} ${utf8Symbols.devcard} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.buy} ${utf8Symbols.devcard} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, asSlice);
 
@@ -1053,7 +1053,7 @@ Colony.prototype.parseTradeBankMessage = function(element)
     const takeResources = Colony.findAllResourceCardsInHtml(gaveAndTook[1]);
     const giveSlice     = mw.generateWorldSlice(giveResources);
     const takeSlice     = mw.generateWorldSlice(takeResources);
-    console.log(`${utf8Symbols.bank} %c${player}%c ${resourcesAsUtf8(giveResources)} ↔ ${resourcesAsUtf8(takeResources)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.bank} %c${player}%c ${resourcesAsUtf8(giveResources)} ↔ ${resourcesAsUtf8(takeResources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, Multiverse.sliceSubtract( Multiverse.asSlice(takeResources)
                                                                      , Multiverse.asSlice(giveResources) ));
@@ -1078,7 +1078,7 @@ Colony.prototype.parseMonopoly = function(element)
     const thief = textContent.substring(0, textContent.indexOf(" "));
     if (!verifyPlayers(this.players, thief)) return false; // Sanity check
     const stolenResource = Colony.findSingularResourceImageInElement(element);
-    console.log(`${utf8Symbols.monopoly} (regular) %c${thief}%c ${resourceIcons[stolenResource]}`, this.cssColour(thief), "");
+    //console.log(`${utf8Symbols.monopoly} (regular) %c${thief}%c ${resourceIcons[stolenResource]}`, this.cssColour(thief), "");
 
     this.multiverse.transformMonopoly(thief, Multiverse.getResourceIndex(stolenResource));
 
@@ -1099,7 +1099,7 @@ Colony.prototype.parseDiscardedMessage = function(element)
     const discarded = Colony.extractResourcesFromElement(element);
     const slice = Multiverse.asSlice(discarded);
     const sliceTotal = Multiverse.sliceTotal(slice);
-    console.log(`${utf8Symbols.discard} %c${player}%c → ${resourcesAsUtf8(discarded)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.discard} %c${player}%c → ${resourcesAsUtf8(discarded)}`, this.cssColour(player), "");
 
     if ((discarded.unknown || 0) !== 0)
     {
@@ -1145,7 +1145,7 @@ Colony.prototype.parseTradeMessage = function(element)
     // TODO Can we use structural parsing over strings?
     const offer = Colony.findAllResourceCardsInHtml(split[0]);
     const demand = Colony.findAllResourceCardsInHtml(split[1]);
-    console.log(`↔️ %c${tradingPlayer}%c ${resourcesAsUtf8(offer)} ⇄️ ${resourcesAsUtf8(demand)} %c${otherPlayer}%c`, this.cssColour(tradingPlayer), "", this.cssColour(otherPlayer), "");
+    //console.log(`↔️ %c${tradingPlayer}%c ${resourcesAsUtf8(offer)} ⇄️ ${resourcesAsUtf8(demand)} %c${otherPlayer}%c`, this.cssColour(tradingPlayer), "", this.cssColour(otherPlayer), "");
 
     this.multiverse.transformTradeByName(tradingPlayer, otherPlayer, offer, demand);
 
@@ -1192,7 +1192,7 @@ Colony.prototype.stealKnown = function(element)
         const count = Multiverse.sliceTotal(slice);
         console.assert([1,2].includes(count));
         console.assert((merchantStolen["unknown"] || -1) !== 0, "Known steals have no unknown cards");
-        console.log(`${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
+        //console.log(`${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         this.multiverse.mwTransformExchange(targetPlayer, stealingPlayer, // source, target
             Multiverse.asSlice(merchantStolen));
@@ -1211,7 +1211,7 @@ Colony.prototype.stealKnown = function(element)
         const count = Multiverse.sliceTotal(slice);
         console.assert([1,2].includes(count));
         console.assert((weddingStolen["unknown"] || -1) !== 0, "Known steals have no unknown cards");
-        console.log(`${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
+        //console.log(`${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         this.multiverse.mwTransformExchange(targetPlayer, stealingPlayer, slice);
 
@@ -1229,7 +1229,7 @@ Colony.prototype.stealKnown = function(element)
 
     console.assert(this.turnState.nextSteal === "robber", "Should set next steal before entering here");
 
-    console.log(`${utf8Symbols.steal} %c${stealingPlayer}%c ← ${resourceIcons[stolenResourceType]} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
+    //console.log(`${utf8Symbols.steal} %c${stealingPlayer}%c ← ${resourceIcons[stolenResourceType]} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
     this.trackerCollection.addRob(stealingPlayer, targetPlayer);
 
@@ -1283,7 +1283,7 @@ Colony.prototype.stealUnknown = function(element)
         const asSlice = Multiverse.asSlice(merchantStolen);
         const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(merchantStolen["unknown"] === stolenCount, "Unknown merchant steals have only unknown cards");
-        console.log(`${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
+        //console.log(`${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         // Steal less than 2 only if not enough available
         if (stolenCount < 2)
@@ -1305,7 +1305,7 @@ Colony.prototype.stealUnknown = function(element)
         const asSlice = Multiverse.asSlice(weddingStolen);
         const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(weddingStolen["unknown"] === stolenCount, "Unknown wedding steals have only unknown cards");
-        console.log(`${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
+        //console.log(`${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
         // Steal less than 2 only if not enough available
         if (stolenCount < 2)
@@ -1331,7 +1331,7 @@ Colony.prototype.stealUnknown = function(element)
         return false;
     }
 
-    console.log(`${utf8Symbols.steal} %c${stealingPlayer}%c ← ${resourceIcons.unknown} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
+    //console.log(`${utf8Symbols.steal} %c${stealingPlayer}%c ← ${resourceIcons.unknown} %c${targetPlayer}%c`, this.cssColour(stealingPlayer), "", this.cssColour(targetPlayer), "");
 
 
     this.trackerCollection.addRob(stealingPlayer, targetPlayer);
@@ -1346,7 +1346,7 @@ Colony.prototype.parseMoveRobber = function(element)
     if (!element.textContent.includes(Colony.snippets.movedRobber))
         return false;
 
-    console.log(`${utf8Symbols.robber} ${utf8Symbols.move}`);
+    //console.log(`${utf8Symbols.robber} ${utf8Symbols.move}`);
 
     this.turnState.nextSteal = "robber";
 
@@ -1360,7 +1360,7 @@ Colony.prototype.parseMoveShip = function(element)
     const type = element.querySelectorAll("img")[1].alt;
     if (type !== "pirate") return false;
 
-    console.log(`${utf8Symbols.pirate} ${utf8Symbols.move}`);
+    //console.log(`${utf8Symbols.pirate} ${utf8Symbols.move}`);
 
     this.turnState.nextSteal = "robber";
 
@@ -1390,7 +1390,7 @@ Colony.prototype.parsePlaceShipRoad = function(element)
     if (this.turnState.roadBuilding > 0)
     {
         console.assert(alt === "road", "Unreachable: Expected road after road buider");
-        console.log(`${utf8Symbols.roadBuilder} %c${player}%c`, this.cssColour(player), "");
+        //console.log(`${utf8Symbols.roadBuilder} %c${player}%c`, this.cssColour(player), "");
         costs = {};
         this.turnState.roadBuilding -= 1;
     }
@@ -1401,7 +1401,7 @@ Colony.prototype.parsePlaceShipRoad = function(element)
             alertIf("Unexpected alt: " + alt);
     }
     const asSlice = Multiverse.asSlice(costs);
-    console.log(`${utf8Symbols.build} ${utf8Symbols[alt]} %c${player}%c → ${resourcesAsUtf8(costs)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.build} ${utf8Symbols[alt]} %c${player}%c → ${resourcesAsUtf8(costs)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, asSlice);
 
@@ -1423,9 +1423,9 @@ Colony.prototype.parsePlaceKnight = function(element)
     const resources = Multiverse.asNames(costSlice);
     if (this.turnState.deserter === true)
     {
-        console.log(`${utf8Symbols.free} ${utf8Symbols.knight} ( ${utf8Symbols.deserter} )`);
+        //console.log(`${utf8Symbols.free} ${utf8Symbols.knight} ( ${utf8Symbols.deserter} )`);
     }
-    console.log(`${utf8Symbols.build} ${utf8Symbols.knight} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.build} ${utf8Symbols.knight} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, costSlice);
 
@@ -1442,7 +1442,7 @@ Colony.prototype.parseActivateKnight = function(element)
     const player = element.textContent.substr(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const cost = { wheat: -1 };
-    console.log(`${utf8Symbols.activate} ${utf8Symbols.knight} %c${player}%c ← ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.activate} ${utf8Symbols.knight} %c${player}%c ← ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn
     (
@@ -1465,12 +1465,12 @@ Colony.prototype.parseUpgradeKnight = function(element)
     let cost = { sheep: -1, ore: -1 };
     if (this.turnState.smith > 0)
     {
-        console.log(`${utf8Symbols.free} ( ${utf8Symbols.smith} ):`);
+        //console.log(`${utf8Symbols.free} ( ${utf8Symbols.smith} ):`);
         cost = {};
         this.turnState.smith -= 1;
     }
     const asSlice = Multiverse.asSlice(cost);
-    console.log(`${utf8Symbols.upgrade} ${utf8Symbols.knight} %c${player}%c → ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.upgrade} ${utf8Symbols.knight} %c${player}%c → ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, asSlice);
 
@@ -1485,7 +1485,7 @@ Colony.prototype.parseAqueduct = function(element)
     const player = element.textContent.substr(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const resources = Colony.extractResourcesFromElement(element);
-    console.log(`${utf8Symbols.aqueduct} %c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.aqueduct} %c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     if ((resources.unknown || 0) !== 0)
     {
@@ -1516,10 +1516,10 @@ Colony.prototype.parseUpgradeCity = function(element)
     {
         this.turnState.crane = false;
         resources[resourceType] += 1;
-        console.log(`${utf8Symbols.discount} ( ${utf8Symbols.crane} ):`);
+        //console.log(`${utf8Symbols.discount} ( ${utf8Symbols.crane} ):`);
     }
     const slice = Multiverse.asSlice(resources);
-    console.log(`${utf8Symbols.upgrade} ${utf8Symbols.city} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.upgrade} ${utf8Symbols.city} %c${player}%c → ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, slice);
 
@@ -1537,7 +1537,7 @@ Colony.prototype.parseProgressCard = function(element)
         return false;
     const player = element.textContent.substring(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-    console.log(`${utf8Symbols.progress} %c${player}%c ${card}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.progress} %c${player}%c ${card}`, this.cssColour(player), "");
     switch (card)
     {
         case "Commodity Monopoly":
@@ -1594,7 +1594,7 @@ Colony.prototype.parseResourceMonopoly = function(element)
     const resourceName = Colony.findSingularResourceImageInElement(element);
     const countStr = element.textContent.trim().split(" ").at(-1);
     const count = Number(countStr);
-    console.log(`${utf8Symbols.monopoly} (resource) %c${player}%c ← ${count}∙${resourceName}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.monopoly} (resource) %c${player}%c ← ${count}∙${resourceName}`, this.cssColour(player), "");
 
     this.multiverse.transformMonopoly
     (
@@ -1623,7 +1623,7 @@ Colony.prototype.parseCommodityMonopoly = function(element)
     const resIndex = Multiverse.getResourceIndex(type);
     const countStr = element.textContent.trim().split(" ").at(-1);
     const count = Number(countStr);
-    console.log(`${utf8Symbols.monopoly} (commodity) %c${player}%c ← ${count}∙${resourceIcons[type]}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.monopoly} (commodity) %c${player}%c ← ${count}∙${resourceIcons[type]}`, this.cssColour(player), "");
 
     // Steal at most 1
     this.multiverse.transformMonopoly(player, resIndex, 1, count);
@@ -1645,7 +1645,7 @@ Colony.prototype.parseCommercialHarborTheirs = function(element)
     const other = both[1].replace(/[Yy]ou/, this.playerUsername);
     if (!verifyPlayers(this.players, player, other)) return false; // Sanity check
     console.assert(player !== this.playerUsername); // Separate parser
-    console.log(`${utf8Symbols.harbor} (them) %c${player}%c (res) ${resourceIcons.unknown} ↔ ${resourceIcons.unknown} (com) ${other}`, this.cssColour(player), "", this.cssColour(other), "");
+    //console.log(`${utf8Symbols.harbor} (them) %c${player}%c (res) ${resourceIcons.unknown} ↔ ${resourceIcons.unknown} (com) ${other}`, this.cssColour(player), "", this.cssColour(other), "");
 
     this.multiverse.branchHarbor(player, other);
 }
@@ -1662,7 +1662,7 @@ Colony.prototype.parseCommercialHarborOurs = function(element)
     let took = element.children[1].children[2];
     gave = Colony.imageAltMap[gave.alt];
     took = Colony.imageAltMap[took.alt];
-    console.log(`${utf8Symbols.harbor} (them/our) %c${us}%c (r/c) ${resourceIcons[gave]} ↔ ${resourceIcons[took]} (com) ${otherPlayer}`, this.cssColour(us), "", this.cssColour(otherPlayer), "");
+    //console.log(`${utf8Symbols.harbor} (them/our) %c${us}%c (r/c) ${resourceIcons[gave]} ↔ ${resourceIcons[took]} (com) ${otherPlayer}`, this.cssColour(us), "", this.cssColour(otherPlayer), "");
 
     this.multiverse.transformTradeByName(us, otherPlayer, {[gave]: 1}, {[took]: 1});
 
@@ -1674,7 +1674,7 @@ Colony.prototype.parseSpecialBuildPhase = function(element)
     if (!element.textContent.includes(Colony.snippets.specialBuildPhase))
         return false;
 
-    console.log("◦ Special build phase");
+    //console.log("◦ Special build phase");
 
     this.turnState = Colony.emptyTurnState;
 
@@ -1688,7 +1688,7 @@ Colony.prototype.parseDiplomatReposition = function(element)
 
     const player = element.textContent.slice(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-    console.log(`${utf8Symbols.diplomat} %c${player}%c ${utf8Symbols.move} ${utf8Symbols.road}`, this.cssColour(player), "");
+    //console.log(`${utf8Symbols.diplomat} %c${player}%c ${utf8Symbols.move} ${utf8Symbols.road}`, this.cssColour(player), "");
 
     this.turnState.diplomatReposition = true;
 
@@ -1700,7 +1700,7 @@ Colony.prototype.parseWin = function(element)
     if (!element.textContent.includes(Colony.snippets.winSnippet))
         return false;
 
-    console.log(`${utf8Symbols.win}`);
+    //console.log(`${utf8Symbols.win}`);
 
     this.stopMainLoop();
 

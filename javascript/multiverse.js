@@ -217,7 +217,7 @@ Multiverse.prototype.mwCardRecovery = function(counts)
     }
     world["chance"] = 1;
     this.worlds = [world];
-    console.debug("🌎 Converting multiverse into recovery mode");
+    //console.debug("🌎 Converting multiverse into recovery mode");
     //console.debug(this.worlds);
     this.printWorlds();
 }
