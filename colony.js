@@ -144,7 +144,12 @@ class Colony
         tradeBankTookSnippet: "and took",
         mono: {present: " stole ", absent: "from"},
         discardedSnippet: " discarded ",
-        trade: {detect: " traded for with ", split: " for "},
+        trade:
+        {
+            detect: " gave and got from ",
+            split: " and got ",
+            transform: x => x.replace(/\s+/g, ' ').trim()
+        },
         steal: {known: ["You stole", " from you"], detect: " stole from "},
         winSnippet: "won the game",
         rolledSnippet: " rolled ",
@@ -1122,12 +1127,12 @@ Colony.prototype.parseDiscardedMessage = function(element)
 Colony.prototype.parseTradeMessage = function(element)
 {
     // Collapse whitespace into single space
-    const textContent = element.textContent.replace(/\s+/g, ' ');
+    const textContent = Colony.snippets.trade.transform(element.textContent);
     if (!textContent.includes(Colony.snippets.trade.detect)) return false;
 
     const involvedPlayers = textContent.split(Colony.snippets.trade.detect);
     const tradingPlayer = involvedPlayers[0];
-    const otherPlayer = involvedPlayers[1].trim(); // Remove trailing space
+    const otherPlayer   = involvedPlayers[1];
     if (!verifyPlayers(this.players, tradingPlayer, otherPlayer)) return false;
 
     const split = element.innerHTML.split(Colony.snippets.trade.split);
