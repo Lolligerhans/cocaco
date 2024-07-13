@@ -15,7 +15,7 @@ let stats = new Statistics({}, {});
 
 const configPrintWorlds = false;
 const configUseTimer = false;
-const configLogMessages = false;
+const configLogMessages = true;
 const configLogWorldCount = false;
 const configPrintRobs = false;
 const configDoAlert = true;
