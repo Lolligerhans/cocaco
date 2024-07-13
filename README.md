@@ -23,8 +23,8 @@
 
 # Usage
 
-  - For base game: v2
-  - For expansions: v3
+  - Disble/Enable: click game log
+  - Show plot/rolls/steals: click road/settlement/city
 
 ### Resource table
 
@@ -37,7 +37,7 @@
   - Number of possible states (_world count_): top left table cell (usually `1`)
   - Cells show most likely marginal value and probabilities
     - The shown combination of marginal probabilities is often impossible
-  - [v3] Unknown non-random echanges are assumed uniform random
+  - [C&K] Unknown non-random exchanges are assumed uniform random
 
 ### Rolls plot
 
@@ -58,7 +58,7 @@
     - not-equals: `!5`
     - can-not-buy: click building cell
     - wrong guesses recover automatically
-  - [v3] measure total resource count: click player name (must be true count)
+  - measure total resource count: click player name (must be true count)
   - toggle plots: clicl road/settlement/city icons
 
 ### Legacy
