@@ -137,7 +137,7 @@ class Colony
         tradeOfferResSnippet: " for ",
         tradeOfferCounterSnippet: " proposed counter offer to ",
         yearOfPlentySnippet: " took from bank ",
-        receivedResourcesSnippet: " got ",
+        gotResource: {present: " got ", absent: " gave and got from ", transform: x => x.replace(/\s+/g, ' ')},
         builtSnippet: " built a ",
         boughtSnippet: " bought ",
         tradeBankGaveSnippet: "gave bank",
@@ -868,26 +868,23 @@ Colony.prototype.parseAlways = function(element, idx)
 
 Colony.prototype.parseGotMessage = function(element)
 {
-    const textContent = element.textContent;
-    if (textContent.includes(Colony.snippets.receivedResourcesSnippet))
+    const textContent = Colony.snippets.gotResource.transform(element.textContent);
+    if (!textContent.includes(Colony.snippets.gotResource.present)) return false;
+    if (textContent.includes(Colony.snippets.gotResource.absent)) return false;
+
+    const player = textContent.substring(0, textContent.indexOf(Colony.snippets.gotResource.present));
+    if (!verifyPlayers(this.players, player)) return false; // Sanity check
+    const resources = Colony.extractResourcesFromElement(element);
+    //console.log(`%c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
+    if ((resources.unknown || 0) !== 0) // Sanity check
     {
-        const player = textContent.substring(0, textContent.indexOf(Colony.snippets.receivedResourcesSnippet));
-        if (!verifyPlayers(this.players, player)) return false; // Sanity check
-        const resources = Colony.extractResourcesFromElement(element);
-        //console.log(`%c${player}%c ← ${resourcesAsUtf8(resources)}`, this.cssColour(player), "");
-
-        if ((resources.unknown || 0) !== 0)
-        { // TODO
-            console.error("Probably not the intended effect. If this happens we should zero unknown resources");
-            alertIf("Implementation lacks handling this case");
-        }
-
-        this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(resources));
-
-        return true;
+        console.error("Probably not the intended effect. If this happens we should zero unknown resources");
+        alertIf("Implementation lacks handling this case");
     }
 
-    return false;
+    this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(resources));
+
+    return true;
 }
 
 // "John selected 🂠 🂠 🂠 from gold tile"
