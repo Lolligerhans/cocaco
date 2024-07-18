@@ -4,6 +4,8 @@
 
 ### Linux download
 
+  Run in Bash:
+
   ```bash
   #!/usr/bin/env bash
   git clone https://github.com/Lolligerhans/explorer.git
@@ -14,12 +16,25 @@
 
 ### Manual download
 
-  [Download from GitHub](https://github.com/Lolligerhans/explorer/tags).
-  Then download links listed in `doc/README`.
+  1. [Download from GitHub](https://github.com/Lolligerhans/explorer/tags).
+  2. Extract the zip directory.
+  3. Download links listed in [doc/README](doc/README).
 
 ### Install
 
-  Install as temporary extension in your browser.
+  Install as temporary extension in your browser:
+  - [Firefox](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
+    - Visist URL [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
+    - Temporary Extensions
+    - Load Temporary Add-on...
+    - Select 'explorer/manifest.json'
+  - [Chrome](https://www.cnet.com/tech/services-and-software/how-to-install-chrome-extensions-manually/)
+    - Visit URL [chrome://extensions/](chrome://extensions/)
+    - Enable developer mode
+    - Load unpacked
+    - Select the 'explorer/' directory. (The inner one if there are two.)
+
+  Run explorer after visiting colonist.
 
 # Usage
 
