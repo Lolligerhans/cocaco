@@ -19,7 +19,7 @@ source "$dotfiles/scripts/boilerplate.sh" "${BASH_SOURCE[0]}" "$@";
 # ╭──────────────────────╮
 # │ 🛠Configuration      │
 # ╰──────────────────────╯
-_run_config["versioning"]=1;
+_run_config["versioning"]=0;
 _run_config["log_loads"]=0;
 #_run_config["error_frames"]=2;
 # ╭──────────────────────╮
@@ -94,14 +94,14 @@ command_download_js()
 
 command_install()
 {
-  set_args "--skip-download --help" "$@"
+  set_args "--skip-download --clear --help" "$@";
   eval "$get_args";
 
   # Sanity checks
   if [[ "$(basename "$parent_path")" != "explorer" ]]; then
-    errchow "This should be run from within the explorer directory"
+    errchow "This should be run from within the explorer directory";
     echou "You probably do not want to do this";
-    choice="$(boolean_prompt "Download files to `pwd -P`?")"
+    choice="$(boolean_prompt "Download files to `pwd -P`?")";
     if [[ "$choice" == "n" ]]; then
       abort "Not installing";
     fi
@@ -126,9 +126,9 @@ command_install()
 
   # Download additional JS dependencies
   if [[ "$skip_download" == "true" ]]; then
-    echos "Downloading JS dependencies"
+    echos "Downloading JS dependencies";
   else
-    subcommand download_js "$@";
+    subcommand download_js "--clear=${clear}";
   fi
 
   declare -r g="${text_lightgreen}";
@@ -161,11 +161,11 @@ command_pushall()
   command git s || errchow "Could not display commits";
   declare choice;
   choice="$(boolean_prompt "Are you sure you want to $force_flag PUSH EVERYTHING?")"
-  [[ "$choice" == "n" ]] && abort "Abort: No changes"
+  [[ "$choice" == "n" ]] && abort "Abort: No changes";
   git push $force_flag origin &&
   git push $force_flag origin --tags &&
   git push $force_flag lolli &&
-  git push $force_flag lolli --tags
+  git push $force_flag lolli --tags;
 }
 
 command_symbols()
@@ -200,6 +200,7 @@ declare -r install_help_string="Prepare for use
 DESCRIPTION
   Downloads submodules and standalone JS files. Outputs instructions for usage.
 OPTIONS
+  --clear: Pass --clear to subcommand download_js.
   --skip-download: Skip dependency download (just show message).";
 declare -r pushall_help_string="Push branch to remotes
 DESCRIPTION
