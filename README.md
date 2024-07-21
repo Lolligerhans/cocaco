@@ -1,10 +1,23 @@
-![Screenshot](/assets/screenshot.png?raw=true)
+![Outdated Screenshot](assets/screenshot.png?raw=true)
+
+# Features
+
+|||
+|-:|:-|
+🂠 | Track cards
+| 🎲 | Analyze dice rolls
+| 🥷 | Record robs
+| ⛵ 🛡 ⑥ | All game-modes
+| 👁 | Spectate games
+| 👤 💡 | Include your own live deductions
 
 # Getting started
 
-### Linux download
+1. [Linux download](#linux-download) or [Manual download](#manual-download)
+2. [Install](#install)
+3. Run explorer after visiting colonist
 
-  Run in Bash:
+### Linux download
 
   ```bash
   #!/usr/bin/env bash
@@ -16,9 +29,9 @@
 
 ### Manual download
 
-  1. [Download from GitHub](https://github.com/Lolligerhans/explorer/tags).
-  2. Extract the zip directory.
-  3. Download links listed in [doc/README](doc/README).
+  1. [Download from GitHub](https://github.com/Lolligerhans/explorer/tags)
+  2. Extract the zip file
+  3. Download links listed in [doc/README](doc/README)
 
 ### Install
 
@@ -34,8 +47,6 @@
     - Load unpacked
     - Select the 'explorer/' directory. (The inner one if there are two.)
 
-  Run explorer after visiting colonist.
-
 # Usage
 
   - Disble/Enable: click game log
@@ -49,7 +60,8 @@
   - `4 (67%) / 73%`
     - 67% marginal probability that count is exactly 5
     - 73% chance to rob this card (across possible states)
-  - Number of possible states (_world count_): top left table cell (usually `1`)
+  - Number of possible states (_world count_): top left table cell (usually
+          `1 🌎`)
   - Cells show most likely marginal value and probabilities
     - The shown combination of marginal probabilities is often impossible
   - [C&K] Unknown non-random exchanges are assumed uniform random
