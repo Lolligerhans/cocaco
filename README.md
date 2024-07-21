@@ -7,7 +7,7 @@
 🂠 | Track cards
 | 🎲 | Analyze dice rolls
 | 🥷 | Record robs
-| ⛵ 🛡 ⑥ | All game-modes
+| ⛵ | Seafarers expansion (🛡 C&K recently broken)
 | 👁 | Spectate games
 | 👤 💡 | Include your own live deductions
 

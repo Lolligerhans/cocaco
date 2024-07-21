@@ -1007,7 +1007,7 @@ Colony.prototype.parseBuiltMessage = function(element, index, array)
         console.error("Failed to detect building in found message");
         alertIf(31);
     }
-    console.log(`${utf8Symbols.build} %c${player}%c ← ${resourcesAsUtf8(buildResources)}`, this.cssColour(player), "");
+    console.log(`${utf8Symbols.build} %c${player}%c ➜ ${resourcesAsUtf8(buildResources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(buildResources));
 
@@ -1469,7 +1469,7 @@ Colony.prototype.parseActivateKnight = function(element)
     const player = element.textContent.substr(0, element.textContent.indexOf(" "));
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
     const cost = { wheat: -1 };
-    console.log(`${utf8Symbols.activate} ${utf8Symbols.knight} %c${player}%c ← ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
+    console.log(`${utf8Symbols.activate} ${utf8Symbols.knight} %c${player}%c ➜ ${resourcesAsUtf8(cost)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn
     (
@@ -1621,7 +1621,7 @@ Colony.prototype.parseResourceMonopoly = function(element)
     const resourceName = Colony.findSingularResourceImageInElement(element);
     const countStr = element.textContent.trim().split(" ").at(-1);
     const count = Number(countStr);
-    console.log(`${utf8Symbols.monopoly} (resource) %c${player}%c ← ${count}∙${resourceName}`, this.cssColour(player), "");
+    console.log(`${utf8Symbols.monopoly} (resource) %c${player}%c ← ${count}∙${resourceIcons[resourceName]}`, this.cssColour(player), "");
 
     this.multiverse.transformMonopoly
     (
@@ -1823,6 +1823,7 @@ Colony.allParsers =
     Colony.prototype.parseDiplomatReposition,
 ];
 
+// TODO Commercial Harbor broken by no longer displaying message
 
 // TODO Some rare events in C&K are not accounted for. These must currently be
 //      recovered from using card recovery.
