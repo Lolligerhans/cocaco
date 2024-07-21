@@ -1,24 +1,11 @@
-// FIXME
-//  • Edge case card combinations
-//  • Unrealized development cards may be confused with regular action
-//      ◦ Building a knight regularly after using only 1 upgrade from an
-//        engineer (reset engineer when road is built)
-//      ◦ Deserter + building later
-//      ◦ smith and upgrading later
-//      ◦ 0-card monopoly (?)
-//      ◦ road builder before beiung able to build
-//      ◦ ...
-//      ◦ diplomat?
-//  • (I think medicine and crane are safe)
-
-// TODO Open tests
-//   • harbor (from other player against us)
-
 "use strict";
 
 class Colony
 {
     static refreshRate = 3000;
+    static green = "PaleGreen";
+    static yellow = "LightGoldenRodYellow";
+    static red = "LightCoral";
 
     //==========================================================================
     // Static
@@ -360,7 +347,7 @@ Colony.prototype.restartTracker = function Colony_prototype_restartTracker(tasks
     { "funct": Colony.prototype.findPlayerName.bind(this),                    "ok": false },
     { "funct": Colony.prototype.findLog.bind(this),                           "ok": false },
     { "funct": Colony.prototype.waitForInitialPlacement.bind(this),           "ok": false },
-    { "funct": Colony.prototype.recoverUsers.bind(this),                      "ok": false },
+    { "funct": Colony.prototype.recoverUsers.bind(this, null, 2),             "ok": false },
     { "funct": Colony.prototype.initializeTracker.bind(this),                 "ok": false },
     { "funct": () => { this.MSG_OFFSET = 0; return true; },                   "ok": false },
     { "funct": Colony.prototype.comeMrTallyManTallinitialResource.bind(this), "ok": false },
@@ -393,6 +380,7 @@ Colony.prototype.reset = function Colony_prototype_reset()
     this.playerUsernameElement = null;
 
     this.playerUsername; // "John"
+    this.foundCount = {}; // For recoverUsers()
     this.players = []; // ["John", "Jane", ...]
     this.playerColours = {}; // {"John": "blue", "Jane": "rgb(...)", ...}
 
@@ -474,24 +462,47 @@ Colony.prototype.waitForInitialPlacement = function Colony_prototype_waitForInit
 }
 
 // Get new messages until 'playerCount' many player names were found. If
-// 'playerCount' is null, continue until the first roll instead. Must stop
-// main loop before running this so they dont interfere. Advances
-// this.MSG_OFFSET as usual.
-// At start of the game, set 'palyerCount' to null so the number is deduced.
-// When recovering from breaking log, or spectating, set 'playerCount' so
-// the function continues while parsing rolls.
-Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers(playerCount = null)
+// 'playerCount' is null, continue until the first roll instead. Must stop main
+// loop before running this so they don't interfere. Advances this.MSG_OFFSET as
+// usual.
+//
+// To allow log message background colourisation, we exploit the very static
+// precedure during regular (non-recovery) startup: Each palyer produces five
+// messages in total: four build messages (settles + roads) and one initial got
+// message. We want to exit after the first round, so the got messages can be
+// colourised by comeMrTallyManTallinitialResource() afterwards.
+//
+// At start of the game, set
+//  - 'palyerCount' to null so the number is deduced
+//  - maxRepetitions to 2 so the loop exits after the first round.
+// In recoverNames(), set 'playerCount' to a number so the loop continues during
+// regular gameplay, including repetitions and rolls.
+//
+// @param playerCount  If set, continue until 'playerCount' many player names
+//                     were found. Else, continue until the first roll.
+// @param maxRepetitions  If set, exit after finding a name more than
+//                        'maxRepetitions' times. use only with
+//                        playerCount===null.
+Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers
+(
+    playerCount = null,
+    maxRepetitions = null
+)
 {
     // NOTE If we make sure not to read initial placement messages, we can set
     //      MSG_OFFEST to 0, too. Those can appear out-of-player-order, and we
     //      imply the order from messages.
     //this.MSG_OFFSET = 0;
 
+    // It is possible to use both, but currently not intended
+    console.assert(maxRepetitions === null || playerCount === null);
+
     let foundRoll = false;
+    let maxReached = false;
     const done = () =>
     {
         if (playerCount === null)
-            return foundRoll;
+            return foundRoll || maxReached === true;
         else
             return playerCount - this.players.length === 0;
     };
@@ -518,10 +529,14 @@ Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers(playerCou
         {
             this.players.push(name);
             this.playerColours[name] = colour;
+            msg.style.background = this.playerColours[name];
             console.log(`• Found player %c${name}%c with colour ${colour}`, this.cssColour(name), "");
-            if (done())
-                break;
         }
+        this.foundCount[name] = (this.foundCount[name] || 0) + 1;
+        if (maxRepetitions !== null && this.foundCount[name] > maxRepetitions)
+            maxReached = true;
+        if (done())
+            break;
     }
 
     if (!done())
@@ -536,7 +551,7 @@ Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker
 {
     let noResources = {};
     for (const name of this.players)
-        noResources[name] = {}; // Could be {"wood": 5, ...}
+        noResources[name] = {}; // Could be noResources[name] = {"wood": 5, ...}
 
     this.multiverse = new Multiverse();
     this.multiverse.initWorlds(noResources);
@@ -579,7 +594,8 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
             foundRoll = true;
             break;
         }
-        this.parseInitialGotMessage(msg); // Finds resources and adds them
+        const found = this.parseInitialGotMessage(msg);
+        if (found) msg.style.background = Colony.green;
     };
     if (!foundRoll)
     {
@@ -611,12 +627,12 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
             return !parser.call(this, msg, idx, allMessages);
         });
 
-        msg.style.background = unidentified ? "LightGoldenRodYellow" : "PaleGreen";
+        msg.style.background = unidentified ? Colony.yellow : Colony.green;
         this.multiverse.printWorlds();
         if (configLogWorldCount) console.log("🌎", this.multiverse.worlds.length);
         if (0 === this.multiverse.worldCount()) // Implies error
         {
-            msg.style.background = "LightCoral";
+            msg.style.background = Colony.red;
             console.error("[ERROR] No world left");
             alertIf("Tracker OFF: No world left. Try recovery mode.");
             this.stopMainLoop();
@@ -786,9 +802,7 @@ Colony.prototype.cssColour = function(playerName)
 // Parsers
 //==============================================================================
 
-/**
- * Process initial resource message after placing first settlement.
- */
+// Special parser: Using during initial phase, but not part of 'ALL_PARSERS'
 Colony.prototype.parseInitialGotMessage = function(element)
 {
     const textContent = element.textContent;
@@ -1709,18 +1723,17 @@ Colony.prototype.parseWin = function(element)
     return true;
 }
 
-// (!) Returns name of the player who's turn it is (not true/false like the
-// other parsers). Returns null if no player found. This is useful to keep the
-// order of occurence constant.
+// Special parser: Using during initial phase, but not part of 'ALL_PARSERS'.
+// @return Pair of [player, colour] or [null, null] if no player found.
 Colony.prototype.parseTurnName = function(element)
 {
     // Include only snippets that identify current user by name
     const txt = element.textContent;
     if (  txt.includes(Colony.snippets.yearOfPlentySnippet)
-        || txt.includes(Colony.snippets.builtSnippet)
-        || txt.includes(Colony.snippets.boughtSnippet)
-        || txt.includes(Colony.snippets.rolledSnippet)
-        || txt.includes(Colony.snippets.placeInitialSettlementSnippet) )
+       || txt.includes(Colony.snippets.builtSnippet)
+       || txt.includes(Colony.snippets.boughtSnippet)
+       || txt.includes(Colony.snippets.rolledSnippet)
+       || txt.includes(Colony.snippets.placeInitialSettlementSnippet) )
     {
         const actor = txt.substring(0, txt.indexOf(" "));
         const html = element.innerHTML;
@@ -1800,8 +1813,18 @@ Colony.allParsers =
 ];
 
 
-//==============================================================================
-// Helpers
-//==============================================================================
+// TODO Some rare events in C&K are not accounted for. These must currently be
+//      recovered from using card recovery.
+//  • Edge case card combinations
+//  • Unrealized development cards may be confused with regular action
+//      ◦ Building a knight regularly after using only 1 upgrade from an
+//        engineer (reset engineer when road is built)
+//      ◦ Deserter + building later
+//      ◦ smith and upgrading later
+//      ◦ 0-card monopoly (?)
+//      ◦ road builder before being able to build
+//      ◦ ...
+//      ◦ diplomat?
+//  • (I think medicine and crane are safe)
 
 // vim: shiftwidth=4:softtabstop=4:expandtab
