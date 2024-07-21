@@ -346,7 +346,7 @@ Colony.prototype.restartTracker = function Colony_prototype_restartTracker(tasks
     { "funct": Colony.prototype.reset.bind(this),                             "ok": false },
     { "funct": Colony.prototype.findPlayerName.bind(this),                    "ok": false },
     { "funct": Colony.prototype.findLog.bind(this),                           "ok": false },
-    { "funct": Colony.prototype.waitForInitialPlacement.bind(this),           "ok": false },
+    { "funct": Colony.prototype.renderDummy.bind(this),           "ok": false },
     { "funct": Colony.prototype.recoverUsers.bind(this, null, 2),             "ok": false },
     { "funct": Colony.prototype.initializeTracker.bind(this),                 "ok": false },
     { "funct": () => { this.MSG_OFFSET = 0; return true; },                   "ok": false },
@@ -428,24 +428,23 @@ Colony.prototype.findLog = function Colony_prototype_findLog()
     return true;
 }
 
-/**
- * Wait for players to place initial settlements so we can determine who the
- * players are. Give them their respective starting resources.
- *
- * This part is implemented separately from normal tracking because the
- * resource tracker must know all players from the start. After the initial
- * starting phase, the tracker is initialized with all players, and their
- * resources are added normally.
- *
- * The main loop is then started with this.MSG_OFFSET pointing to the first
- * non-initial placement message.
- **/
-Colony.prototype.waitForInitialPlacement = function Colony_prototype_waitForInitialPlacement()
+
+// Initialize tracker structures with dummy data and render them.
+//
+// This allows us to utilize the existing rendering code to display a message to
+// the user: We set player names to predetermined strings which are rendered
+// into the resource table.
+//
+// At the same time, it allows us to identify generic rendering problems earlier
+// by faithfully utilizign the rendering code.
+//
+// All components are later initialized for real in initializeTracker().
+Colony.prototype.renderDummy = function Colony_prototype_waitForInitialPlacement()
 {
-    const dummyPlayers = ["Awaiting", "First", "Roll", "..."];
-    const dummyColours = {"Awaiting":"black", "First":"red", "Roll":"gold", "...":"white"};
+    const dummyPlayers = ["Detecting", "Player", "Names"];
+    const dummyColours = {"Detecting":"black", "Player":"red", "Names":"gold"};
     this.multiverse = new Multiverse();
-    this.multiverse.initWorlds({"Awaiting":{}, "First":{}, "Roll":{}, "...":{}});
+    this.multiverse.initWorlds({"Detecting":{}, "Player":{}, "Names":{}});
     this.trackerCollection = new Track();
     this.trackerCollection.init(dummyPlayers);
     this.renderObject = new Render
@@ -584,7 +583,9 @@ Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker
  */
 Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_comeMrTallyManTallinitialResource()
 {
+    let foundNewResources = false;
     let foundRoll = false;
+    if(configUseTimer) console.time("tallyLoop");
     let [allMessages, i] = this.getNewMessages(true);
     for (; i < allMessages.length; ++i)
     {
@@ -595,14 +596,24 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
             break;
         }
         const found = this.parseInitialGotMessage(msg);
-        if (found) msg.style.background = Colony.green;
+        if (found)
+        {
+            foundNewResources = true;
+            msg.style.background = Colony.green;
+        }
     };
+    if (configUseTimer) console.timeEnd("tallyLoop");
+    this.multiverse.printWorlds();
+
+    if (configUseTimer) console.time("render");
+    this.renderObject.render(() => foundNewResources);
+    if (configUseTimer) console.timeEnd("render");
+
     if (!foundRoll)
     {
-        console.debug("◦ Waiting for first roll");
+        console.debug("◦ Tallying initial resources");
         return false;
     }
-    this.multiverse.printWorlds();
 
     this.MSG_OFFSET = i;
     console.debug(`• Starting from message ${i}`); // 28 for normal base game
@@ -710,7 +721,7 @@ Colony.prototype.recoverNames = function()
         { "funct": this.reset.bind(this), "ok": false },
         { "funct": this.findPlayerName.bind(this), "ok": false },
         { "funct": this.findLog.bind(this), "ok": false },
-        { "funct": this.waitForInitialPlacement.bind(this), "ok": false },
+        { "funct": this.renderDummy.bind(this), "ok": false },
         { "funct": this.recoverUsers.bind(this, playerCount), "ok": false },
         { "funct": this.initializeTracker.bind(this), "ok": false },
         { "funct": () => { this.renderObject.render(); return true; }, "ok": false },
