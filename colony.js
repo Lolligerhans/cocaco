@@ -453,7 +453,7 @@ Colony.prototype.renderDummy = function Colony_prototype_waitForInitialPlacement
         null,
         null,
         null,
-        configOwnIcons ? alternativeAssets : Colony.colonistAssets
+        config.ownIcons ? alternativeAssets : Colony.colonistAssets
     );
     this.renderObject.unrender(); // Remove leftovers during testing
     this.renderObject.render();
@@ -569,7 +569,7 @@ Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker
         null,
         this.boundRecoverCards,
         this.boundRecoverNames,
-        configOwnIcons ? Colony.alternativeAssets : Colony.colonistAssets
+        config.ownIcons ? Colony.alternativeAssets : Colony.colonistAssets
     );
 
     this.renderObject.render();
@@ -585,7 +585,7 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
 {
     let foundNewResources = false;
     let foundRoll = false;
-    if(configUseTimer) console.time("tallyLoop");
+    if(config.useTimer) console.time("tallyLoop");
     let [allMessages, i] = this.getNewMessages(true);
     for (; i < allMessages.length; ++i)
     {
@@ -602,12 +602,12 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
             msg.style.background = Colony.green;
         }
     };
-    if (configUseTimer) console.timeEnd("tallyLoop");
+    if (config.useTimer) console.timeEnd("tallyLoop");
     this.multiverse.printWorlds();
 
-    if (configUseTimer) console.time("render");
+    if (config.useTimer) console.time("render");
     this.renderObject.render(() => foundNewResources);
-    if (configUseTimer) console.timeEnd("render");
+    if (config.useTimer) console.timeEnd("render");
 
     if (!foundRoll)
     {
@@ -627,7 +627,7 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
     if (!continueIf())
         return true; // Return true to signal completion to setDoInterval
     console.assert(this.startupFlag === false);
-    if(configUseTimer) console.time("mainLoop");
+    if(config.useTimer) console.time("mainLoop");
 
     const [allMessages, index] = this.getNewMessages(true);
     for (let idx = index; idx < allMessages.length; ++idx)
@@ -640,7 +640,7 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
 
         msg.style.background = unidentified ? Colony.yellow : Colony.green;
         this.multiverse.printWorlds();
-        if (configLogWorldCount) console.log("🌎", this.multiverse.worlds.length);
+        if (config.logWorldCount) console.log("🌎", this.multiverse.worlds.length);
         if (0 === this.multiverse.worldCount()) // Implies error
         {
             msg.style.background = Colony.red;
@@ -650,11 +650,11 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
             return true; // Return true to signal completion
         }
     }
-    if (configUseTimer) console.timeEnd("mainLoop");
+    if (config.useTimer) console.timeEnd("mainLoop");
 
-    if (configUseTimer) console.time("render");
+    if (config.useTimer) console.time("render");
     this.renderObject.render(() => this.isNewMessage(this.MSG_OFFSET));
-    if (configUseTimer) console.timeEnd("render");
+    if (config.useTimer) console.timeEnd("render");
 }
 
 // Recovers MW state from unknown cards. Player array is used and assumed
@@ -743,7 +743,7 @@ Colony.prototype.stopMainLoop = function()
     console.info("• Stopping main loop ", this.activeIndex);
     this.activeIndex += 1;
 
-    if (configUseTimer) console.timeEnd("mainLoop");
+    if (config.useTimer) console.timeEnd("mainLoop");
 }
 
 Colony.prototype.restartMainLoop = function Colony_prototype_restartMainLoop()
@@ -793,11 +793,11 @@ Colony.prototype.mainLoopToggle = function()
 Colony.prototype.reorderPlayerNames = function()
 {
     // Determine our own name
-    if (configFixedPlayerName || !this.playerUsername)
+    if (config.fixedPlayerName || !this.playerUsername)
     {
-        if (!configFixedPlayerName)
+        if (!config.fixedPlayerName)
             console.warn("Username not found. Using fixed name.");
-        this.playerUsername = configPlayerName;
+        this.playerUsername = config.playerName;
     }
 
     this.players = rotateToLastPosition(this.players, this.playerUsername);
@@ -891,7 +891,7 @@ Colony.prototype.parseYearOfPlenty = function(element)
 // (except logging).
 Colony.prototype.parseAlways = function(element, idx)
 {
-    if (!configLogMessages) return false;
+    if (!config.logMessages) return false;
     console.info(`Message [${idx}] ${element.textContent} 🔍`, element);
     return false;
 }

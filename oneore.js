@@ -473,7 +473,7 @@ initializeTracker: function()
         //twosheep.recoverCards.bind(twosheep),
         //twosheep.recoverNames.bind(twosheep),
         // Allowing our own icons as fallback
-        configOwnIcons ? alternativeAssets : twosheep.icons
+        config.ownIcons ? alternativeAssets : twosheep.icons
     );
     twosheep.render.unrender(); // Remove table to force redraw over update
 
@@ -530,7 +530,7 @@ stopMainLoop: function()
     twosheep.activeIndex += 1; // Tells old loop to stop
     // This timer end can produce a warning since 'stopMainLoop' is often
     // obsolete when called. It does no harm.
-    if (configUseTimer) console.timeEnd("mainLoop");
+    if (config.useTimer) console.timeEnd("mainLoop");
 },
 
 // Start new main loop interval. It is given a closure with the current
@@ -604,7 +604,7 @@ mainLoop: function(continueIf)
     {
         console.info("🧭", `Running main loop. Current index: ${twosheep.activeIndex}`);
     }
-    if (configUseTimer) console.time("mainLoop");
+    if (config.useTimer) console.time("mainLoop");
 
     // Use array + index to allow build parser to find a road builder dev card
     // player earlier. Generally parsers should only use the current message.
@@ -636,13 +636,13 @@ mainLoop: function(continueIf)
             return true;
         }
     };
-    if (configUseTimer) console.timeEnd("mainLoop");
+    if (config.useTimer) console.timeEnd("mainLoop");
 
     console.log(`🌎 ${twosheep.multiverse.worlds.length}`);
 
-    if (configUseTimer) console.time("render");
+    if (config.useTimer) console.time("render");
     twosheep.render.render(() => twosheep.MSG_OFFSET > twosheep.renderedOffset);
-    if (configUseTimer) console.timeEnd("render");
+    if (config.useTimer) console.timeEnd("render");
     twosheep.renderedOffset = twosheep.MSG_OFFSET;
 
 
@@ -770,7 +770,7 @@ parsers:
 {
     always: function(msg, idx)
     {
-        if (!configLogMessages) return false;
+        if (!config.logMessages) return false;
         console.info(`👁 Message ${idx} | »${msg.textContent}«`);
         //console.debug(`🔍 Message ${idx} object:`, msg);
         return false;

@@ -61,7 +61,7 @@ class Track
 
     printRobs()
     {
-        if (configPrintRobs !== true) return;
+        if (config.printRobs !== true) return;
         log("robs:", robs);
         log("robsTaken:", robsTaken);
         log("robsLost:", robsLost);

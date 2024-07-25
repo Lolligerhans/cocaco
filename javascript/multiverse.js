@@ -183,7 +183,7 @@ Multiverse.sliceUseUnknowns = function(slice)
 
 Multiverse.prototype.printWorlds = function()
 {
-    if (configPrintWorlds === false)
+    if (config.printWorlds === false)
         return;
     if (this.worlds.length > 1000)
     {

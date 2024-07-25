@@ -332,7 +332,7 @@ class ManyWorlds
 
     printWorlds()
     {
-        if (configPrintWorlds === false)
+        if (config.printWorlds === false)
             return;
         log2("🌎 ManyWorlds:", this.manyWorlds);
         if (this.manyWorlds.length === 0)

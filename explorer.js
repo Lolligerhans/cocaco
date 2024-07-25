@@ -13,29 +13,21 @@ let stats = new Statistics({}, {});
 //console.log(stats.binomialDistribution);
 //console.log(stats.binomialDistribution(50, 1/6));
 
-const configPrintWorlds = false;
-const configUseTimer = false;
-const configLogMessages = true;
-const configLogWorldCount = true;
-const configPrintRobs = false;
-const configDoAlert = true;
-const configOwnIcons = false;
-const configFixedPlayerName = false;    // Set true to use configPlayerName
-const configPlayerName = "John#1234";
-const configRunManyWorldsTest = false;  // Run test and quit. Not a full unit test.
-
-console.info("Explorer config:",
-    "| configPrintWorlds:", configPrintWorlds,
-    "| configUseTimer:", configUseTimer,
-    "| configLogMessages:", configLogMessages,
-    "| configLogWorldCount:", configLogWorldCount,
-    "| configPrintRobs:", configPrintRobs,
-    "| configDoAlert:", configDoAlert,
-    "| configOwnIcons:", configOwnIcons,
-    "| configFixedPlayerName:", configFixedPlayerName,
-    "| configPlayerName:", configPlayerName,
-    "| configRunManyWorldsTest:", configRunManyWorldsTest
-);
+const config =
+{
+    printWorlds: false,
+    useTimer: false,
+    logMessages: true,
+    logWorldCount: true,
+    printRobs: false,
+    doAlert: true,
+    ownIcons: false,
+    fixedPlayerName: false,    // Set true to use config.playerName
+    playerName: "John#1234",
+    runManyWorldsTest: false,  // Run test and quit. Not a full unit test.
+    injectLogs: true,
+};
+console.table(config);
 
 let e = document.getElementById("header_navigation_store");
 if (e !== null) { e.textContent = "(CoCaCo " + version_string + ")"; e.style.background = "LightGreen"; }
@@ -244,7 +236,7 @@ function deepCopy(object)
 function alertIf(message)
 {
     console.error("alert(", message, ")");
-    if (configDoAlert)
+    if (config.doAlert)
     {
         alert(message);
         debugger;
@@ -316,7 +308,7 @@ function allTests()
 
 function main()
 {
-    if (configRunManyWorldsTest === true)
+    if (config.runManyWorldsTest === true)
     {
         allTests();
         return
