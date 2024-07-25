@@ -17,8 +17,8 @@ const config =
 {
     printWorlds: false,
     useTimer: false,
-    logMessages: true,
-    debugMessages: true,
+    logMessages: false,
+    debugMessages: false,
     logWorldCount: true,
     printRobs: false,
     doAlert: true,
