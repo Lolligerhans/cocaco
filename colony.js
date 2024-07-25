@@ -291,7 +291,6 @@ class Colony
 
         // C&K has stateful messages. We add flags and reset after each roll
         this.turnState = Colony.emptyTurnState;
-
     } // ctor
 
 } // class Colony
@@ -345,8 +344,9 @@ Colony.prototype.restartTracker = function Colony_prototype_restartTracker(tasks
 [
     { "funct": Colony.prototype.reset.bind(this),                             "ok": false },
     { "funct": Colony.prototype.findPlayerName.bind(this),                    "ok": false },
-    { "funct": Colony.prototype.findLog.bind(this),                           "ok": false },
-    { "funct": Colony.prototype.renderDummy.bind(this),           "ok": false },
+    { "funct": Colony.prototype.findElements.bind(this),                      "ok": false },
+    { "funct": Colony.prototype.clearLog.bind(this),                          "ok": false },
+    { "funct": Colony.prototype.renderDummy.bind(this),                       "ok": false },
     { "funct": Colony.prototype.recoverUsers.bind(this, null, 2),             "ok": false },
     { "funct": Colony.prototype.initializeTracker.bind(this),                 "ok": false },
     { "funct": () => { this.MSG_OFFSET = 0; return true; },                   "ok": false },
@@ -372,11 +372,13 @@ Colony.prototype.restartTracker = function Colony_prototype_restartTracker(tasks
     console.info("🧭 ( ✔️  ) restartTracker' dispatcher completed");
 }
 
-    // Like ctor, but keeps 'activeIndex' and 'lastStarted' intact so we dont
-    // orphan the 'mainLoop' 'setDoInterval'.
+// Like ctor, but keeps 'activeIndex' and 'lastStarted' intact so we dont orphan
+// the 'mainLoop' 'setDoInterval'.
+// We do not clear the log effects. Use 'clearLog()' to do that.
 Colony.prototype.reset = function Colony_prototype_reset()
 {
     this.logElement = null;
+    this.chatElement = null; // For logger
     this.playerUsernameElement = null;
 
     this.playerUsername; // "John"
@@ -391,6 +393,9 @@ Colony.prototype.reset = function Colony_prototype_reset()
     this.MSG_OFFSET = 0;
     this.messageNumberDone = -1;
     this.startupFlag = true;
+
+    // We use the logger to multiplex logging for debugging
+    this.logger = null;
 
     return true;
 }
@@ -408,19 +413,23 @@ Colony.prototype.findPlayerName = function Colony_prototype_findPlayerName()
     return true;
 }
 
-Colony.prototype.findLog = function Colony_prototype_findLog()
+Colony.prototype.findElements = function Colony_prototype_findLog()
 {
     console.assert(!this.logElement);
+    console.assert(!this.chatElement);
     this.logElement = document.getElementById("game-log-text");
     if (!this.logElement)
-    {
-        //console.debug("• No #game-log-text found");
         return false;
-    }
     console.log("• Found #game-log-text");
+    this.chatElement = document.getElementById("game-chat-text");
+    if (this.chatElement)
+        console.log("• Found #game-chat-text");
+
     Colony.deleteSomeElements();
     this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
 
+    this.logger = new MessageLog(this.chatElement);
+    console.error("• Created logger", this.logger);
     // Reset background after extension restart. Has no effect the first time.
     for (e of this.logElement.children)
         e.style.background = "";
@@ -428,6 +437,13 @@ Colony.prototype.findLog = function Colony_prototype_findLog()
     return true;
 }
 
+Colony.prototype.clearLog = function()
+{
+    console.assert(this.logger !== null);
+    console.log(this.logger);
+    this.logger.clear();
+    return true;
+}
 
 // Initialize tracker structures with dummy data and render them.
 //
@@ -718,9 +734,12 @@ Colony.prototype.recoverNames = function()
 
     this.restartTracker(
     [
+        // Like the default control flow, but do not clearLog (keep it).
+        // And do not tallyInitialResources and do not restartMainLoop (leave
+        // for manual activation).
         { "funct": this.reset.bind(this), "ok": false },
         { "funct": this.findPlayerName.bind(this), "ok": false },
-        { "funct": this.findLog.bind(this), "ok": false },
+        { "funct": this.findElements.bind(this), "ok": false },
         { "funct": this.renderDummy.bind(this), "ok": false },
         { "funct": this.recoverUsers.bind(this, playerCount), "ok": false },
         { "funct": this.initializeTracker.bind(this), "ok": false },
@@ -805,7 +824,7 @@ Colony.prototype.reorderPlayerNames = function()
 
 Colony.prototype.cssColour = function(playerName)
 {
-    return `background: ${this.playerColours[playerName]}; padding: 3px; border-radius: 5px; font-weight: bold;`;
+    return `color: white; background: ${this.playerColours[playerName]}; padding: 3px; border-radius: 5px; font-weight: bold;`;
 }
 
 

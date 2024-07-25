@@ -10,6 +10,11 @@
  * This file is a mess. We could really need replacing it entirely.
  */
 
+.ex-dbg-msg
+{
+    color: black;
+}
+
 /* for test main.HTML */
 #explorer-plt
 {

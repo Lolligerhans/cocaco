@@ -18,6 +18,7 @@ const config =
     printWorlds: false,
     useTimer: false,
     logMessages: true,
+    debugMessages: true,
     logWorldCount: true,
     printRobs: false,
     doAlert: true,
@@ -25,7 +26,6 @@ const config =
     fixedPlayerName: false,    // Set true to use config.playerName
     playerName: "John#1234",
     runManyWorldsTest: false,  // Run test and quit. Not a full unit test.
-    injectLogs: true,
 };
 console.table(config);
 
