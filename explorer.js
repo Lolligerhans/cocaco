@@ -18,16 +18,16 @@ const config =
     // Style
     ownIcons: false,
     // Verbose
-    logMessages: true,
-    logWorldCount: true,
+    logMessages: false,
+    logWorldCount: false,
     useTimer: false,
     printRobs: false,
     // Very verbose
-    debugMessages: true,
+    debugMessages: false,
     printWorlds: false,
     // Debug
-    largeLog: true,
-    doDebug: true,
+    largeLog: false,
+    doDebug: false,
     runManyWorldsTest: false,  // Run test and quit. Not a full unit test.
     fixedPlayerName: false,    // Set true to use config.playerName
     playerName: "John#1234",

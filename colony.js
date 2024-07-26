@@ -102,10 +102,7 @@ class Colony
         {
             let element = document.getElementById(id);
             if (element)
-            {
                 element.remove();
-                console.debug("◦ Deleted", id);
-            }
         }
     }
 
@@ -434,11 +431,9 @@ Colony.prototype.findElements = function Colony_prototype_findLog()
     this.logElement = document.getElementById("game-log-text");
     if (!this.logElement)
         return false;
-    console.log("🥥 Found #game-log-text");
     this.chatElement = document.getElementById("game-chat-text");
     if (this.chatElement)
     {
-        console.log("🥥 Found #game-chat-text");
         if (Colony.enlarger)
         {
             this.chatElement.removeEventListener("click", Colony.enlarger, false);

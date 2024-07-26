@@ -66,7 +66,7 @@ MessageLog.prototype.init = function(chatElement)
     {
         if (config[key])
             this.loggers.push(value);
-        console.log(`🥥 MessageLog: ${key} = ${value}`);
+        console.log(`🥥 MessageLog: ${key}`);
     }
 }
 
