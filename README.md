@@ -7,7 +7,7 @@
 🂠 | Track cards
 | 🎲 | Analyze dice rolls
 | 🥷 | Record robs
-| ⛵ | Seafarers expansion (🛡 C&K recently broken)
+| ⛵ 🛡 | All expansions
 | 👁 | Spectate games
 | 👤 💡 | Include your own live deductions
 
@@ -24,7 +24,7 @@
   git clone https://github.com/Lolligerhans/explorer.git
   cd explorer
   git submodule update --init --recursive
-  ./run.sh install # Downloads plotly
+  ./run.sh install
   ```
 
 ### Manual download

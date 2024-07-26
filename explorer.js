@@ -26,6 +26,7 @@ const config =
     debugMessages: true,
     printWorlds: false,
     // Debug
+    largeLog: true,
     doDebug: true,
     runManyWorldsTest: false,  // Run test and quit. Not a full unit test.
     fixedPlayerName: false,    // Set true to use config.playerName

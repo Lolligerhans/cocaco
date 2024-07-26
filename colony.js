@@ -440,9 +440,15 @@ Colony.prototype.findElements = function Colony_prototype_findLog()
     {
         console.log("🥥 Found #game-chat-text");
         if (Colony.enlarger)
+        {
             this.chatElement.removeEventListener("click", Colony.enlarger, false);
-        const enlarger = enlarge.bind(null, this.logElement);
-        this.chatElement.addEventListener("click", enlarger, false);
+            Colony.enlarger = null;
+        }
+        if (config.largeLog)
+        {
+            Colony.enlarger = enlarge.bind(null, this.logElement);
+            this.chatElement.addEventListener("click", Colony.enlarger, false);
+        }
     }
 
     Colony.deleteSomeElements();
@@ -634,7 +640,7 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
         [
             Colony.prototype.parseInitialGotMessage,
             Colony.prototype.parseGotMessage,
-            // FIXME Discovering gold has a different message (add gold parser?)
+            Colony.prototype.parseGoldTile,
         ];
         const found = !this.applyParsers(msg, i, allMessages, initialParsers);
         if (found)
