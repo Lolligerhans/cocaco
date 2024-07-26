@@ -1,4 +1,5 @@
-// track.js: Small tracking structures. The main tracking is manyworlds.js
+// Simple counting structure 'Track'.
+// For tracking trivial events.
 
 "use strict";
 

@@ -1,6 +1,10 @@
-//============================================================
-// CONFIG
-//============================================================
+// Extension entry point.
+//
+// Config
+// Globals
+// Helpers
+//
+// Dispatches into Colony/Oneore.
 
 "use strict";
 
@@ -8,24 +12,24 @@ const theBrowser = typeof(chrome) !== "undefined" ? chrome : browser;
 const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
-//console.log(stats);
-//console.log(Statistics);
-//console.log(stats.binomialDistribution);
-//console.log(stats.binomialDistribution(50, 1/6));
 
 const config =
 {
-    printWorlds: false,
-    useTimer: false,
-    logMessages: false,
-    debugMessages: false,
-    logWorldCount: true,
-    printRobs: false,
-    doAlert: true,
+    // Style
     ownIcons: false,
+    // Verbose
+    logMessages: true,
+    logWorldCount: true,
+    useTimer: false,
+    printRobs: false,
+    // Very verbose
+    debugMessages: true,
+    printWorlds: false,
+    // Debug
+    doDebug: true,
+    runManyWorldsTest: false,  // Run test and quit. Not a full unit test.
     fixedPlayerName: false,    // Set true to use config.playerName
     playerName: "John#1234",
-    runManyWorldsTest: false,  // Run test and quit. Not a full unit test.
 };
 console.table(config);
 
@@ -185,6 +189,14 @@ function setDoInterval(repeat, time, then = null)
     );
 }
 
+function resize(element, w = 1000, h = 800)
+{
+    console.log("resizing", element, w, h);
+    element.style.width = `${w}px`;
+    element.style.height = `${h}px`;
+}
+const enlarge = (e) => resize(e);
+
 // For debugging
 function p(object)
 {
@@ -219,7 +231,7 @@ const resourceTypes = [wood, brick, sheep, wheat, ore];
 function rotateToLastPosition(array, value)
 {
     const pos = array.indexOf(value);
-    console.assert(pos >= 0, "Value must be in array");
+    console.assert(pos >= 0, "Are you spectator?");
     const rotation = array.length - pos - 1;
     const unrotatedCopy = deepCopy(array);
     for (let i = 0; i < array.length; ++i)
@@ -236,14 +248,10 @@ function deepCopy(object)
 function alertIf(message)
 {
     console.error("alert(", message, ")");
-    if (config.doAlert)
+    if (config.doDebug)
     {
         alert(message);
         debugger;
-    }
-    else
-    {
-        console.warn("Skipping alert(", message, ")");
     }
 }
 

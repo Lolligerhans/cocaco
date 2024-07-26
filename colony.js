@@ -336,6 +336,20 @@ Colony.prototype.isNewMessage = function(msgNumber)
     return false;
 }
 
+// Applies array of parsers. Parser are member functions of Colony.
+// @return 'unidentified': true when no parser accepted.
+Colony.prototype.applyParsers = function(
+    msg, idx, allMessages,
+    parsers = Colony.allParsers
+    )
+{
+    const unidentified = parsers.every(parser =>
+    {
+        return !parser.call(this, msg, idx, allMessages);
+    });
+    return unidentified;
+}
+
 //==============================================================================
 // Program flow
 //==============================================================================
@@ -423,7 +437,13 @@ Colony.prototype.findElements = function Colony_prototype_findLog()
     console.log("🥥 Found #game-log-text");
     this.chatElement = document.getElementById("game-chat-text");
     if (this.chatElement)
+    {
         console.log("🥥 Found #game-chat-text");
+        if (Colony.enlarger)
+            this.chatElement.removeEventListener("click", Colony.enlarger, false);
+        const enlarger = enlarge.bind(null, this.logElement);
+        this.chatElement.addEventListener("click", enlarger, false);
+    }
 
     Colony.deleteSomeElements();
     this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
@@ -610,7 +630,13 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
             foundRoll = true;
             break;
         }
-        const found = this.parseInitialGotMessage(msg);
+        const initialParsers =
+        [
+            Colony.prototype.parseInitialGotMessage,
+            Colony.prototype.parseGotMessage,
+            // FIXME Discovering gold has a different message (add gold parser?)
+        ];
+        const found = !this.applyParsers(msg, i, allMessages, initialParsers);
         if (found)
         {
             foundNewResources = true;
@@ -648,11 +674,7 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
     for (let idx = index; idx < allMessages.length; ++idx)
     {
         const msg = allMessages[idx];
-        const unidentified = Colony.allParsers.every(parser =>
-        {
-            return !parser.call(this, msg, idx, allMessages);
-        });
-
+        const unidentified = this.applyParsers(msg, idx, allMessages);
         msg.style.background = unidentified ? Colony.yellow : Colony.green;
         this.multiverse.printWorlds();
         if (config.logWorldCount) console.log("🌎", this.multiverse.worlds.length);
@@ -1208,7 +1230,7 @@ Colony.prototype.stealKnown = function(element)
 
     if (this.turnState.nextSteal === "spy")
     {
-        console.debug("◦ Ignoring stel message (spy)");
+        this.logger.log(element, `${utf8Symbols.spy}`);
         this.turnState.nextSteal = null;
         return true;
     }
@@ -1429,12 +1451,11 @@ Colony.prototype.parsePlaceShipRoad = function(element)
     }
     else if(alt === "road")
     {
-        costs = { wood:  1, brick:  1 };
+        costs = { wood: -1, brick: -1 };
     }
     console.assert(costs !== null, "Unexpected alt: " + alt);
     if (this.turnState.roadBuilding > 0)
     {
-        console.assert(alt === "road", "Unreachable: Expected road after road buider");
         this.logger.log(element, `${utf8Symbols.roadBuilder} %c${player}%c`, this.cssColour(player), "");
         costs = {};
         this.turnState.roadBuilding -= 1;
@@ -1571,8 +1592,8 @@ Colony.prototype.parseUpgradeCity = function(element)
     return true;
 }
 
-// Some progress cards are ignored. For these we return false. This allows
-// a separate parser to catch them if desired.
+// Some progress cards are ignored. For these we return false. This would allow
+// a separate parser to catch them.
 Colony.prototype.parseProgressCard = function(element)
 {
     if (!element.textContent.replace(/\s+/g, " ").includes(Colony.snippets.progressCard.text))
