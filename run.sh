@@ -80,7 +80,7 @@ command_download_js()
     echos "$(basename "$plotly_path") already exists";
   else
     wget --https-only -P "$plotly_dir/" -c "$plotly_path";
-    echok "Downloaded $plotly_path";
+    echol "Downloaded $plotly_path";
   fi
 
   if ! sha256sum -c <<< "$plotly_hash"; then
@@ -90,6 +90,8 @@ command_download_js()
     errchoe "Downloaded ${text_user}${plotly_path}${text_normal} does not match expected checksum";
     abort "Failed to download $plotly_path";
   fi
+
+  echok "Available: $plotly_path";
 }
 
 command_install()

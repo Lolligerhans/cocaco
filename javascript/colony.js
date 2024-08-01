@@ -886,7 +886,6 @@ Colony.prototype.parseTradeOffer = function(element)
     //      trade offer counter parser?
     const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
-    const asSlice = mw.generateWorldSlice(offer);
     this.logger.log(element, `%c${player}%c ➡️ ${resourcesAsUtf8(offer)} ⇄️ <resources>`, this.cssColour(player), "");
 
     this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
@@ -906,7 +905,6 @@ Colony.prototype.parseTradeOfferCounter = function(element)
     // TODO Can we use structural parsing over strings?
     const offerHtml = element.innerHTML.split(Colony.snippets.tradeOfferResSnippet)[0];
     const offer = Colony.findAllResourceCardsInHtml(offerHtml);
-    const asSlice = mw.generateWorldSlice(offer);
     this.logger.log(element, `⬅️ <resources> ⇄️ ${resourcesAsUtf8(offer)} %c${player}%c`, this.cssColour(player), "");
     this.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
 
@@ -982,7 +980,7 @@ Colony.prototype.parseGoldTile = function(element)
     return true;
 }
 
-Colony.prototype.parseBuiltMessage = function(element, index, array)
+Colony.prototype.parseBuiltMessage = function(element)
 {
     let textContent = element.textContent;
     if (!textContent.includes(Colony.snippets.builtSnippet)) return false;
@@ -1104,11 +1102,7 @@ Colony.prototype.parseTradeBankMessage = function(element)
     }
     let player = textContent.split(" ")[0];
     if (!verifyPlayers(this.players, player)) return false; // Sanity check
-    let innerHTML = element.innerHTML;
-    let gavebank = innerHTML.slice(innerHTML.indexOf(Colony.snippets.tradeBankGaveSnippet), innerHTML.indexOf(Colony.snippets.tradeBankTookSnippet)).split("<img");
-    let andtook = innerHTML.slice(innerHTML.indexOf(Colony.snippets.tradeBankTookSnippet)).split("<img");
 
-    // ManyWorlds version
     const gaveAndTook = element.innerHTML.split(" and took ");
     if (gaveAndTook.length !== 2)
     {
@@ -1119,8 +1113,6 @@ Colony.prototype.parseTradeBankMessage = function(element)
     // TODO Can we use structural parsing over strings here?
     const giveResources = Colony.findAllResourceCardsInHtml(gaveAndTook[0]);
     const takeResources = Colony.findAllResourceCardsInHtml(gaveAndTook[1]);
-    const giveSlice     = mw.generateWorldSlice(giveResources);
-    const takeSlice     = mw.generateWorldSlice(takeResources);
     this.logger.log(element, `${utf8Symbols.bank} %c${player}%c ${resourcesAsUtf8(giveResources)} ↔ ${resourcesAsUtf8(takeResources)}`, this.cssColour(player), "");
 
     this.multiverse.mwTransformSpawn(player, Multiverse.sliceSubtract( Multiverse.asSlice(takeResources)
@@ -1293,7 +1285,6 @@ Colony.prototype.stealKnown = function(element)
     }
 
     const stolenResourceType = Colony.findSingularResourceImageInElement(element);
-    const stolenResourceIndex = Multiverse.getResourceIndex(stolenResourceType);
 
     console.assert(this.turnState.nextSteal === "robber", "Should set next steal before entering here");
 

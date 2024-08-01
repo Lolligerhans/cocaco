@@ -352,7 +352,6 @@ Multiverse.prototype.mwWeightGuessNotavailable = function(playerName, resourceSl
     console.log(`❕❔ ${playerName} 🚫`, Multiverse.asNames(resourceSlice));
     const playerIdx = this.getPlayerIndex(playerName);
     const factor = 100; // Arbitrary large value
-    let didBranch = false;
     this.worlds.forEach(world =>
     {
         let adjustedSlice = Multiverse.sliceAdd(world[playerIdx], resourceSlice);
@@ -485,7 +484,7 @@ Multiverse.prototype.branchHarbor = function(playerName, otherName)
 // thief's slice as stolen resource type. Where U is the number of unknown cards
 // victim has. This is a helper to allow monopolies in recovery mode.
 // @param max  Per-opponent stealing limit (for C&K).
-// ❕ Currently ignores the implicit reduction of 'max' to to stealing of
+// ❕ Currently ignores the implicit reduction of 'max' to stealing of
 // regular resources. To fix this, the branching could to happen before, while
 // the card count is still known.
 Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, resourceIndex, max=19)
@@ -497,7 +496,6 @@ Multiverse.prototype.mwBranchRecoveryMonopoly = function(victimIdx, thiefIdx, re
     let newWorlds = [];
     for (const world of this.worlds)
     {
-        const totalRes = Multiverse.sliceTotal(world[victimIdx]);
         const u = world[victimIdx][unknowIndex];
         for (let i = 0; i <= Math.min(u, max); ++i)
         {
@@ -769,7 +767,7 @@ Multiverse.prototype.mwUpdateStats = function()
         {
             if (res === "unknown")
             {
-//                debugger;
+                assert(false, "unreachable")
             }
             // Compute guess and range for this player-resource combo based on
             // the full statistics.

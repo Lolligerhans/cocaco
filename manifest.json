@@ -1,33 +1,50 @@
 {
-    "name": "Colonist Card Counter",
-    "short_name": "CoCaCo",
-    "manifest_version": 3,
-    "author": "Lolligerhans",
-    "description": "Correctly correlated Colonist card chance counter",
-    "version": "3.2.1",
-    "icons":
+  "name": "Colonist Card Counter",
+  "short_name": "CoCaCo",
+  "manifest_version": 3,
+  "author": "Lolligerhans",
+  "description": "Correctly correlated Colonist card chance counter",
+  "version": "3.2.2",
+  "icons": {
+    "512": "assets/catan2.jpg"
+  },
+  "host_permissions": [
+    "https://colonist.io/*",
+    "https://twosheep.io/*"
+  ],
+  "content_scripts": [
     {
-        "512": "assets/catan2.jpg"
-    },
-    "host_permissions":
-    [
+      "matches": [
         "https://colonist.io/*",
         "https://twosheep.io/*"
-    ],
-    "content_scripts":
-    [
-        {
-            "matches": ["https://colonist.io/*", "https://twosheep.io/*"],
-            "css": ["explorer-styles.css"],
-            "run_at": "document_idle",
-            "js": ["statistics.js/statistics.min.js", "plotly/plotly-2.25.2.min.js", "javascript/log.js", "manyworlds.js", "track.js", "render.js", "colony.js", "oneore.js", "javascript/multiverse.js", "plot.js", "explorer.js" ]
-        }
-    ] ,
-    "web_accessible_resources":
-    [
-        {
-            "resources": ["assets/*.jpg"],
-            "matches": [ "https://colonist.io/*", "https://twosheep.io/*"]
-        }
-    ]
+      ],
+      "css": [
+        "explorer-styles.css"
+      ],
+      "run_at": "document_idle",
+      "js": [
+        "statistics.js/statistics.min.js",
+        "plotly/plotly-2.25.2.min.js",
+        "javascript/log.js",
+        "javascript/track.js",
+        "javascript/render.js",
+        "javascript/colony.js",
+        "javascript/oneore.js",
+        "javascript/multiverse.js",
+        "javascript/plot.js",
+        "javascript/explorer.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*.jpg"
+      ],
+      "matches": [
+        "https://colonist.io/*",
+        "https://twosheep.io/*"
+      ]
+    }
+  ]
 }

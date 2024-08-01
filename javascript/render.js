@@ -270,7 +270,6 @@ class Render
         playerHeaderCell.className = "explorer-tbl-player-col-header";
         for (let i = 0; i < Multiverse.resources.length; i++)
         {
-            let resourceType = Multiverse.getResourceName(i);
             let resourceHeaderCell = headerRow.insertCell(i + 1);
             resourceHeaderCell.addEventListener("click", this.context.recoverCardsCallback, false);
             resourceHeaderCell.className = "explorer-tbl-cell";
