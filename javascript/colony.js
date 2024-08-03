@@ -866,10 +866,14 @@ Colony.prototype.parseInitialGotMessage = function(element)
     if (!verifyPlayers(this.players, player)) return false;
 
     const initialResources = Colony.extractResourcesFromElement(element);
-    const asSlice = mw.generateWorldSlice(initialResources);
     this.logger.log(element, `▶️ %c${player}%c ${resourcesAsUtf8(initialResources)}`, this.cssColour(player), "");
     //console.debug(`• Set initial resources for ${name} to`, resources);
-    if (asSlice === 0) { console.warn("[WARNING] Empty starting resources"); }
+
+    const slice = Multiverse.asSlice(initialResources);
+    if (Multiverse.sliceTotal(slice) === 0)
+    {
+        console.warn("Empty starting resources");
+    }
     this.multiverse.mwTransformSpawn(player, Multiverse.asSlice(initialResources));
 
     return true;

@@ -765,17 +765,14 @@ Multiverse.prototype.mwUpdateStats = function()
     {
         for (const res of Multiverse.resources)
         {
-            if (res === "unknown")
-            {
-                assert(false, "unreachable")
-            }
             // Compute guess and range for this player-resource combo based on
             // the full statistics.
             let range = [19, 0, 0, 0]; // [ smallest_nonzero_index,
                                        //   max_chance, index_of_max_count
                                        //   largest_nonzero_index ]
             // FIXME mwDistribution goes until 19 only, but unknown cards might be more than 19
-            let maxIndex = this.mwDistribution[player][res].reduce((r, val, idx) =>
+            let maxIndex = this.mwDistribution[player][res].reduce(
+                    (r, val, idx) =>
             {
                 if (val != 0) r[0] = Math.min(r[0], idx);
                 if (val > r[1]) { r[1] = val; r[2] = idx; }

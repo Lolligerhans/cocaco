@@ -62,12 +62,13 @@ class Track
 
     printRobs()
     {
-        if (config.printRobs !== true) return;
-        log("robs:", robs);
-        log("robsTaken:", robsTaken);
-        log("robsLost:", robsLost);
-        log("robsTotal:", robsTotal);
-        log("robsSeven:", robsSeven);
+        if (config.printRobs !== true)
+            return;
+        log("robs:", this.robs);
+        log("robsTaken:", this.robsTaken);
+        log("robsLost:", this.robsLost);
+        log("robsTotal:", this.robsTotal);
+        log("robsSeven:", this.robsSeven);
     }
 
     initRobs(playerNames = players)

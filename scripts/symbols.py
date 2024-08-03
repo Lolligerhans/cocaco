@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import plotly.graph_objects as go
 from plotly.validators.scatter.marker import SymbolValidator
 # import plotly
