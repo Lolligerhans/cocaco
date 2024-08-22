@@ -78,7 +78,7 @@ MessageLog.prototype.log = function(...args)
 }
 
 // Switch between logMessage() and logChat() dependign on the presence of
-// a message element. Results on a dom element being added somewhere.
+// a message element. Results in a dom element being added somewhere.
 MessageLog.prototype.logDom = function(messageElement, ...args)
 {
     if (messageElement)

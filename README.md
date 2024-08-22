@@ -52,8 +52,8 @@ Install as temporary extension in your browser:
 
 ## Usage
 
-- Disble/Enable: click game log
-- Show plot/rolls/steals: click road/settlement/city
+- Hide/show resources: click game log
+- Show/hide plot/rolls/steals: click road/settlement/city
 
 ### Resource table
 

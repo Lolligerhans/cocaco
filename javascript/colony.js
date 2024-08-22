@@ -285,6 +285,7 @@ class Colony
         this.boundMainLoopToggle = Colony.prototype.mainLoopToggle.bind(this);
         this.boundRecoverCards = Colony.prototype.recoverCards.bind(this);
         this.boundRecoverNames = Colony.prototype.recoverNames.bind(this);
+        this.boundToggleTable = Colony.prototype.toggleTable.bind(this);
 
         // C&K has stateful messages. We add flags and reset after each roll
         this.turnState = Colony.emptyTurnState;
@@ -447,7 +448,8 @@ Colony.prototype.findElements = function Colony_prototype_findLog()
     }
 
     Colony.deleteSomeElements();
-    this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
+    // this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
+    this.logElement.addEventListener("click", this.boundToggleTable, false);
     this.logger = new MessageLog(this.chatElement);
 
     // Reset background after extension restart. Has no effect the first time.
@@ -740,7 +742,7 @@ Colony.prototype.recoverNames = function()
     //console.debug("💉 Considering name recovery");
     if (this.startupFlag === true)
     {
-        console.warn(`${recoverNames.name}: Suppressed! startupFlag === true`);
+        console.warn(`💉 Suppressed! startupFlag === true`);
         return;
     }
     const playerCount = Number(prompt("💉 New players count?", 0));
@@ -778,7 +780,6 @@ Colony.prototype.isActiveMainLoop = function()
     return this.lastStarted === this.activeIndex;
 }
 
-// Returns true if existing main loop interval was cleared, otherwise false
 Colony.prototype.stopMainLoop = function()
 {
     console.info("🥥 Stopping main loop ", this.activeIndex);
@@ -849,6 +850,13 @@ Colony.prototype.cssColour = function(playerName)
     return `color: white; background: ${this.playerColours[playerName]}; padding: 3px; border-radius: 5px; font-weight: bold;`;
 }
 
+Colony.prototype.toggleTable = function()
+{
+    if (this.renderObject)
+    {
+        this.renderObject.toggle("resourceTable");
+    }
+}
 
 //==============================================================================
 // Parsers
@@ -1876,4 +1884,4 @@ Colony.allParsers =
 //      ◦ diplomat?
 //  • (I think medicine and crane are safe)
 
-// vim: shiftwidth=4:softtabstop=4:expandtab
+// vim: set shiftwidth=4 softtabstop=4 expandtab:

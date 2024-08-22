@@ -10,6 +10,11 @@
  * This file is a mess. We could really need replacing it entirely.
  */
 
+.hidden
+{
+    visibility: hidden;
+}
+
 .ex-dbg-msg
 {
     color: black;
@@ -44,10 +49,11 @@
     z-index: 9996;
     top: 0;
     left: 0;
-    /*! padding: 3px; */
     border: solid 3px #555;
     font-family: sans-serif;
     white-space: pre;
+    padding: 0;
+    border-spacing: 0;
 }
 
 #explorer-rob-tbl
@@ -62,6 +68,8 @@
     border: solid 3px #555;
     white-space: pre;
     font-family: monospace;
+    padding: 0;
+    border-spacing: 0;
 }
 
 .explorer-tbl-header {
@@ -166,6 +174,11 @@
     font-size: 110%;
     font-family: monospace;
     font-weight: bold;
+}
+
+.table-tick
+{
+    white-space: initial;
 }
 
 .table-number-chance

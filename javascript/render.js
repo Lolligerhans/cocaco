@@ -48,24 +48,24 @@ class Render
         // Next render() will redraw, else will just update()
         this.mustRedraw = false;
         // Render toggles
-        this.config =
+        this.configHidden =
         {
-            // The main table is always drawn because it contains onclick events
-            bubbles: false,
-            rolls: false,
-            robs: false,
+            bubbles: true,
+            rolls: true,
+            robs: true,
+            resourceTable: false,
         };
     }
 
     toggle(which)
     {
-        if (typeof(which) === "number") which = Object.keys(this.config)[which];
-        this.config[which] = !this.config[which];
+        if (typeof(which) === "number")
+            which = Object.keys(this.configHidden)[which];
+        this.configHidden[which] = !this.configHidden[which];
+        console.info(`🖥 Toggling ${which} ➜ ${this.configHidden[which]}`);
         this.mustRedraw = true;
-        console.info(`🖥 Toggling ${which} ➜ ${this.config[which]}`);
         this.render();
     }
-
 
     unrender()
     {
@@ -85,106 +85,40 @@ class Render
         }
     }
 
+    // Update exisintg elements. Create elements if missing. If the element is
+    // disabled by this.config, we do not touch, update or create it.
     update()
     {
-        //console.debug("🖥 Updating...");
+        //console.debug("🖥 Updating display...");
         this.manyWorlds.mwUpdateStats();
+        // TODO generate and return stats object?
 
-        //----------------------------------------------------------------------
         // Display resource plot
-        //----------------------------------------------------------------------
-
-        if (this.config.bubbles === true)
+        if (this.configHidden.bubbles === false)
         {
-            let plt = document.getElementById(this.ids.bubblePlot);
+            let plt = this.ensureResourcePlot();
             fillElementWithPlot(plt, this.manyWorlds, this.colour_map);
         }
 
-        //----------------------------------------------------------------------
         // Dispaly rolls histogram
-        //----------------------------------------------------------------------
-
-        if (this.config.rolls === true)
+        if (this.configHidden.rolls === false)
         {
-            let plt = document.getElementById(this.ids.rollsPlot);
+            let plt = this.ensureRollsPlot();
             this.track.fillRollPlot(plt);
         }
 
-        //======================================================================
         // Display table
-        //======================================================================
-
-        let tbl = document.getElementById(this.ids.resourceTable);
-
-        //----------------------------------------------------------------------
-        // Header row - one column per resource, plus player column
-        //----------------------------------------------------------------------
-
-        let header = tbl.tHead;
-        let headerRow = header.rows[0];
-        let playerHeaderCell = headerRow.cells[0];
-        playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
-        for (let i = 0; i < Multiverse.resources.length; i++)
-        { // TODO use spans to separate number from icon
-            let resourceType = Multiverse.getResourceName(i);
-            let resourceHeaderCell = headerRow.cells[i + 1];
-            const total = this.manyWorlds.mwTotals[resourceType];
-            const numberString = total > 0 ? `${total}` : "";
-            resourceHeaderCell.innerHTML = numberString + this.iconElements[resourceType];
-        }
-
-        //----------------------------------------------------------------------
-        // One resource table row per player
-        //----------------------------------------------------------------------
-
-        let tblBody = tbl.tBodies[0];
-        for (let i = 0; i < this.playerNames.length; i++)
+        if (this.configHidden.resourceTable === false)
         {
-            const player = this.playerNames[i];
-            let row = tblBody.rows[i];
-            let playerRowCell = row.cells[0];
-            playerRowCell.innerHTML = this.renderPlayerCell(player);
-            for (let j = 0; j < Multiverse.resources.length; j++)
-            {
-                const res = Multiverse.getResourceName(j);
-                let cell = row.cells[j + 1];
-                const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
-                const fraction = this.manyWorlds.worldGuessAndRange[player][res][1]; // Fraction
-                const percentString = fraction > 0.999 ? "" : ` <span class="table-percent table-number-chance">${Math.round(fraction * 100)}%</span>`;
-                const stealChance = this.manyWorlds.mwSteals[player][res];
-                const shadowColour = colourInterpolate(stealChance);
-                cell.innerHTML = this.manyWorlds.worldGuessAndRange[player][res][3] === 0
-                               ? "" // Display nothing if guaranteed 0 amount available
-                               : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
-                // Alternatively, background whole cell
-                //if (this.manyWorlds.worldGuessAndRange[player][res][3] !== 0)
-                //    cell.style.background = shadowColour;
-            }
-            // Copy the cell-adding for resource
-            let j = Multiverse.resources.length + 1;
-            let addBuildFunc = b =>
-            {
-                const chance = this.manyWorlds.mwBuildsProb[player][b];
-                let cell = row.cells[j];
-                cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
-                               : chance > 0.999 ? "<span class='table-number'>✔️ </span>"
-                               : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
-                if (0.001 < chance)
-                    cell.style.background = colourInterpolate(chance);
-                else
-                    cell.style.background = "";
-                ++j;
-            };
-            Object.keys(Multiverse.costs).forEach(addBuildFunc);
+            let tbl = this.ensureResourceTable();
+            this.fillResourceTable(tbl);
         }
 
-        //----------------------------------------------------------------------
         // Display rob table
-        //----------------------------------------------------------------------
-
-        if (this.config.robs === true)
+        if (this.configHidden.robs === false)
         {
-            this.updateRobTable();
+            let tbl = this.ensureRobTable();
+            this.fillRobTable(tbl);
         }
 
         //console.debug("🖥 Updated display");
@@ -198,65 +132,108 @@ class Render
             return;
         }
 
-        if (!this.mustRedraw && document.getElementById(this.ids.resourceTable))
+        if (this.mustRedraw === false)
         {
             //console.log("🖥 Delegating to update()");
             this.update();
             return;
         }
+        this.mustRedraw = false;
 
         //console.debug("🖥 Inserting display...");
 
-        // TODO generate and return stats object?
-        this.manyWorlds.mwUpdateStats();
-        this.unrender();
-
-        // Display
-        let body = document.getElementsByTagName("body")[0];
-
-        //----------------------------------------------------------------------
-        // Display resource plot
-        //----------------------------------------------------------------------
-
-        if (this.mustRedraw || this.config.bubbles === true)
+        // Resource plot
         {
-            let existingPlot = document.getElementById(this.ids.bubblePlot);
-            try { if (existingPlot) { existingPlot.remove(); } }
-            catch (e) { console.warn("had an issue deleting the bubble plot", e); }
-            let plt = document.createElement("plot");
-            plt.id = this.ids.bubblePlot;
-            // FIXME I dont remember what this 'plot-window' is meant to do. The entire css syling is a mess anyway.
-    //        plt.class = "plot-window";
-            body.appendChild(plt);
+            let plt = this.ensureResourcePlot();
+            setHidden(this.configHidden.bubbles, plt);
         }
 
-        //----------------------------------------------------------------------
-        // Dispaly rolls histogram
-        //----------------------------------------------------------------------
-
-        if (this.mustRedraw || this.config.rolls === true)
+        // Rolls histogram
         {
-            let existingPlot = document.getElementById(this.ids.rollsPlot);
-            try { if (existingPlot) { existingPlot.remove(); } }
-            catch (e) { console.warn("had an issue deleting the rolls plot", e); }
-            // TODO I think we should not give an ID here because we set it below (?)
-            let plt = document.createElement("roll-plot");
-            plt.id = this.ids.rollsPlot;
-            body.appendChild(plt);
+            let plt = this.ensureRollsPlot();
+            setHidden(this.configHidden.rolls, plt);
         }
 
-        //======================================================================
-        // Display table
-        //======================================================================
+        // Resource table
+        {
+            let tbl = this.ensureResourceTable();
+            setHidden(this.configHidden.resourceTable, tbl);
+        }
 
-        let existingTbl = document.getElementById(this.ids.resourceTable);
-        try { if (existingTbl) { existingTbl.remove(); } }
-        catch (e) { console.warn("had an issue deleting the table", e); }
+        // Rob table
+        {
+            let tbl = this.ensureRobTable();
+            setHidden(this.configHidden.robs, tbl);
+        }
+
+        this.update();
+    }
+
+    fillRobTable(robTable)
+    {
+        robTable = document.getElementById(this.ids.robTable);
+
+        // Player name and total steal count header cells
+        // let header = robTable.tHead;
+        // let headerRow = header.rows[0];
+        // let playerHeaderCell = headerRow.cells[0];
+        let i = this.playerNames.length;
+
+        // Rows for player i robbing player j. And one last cell for rob total
+        let tblBody = robTable.tBodies[0];
+        for (i = 0; i < this.playerNames.length; i++)
+        {
+            const thief = this.playerNames[i];
+            let row = tblBody.rows[i];
+            let playerRowCell = row.cells[0];
+            playerRowCell.innerHTML = this.renderPlayerCell(thief, true); // true -> add rob counts
+            for (let j = 0; j < this.playerNames.length; ++j)
+            {
+                //if (j === i) continue;
+                const victim = this.playerNames[j];
+                let robCount = this.track.robs[thief][victim];
+                if (robCount === undefined) { alertIf(43); robCount = 0; }
+                const robAdvantage = robCount - this.track.robs[victim][thief];
+                const irrelevant = robCount === 0 && robAdvantage === 0;
+                const robColour = robAdvantage > 0 ? "#00a000"
+                                : robAdvantage < 0 ? "#a00000"
+                                :                    "#000000";
+                const style = `style="color:${robColour}"`;
+                let cell = row.cells[j + 1];
+                cell.innerHTML = irrelevant ? "" : `<span ${style}>${robCount}</span>`;
+            }
+            let j = this.playerNames.length;
+            let cell = row.cells[j + 1];
+            let taken = this.track.robsTaken[thief];
+            if (taken === undefined) { alertIf(44); taken = 0; }
+            const sevenStr = this.track.robsSeven[thief] ? this.track.robsSeven[thief].toString() : " ";
+            const knightsCount = taken - this.track.robsSeven[thief];
+            const knightStr = knightsCount ? `+${knightsCount.toString()}` : "  ";
+            cell.innerHTML = taken === 0 ? "" : `<span style="color:${this.colour_map[thief]}">${sevenStr}${knightStr}</span>`;
+        }
+
+        // Final row for lost totals and steal totals
+        i = this.playerNames.length;
+        let row = tblBody.rows[i];
+        for (let j = 0; j < this.playerNames.length; ++j)
+        {
+            const victim = this.playerNames[j];
+            let lostCount = this.track.robsLost[victim];
+            if (lostCount === undefined) { alertIf(45); lostCount = 0; }
+            let cell = row.cells[j + 1];
+            cell.innerHTML = lostCount === 0 ? "" : `<span style="color:${this.colour_map[victim]}">${lostCount}</span>`;
+        }
+        let j = this.playerNames.length;
+        let cell = row.cells[j + 1];
+        cell.innerHTML = this.track.robsTotal === 0 ? "" : `${this.track.robsTotal}`;
+    }
+
+    // Generate new resource table element. Use with ensure
+    generateResourceTable()
+    {
         let tbl = document.createElement("table");
-        tbl.id = this.ids.resourceTable;
-
-        tbl.setAttribute("cellspacing", 0); // ?
-        tbl.setAttribute("cellpadding", 0);
+        // tbl.setAttribute("cellspacing", 0); // ?
+        // tbl.setAttribute("cellpadding", 0);
 
         //----------------------------------------------------------------------
         // Header row - one column per resource, plus player column
@@ -359,7 +336,6 @@ class Render
             let j = Multiverse.resources.length + 1;
             let addBuildFunc = b =>
             {
-                const chance = this.manyWorlds.mwBuildsProb[player][b];
                 let cell = row.insertCell(j);
                 cell.addEventListener("click", guessHasNoBuilding.bind(null, player, b), false);
                 cell.className = "explorer-tbl-cell";
@@ -367,115 +343,122 @@ class Render
             };
             Object.keys(Multiverse.costs).forEach(addBuildFunc);
         }
-
-        //----------------------------------------------------------------------
-        // Display rob table
-        //----------------------------------------------------------------------
-
-        let previousRobTbl = document.getElementById(this.ids.robTable);
-        try
-        {
-            if (previousRobTbl && !this.config.robs)
-                previousRobTbl.remove();
-        }
-        catch(e)
-        {
-            console.warn("Exception in unrender():", e);
-            alertIf(46);
-        }
-
-        if (this.mustRedraw || this.config.robs === true)
-        {
-            const robTable = this.generateRobTable();
-            if (robTable) body.appendChild(robTable);
-        }
-
-        body.appendChild(tbl);
-
-        tbl.setAttribute("border", "2"); // (?)
-
-        //console.debug("🖥 Inserted display");
-
-        this.mustRedraw = false;
-        //console.log("🖥 Continuing with update()");
-        this.update(renderIf);
+        return tbl;
     }
 
-    updateRobTable()
+    /// Return resource table element. A newly created only if necessary. Does
+    /// not fill element.
+    ensureResourceTable()
     {
-        let robTable = document.getElementById(this.ids.robTable);
+        let tbl = document.getElementById(this.ids.resourceTable);
+        if (tbl === null)
+        {
+            tbl = this.generateResourceTable();
+            tbl.id = this.ids.resourceTable;
+            document.body.appendChild(tbl);
+        }
+        return tbl;
+    }
 
-        // Player name and total steal count header cells
-        let header = robTable.tHead;
+    ensureRollsPlot()
+    {
+        let e = document.getElementById(this.ids.rollsPlot);
+        if (e === null)
+        {
+            e = document.createElement("div");
+            e.id = this.ids.rollsPlot;
+            document.body.appendChild(e);
+        }
+        return e;
+    }
+
+    ensureResourcePlot()
+    {
+        let e = document.getElementById(this.ids.bubblePlot);
+        if (e === null)
+        {
+            e = document.createElement("div");
+            e.id = this.ids.bubblePlot;
+            //plt.class = "plot-window"; // ❔
+            document.body.appendChild(e);
+        }
+        return e;
+    }
+
+    ensureRobTable()
+    {
+        let tbl = document.getElementById(this.ids.robTable);
+        if (tbl === null)
+        {
+            tbl = this.generateRobTable();
+            tbl.id = this.ids.robTable;
+            document.body.appendChild(tbl);
+        }
+        return tbl;
+    }
+
+    fillResourceTable(tbl)
+    {
+        // Header row - one column per resource, plus player column
+        let header = tbl.tHead;
         let headerRow = header.rows[0];
         let playerHeaderCell = headerRow.cells[0];
-        let i = this.playerNames.length;
-        let totalHeaderCell = headerRow.cells[i + 1];
+        playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
+        for (let i = 0; i < Multiverse.resources.length; i++)
+        { // TODO use spans to separate number from icon
+            let resourceType = Multiverse.getResourceName(i);
+            let resourceHeaderCell = headerRow.cells[i + 1];
+            const total = this.manyWorlds.mwTotals[resourceType];
+            const numberString = total > 0 ? `${total}` : "";
+            resourceHeaderCell.innerHTML = numberString + this.iconElements[resourceType];
+        }
 
-        // Rows for player i robbing player j. And one last cell for rob total
-        let tblBody = robTable.tBodies[0];
-        for (i = 0; i < this.playerNames.length; i++)
+        // One resource table row per player
+        let tblBody = tbl.tBodies[0];
+        for (let i = 0; i < this.playerNames.length; i++)
         {
-            const thief = this.playerNames[i];
+            const player = this.playerNames[i];
             let row = tblBody.rows[i];
             let playerRowCell = row.cells[0];
-            playerRowCell.innerHTML = this.renderPlayerCell(thief, true); // true -> add rob counts
-            for (let j = 0; j < this.playerNames.length; ++j)
+            playerRowCell.innerHTML = this.renderPlayerCell(player);
+            for (let j = 0; j < Multiverse.resources.length; j++)
             {
-    //            if (j === i) continue;
-                const victim = this.playerNames[j];
-                let robCount = this.track.robs[thief][victim];
-                if (robCount === undefined) { alertIf(43); robCount = 0; }
-                const robAdvantage = robCount - this.track.robs[victim][thief];
-                const irrelevant = robCount === 0 && robAdvantage === 0;
-                const robColour = robAdvantage > 0 ? "#00a000"
-                                : robAdvantage < 0 ? "#a00000"
-                                :                    "#000000";
-                const style = `style="color:${robColour}"`;
+                const res = Multiverse.getResourceName(j);
                 let cell = row.cells[j + 1];
-                cell.innerHTML = irrelevant ? "" : `<span ${style}>${robCount}</span>`;
+                const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
+                const fraction = this.manyWorlds.worldGuessAndRange[player][res][1]; // Fraction
+                const percentString = fraction > 0.999 ? "" : ` <span class="table-percent table-number-chance">${Math.round(fraction * 100)}%</span>`;
+                const stealChance = this.manyWorlds.mwSteals[player][res];
+                const shadowColour = colourInterpolate(stealChance);
+                cell.innerHTML = this.manyWorlds.worldGuessAndRange[player][res][3] === 0
+                               ? "" // Display nothing if guaranteed 0 amount available
+                               : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
+                // Alternatively, background whole cell
+                //if (this.manyWorlds.worldGuessAndRange[player][res][3] !== 0)
+                //    cell.style.background = shadowColour;
             }
-            let j = this.playerNames.length;
-            let cell = row.cells[j + 1];
-            let taken = this.track.robsTaken[thief];
-            if (taken === undefined) { alertIf(44); taken = 0; }
-            const sevenStr = this.track.robsSeven[thief] ? this.track.robsSeven[thief].toString() : " ";
-            const knightsCount = taken - this.track.robsSeven[thief];
-            const knightStr = knightsCount ? `+${knightsCount.toString()}` : "  ";
-            cell.innerHTML = taken === 0 ? "" : `<span style="color:${this.colour_map[thief]}">${sevenStr}${knightStr}</span>`;
+            // Copy the cell-adding for resource
+            let j = Multiverse.resources.length + 1;
+            let addBuildFunc = b =>
+            {
+                const chance = this.manyWorlds.mwBuildsProb[player][b];
+                let cell = row.cells[j];
+                cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
+                               : chance > 0.999 ? "<span class='table-number table-tick'>✔️ </span>"
+                               : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
+                if (0.001 < chance)
+                    cell.style.background = colourInterpolate(chance);
+                else
+                    cell.style.background = "";
+                ++j;
+            };
+            Object.keys(Multiverse.costs).forEach(addBuildFunc);
         }
-
-        // Final row for lost totals and steal totals
-        i = this.playerNames.length;
-        let row = tblBody.rows[i];
-        let totalRowCell = row.cells[0];
-        for (let j = 0; j < this.playerNames.length; ++j)
-        {
-            const victim = this.playerNames[j];
-            let lostCount = this.track.robsLost[victim];
-            if (lostCount === undefined) { alertIf(45); lostCount = 0; }
-            let cell = row.cells[j + 1];
-            cell.innerHTML = lostCount === 0 ? "" : `<span style="color:${this.colour_map[victim]}">${lostCount}</span>`;
-        }
-        let j = this.playerNames.length;
-        let cell = row.cells[j + 1];
-        cell.innerHTML = this.track.robsTotal === 0 ? "" : `${this.track.robsTotal}`;
     }
 
     generateRobTable()
     {
-
-        let existingTbl = document.getElementById(this.ids.robTable);
-        try { if (existingTbl) { existingTbl.remove(); } }
-        catch (e) { console.warn("had an issue deleting the rob table", e); }
-        if (this.config.robs === false) return null;
-
         let robTable = document.createElement("table");
-        robTable.id = this.ids.robTable;
-
-        // TODO effect?
-        robTable.setAttribute("cellspacing", 0);
-        robTable.setAttribute("cellpadding", 0);
 
         // Player name and total steal count header cells
         let header = robTable.createTHead();

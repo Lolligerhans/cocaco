@@ -197,25 +197,33 @@ function resize(element, w = 1000, h = 800)
     element.style.height = `${h}px`;
 }
 const enlarge = (e) => resize(e);
+const setHidden = (flag, ...rest) =>
+{
+    if (flag === true)
+        hide(...rest);
+    else
+        unhide(...rest);
+};
+const hide = (...rest) => rest.forEach(e => {
+    if (e) e.classList.add("hidden");
+});
+const unhide = (...rest) => rest.forEach(e => {
+    if (e) e.classList.remove("hidden")
+});
 
 // For debugging
 function p(object)
 {
     return JSON.stringify(object);
 }
-
-// Log objects
 function log(...args)
 {
     console.log(...args);
 }
-
-// Log stringified
 function logs(...args)
 {
     log(...args.map( x => JSON.stringify(x) ));
 }
-
 function log2(...args)
 {
     log(...args);
@@ -232,7 +240,7 @@ const resourceTypes = [wood, brick, sheep, wheat, ore];
 function rotateToLastPosition(array, value)
 {
     const pos = array.indexOf(value);
-    console.assert(pos >= 0, "Are you spectator?");
+    console.assert(pos >= 0, "Expected error when spectating");
     const rotation = array.length - pos - 1;
     const unrotatedCopy = deepCopy(array);
     for (let i = 0; i < array.length; ++i)
