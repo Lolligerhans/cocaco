@@ -13,6 +13,10 @@
 | 👁 | Spectate games |
 | 👤 💡 | Include your own live deductions |
 
+| Display dense dice data | Rightfully revenge ridiculous robs |
+|:-------------------------:|:-------------------------:|
+| ![rolls plot](assets/rolls.png?raw=true) |  ![robs table](assets/robs.png?raw=true) |
+
 ## Getting started
 
 1. [Linux download](#linux-download) or [Manual download](#manual-download)
@@ -80,6 +84,7 @@ opportunities.
 expectation. Proxy for influence of luck on rolls. `1 / rarity(n) * (n - E[N])`.
 The bar is colour coded to be yellow if red == 50%. Red when more rare, green
 when less rare.
+- purple line: KL-Divergence to expectation
 
 ### Interaction
 

@@ -1368,6 +1368,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         xref: "x",
         yref: "y3",
 
+        // Text position
         ax: minAdjustedChance.xoffset,
         ay: minAdjustedChance.yoffset,
         axref: "x",
@@ -1377,6 +1378,9 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         bgcolor: "red",
         opacity: 0.8,
         showarrow: true,
+        arrowhead: 6,
+        arrowsize: 1,
+        arrowwidth: 1,
         arrowcolor: "darkred",
         font:
         {
