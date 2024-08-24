@@ -1,3 +1,5 @@
+"use strict";
+
 // The user should only call ctor, render() and unrender()
 class Render
 {
@@ -62,7 +64,7 @@ class Render
         if (typeof(which) === "number")
             which = Object.keys(this.configHidden)[which];
         this.configHidden[which] = !this.configHidden[which];
-        console.info(`🖥 Toggling ${which} ➜ ${this.configHidden[which]}`);
+        console.log(`🖥Toggle ${which} ➜ ${this.configHidden[which] ? "hide" : "show"}`);
         this.mustRedraw = true;
         this.render();
     }
@@ -71,10 +73,11 @@ class Render
     {
         try
         {
-            let t = document.getElementById(this.ids.resourceTable); if (t) { t.remove(); }
-            let p = document.getElementById(this.ids.bubblePlot);    if (p) { p.remove(); }
-            let d = document.getElementById(this.ids.rollsPlot);     if (d) { d.remove(); }
-            let r = document.getElementById(this.ids.robTable);      if (r) { r.remove(); }
+            Object.values(this.ids).forEach(id =>
+            {
+                const e = document.getElementById(id);
+                if (e) e.remove();
+            });
         }
         catch(e)
         {

@@ -10,6 +10,7 @@ class Track
         // Save count of rolling the number N at 'rolls[N]', N \in [2,12].
         // 'rolls[0]' is the roll total.
         // 'rolls[1]' is the max of any roll (use when encoding with colour)
+        // 'rolls[2-12]' is the count of rolling so many eyes
         this.rolls = [];
         this.rollsHistogram = [];
 
@@ -30,8 +31,8 @@ class Track
     // TODO Can we init in ctor?
     initRolls()
     {
-        this.rolls = []; // Raw numbers in order
-        this.rollsHistogram = new Array(12 + 1).fill(0);  // Histogram (1-based)
+        this.rolls = [];
+        this.rollsHistogram = new Array(12 + 1).fill(0);
     }
 
     addRoll(number)

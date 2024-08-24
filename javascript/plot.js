@@ -122,9 +122,18 @@ function generatePerCountBubbles(allPlayers, distribution, player, resource, tot
         }
     }
     const slot = resourceTypes.indexOf(resource) + 1 + offset;
-    const x = size.map(y => slot);
+    const x = size.map(_y => slot);
 
     return [x, y, size, opacity];
+}
+
+function klDivergence(p, q)
+// Compute KL-Divergence between expected and actual rolls
+{
+  const kl = p
+    .map((x, i) => x === 0 ? 0 : (x * Math.log(x / q[i])))
+    .reduce((a, b) => a + b, 0);
+  return kl;
 }
 
 //============================================================
@@ -397,8 +406,8 @@ function histogramTest()
 //  const cok = [0, 85, 0]; // Forest green
 //  const cok = [85, 51, 136]; // Half purple
   const cok = [0, 0, 0]; // Black
-  const colo = x.map((v, i) => { const f = i / x.length;
-                                 return `rgb(${Math.floor(cok[0] * (1-f) + col[0] * f)},${Math.floor(cok[1] * (1-f) + col[1] * f)},${Math.floor(cok[2] * (1-f) + col[2] * f)})`; });
+  const colo = x.map((_v, i) => { const f = i / x.length;
+                                  return `rgb(${Math.floor(cok[0] * (1-f) + col[0] * f)},${Math.floor(cok[1] * (1-f) + col[1] * f)},${Math.floor(cok[2] * (1-f) + col[2] * f)})`; });
   log("x:", x, "y:", y, "colo:", colo);
   let trace =
   {
@@ -483,7 +492,7 @@ function histogramTest()
     const sum = distrib.reduce((acc, val) => acc + val) - distrib[0];
     return Math.min(Math.max(sum, 0), 1);
   };
-  let histPercent = testHist.slice(2).map((v, i, arr) => { return v / testLineY[i+1] - 1 });
+  let histPercent = testHist.slice(2).map((v, i, _arr) => { return v / testLineY[i+1] - 1 });
   let maxPercent = Math.max.apply(null, histPercent);
   log("===========================================");
   let minChance = { number: 0, chance: 2.0 }; // Invalid initialization
@@ -512,7 +521,7 @@ function histogramTest()
 
   const adjustedChance = chanceLevel.map(p => probAdjust(p));
   // TODO have local slicedHist = testHist.slice()
-  const realLuck = testHist.slice(2).map((v,i,arr) =>
+  const realLuck = testHist.slice(2).map((v,i,_arr) =>
   {
     // Return probability of an event this rare or rarer
     const res = chanceLevel[i];
@@ -538,7 +547,7 @@ function histogramTest()
     log(`count=${v}, number=${i+2}, luckNumber =`, luckNumber);
     return luckNumber;
   });
-  const adjustedRealLuck = testHist.slice(2).map((v,i,arr) =>
+  const adjustedRealLuck = testHist.slice(2).map((v,i,_arr) =>
   {
     // Return probability of an event this rare or rarer
     const res = adjustedChance[i];
@@ -566,7 +575,6 @@ function histogramTest()
   minAdjustedChance.xoffset = minChance.xoffset;
   minAdjustedChance.yoffset = 0.15;
 
-  const add = (x,y)=>x+y;
   const luckSum = realLuck.reduce((a,b)=>a+b);
   logs(`realLuck: ${realLuck}`);
   logs(`adjustedRealLuck: ${adjustedRealLuck}`);
@@ -962,7 +970,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     // Linearly interpolate towards base colour starting at black during
     // progression in data (moves in the game).
     const f = i / trackerObject.rolls.length;
-    return `rgb(${Math.ceil(c[0]*f)},${Math.ceil(c[1]*f)},${Math.ceil(c[2]*f)})`;
+    return `rgb(${Math.ceil(c[0] * f)},${Math.ceil(c[1] * f)},${Math.ceil(c[2] * f)})`;
   });
 
   const N = trackerObject.rolls.length;
@@ -1055,17 +1063,35 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     // For 75% probability, multiply by 1/3
     const res = (1 / rarity[i] - 1) * (v - ey[i+1]);
 
-//    log(`[DEBUG] count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
+    // log(`[DEBUG] count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
     return res;
   });
-  const adjustedRealLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
-  {
-    return (1 / adjustedRarity[i] - 1) * (v - ey[i+1]);
-  });
+  // const adjustedRealLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
+  // {
+  //   return (1 / adjustedRarity[i] - 1) * (v - ey[i+1]);
+  // });
   minChance.xoffset = minChance.number <= 7 ? 11 : 3;
   minChance.yoffset = 0.05;
   minAdjustedChance.xoffset = minChance.xoffset;
   minAdjustedChance.yoffset = 0.15;
+
+  // KL-Divergence
+  let kl =
+  {
+    values: [ 0, 0 ],
+    xoffset: 14 - minChance.xoffset, // On the other side
+    yoffsets: [ 0.05, 0.15],
+  };
+  if (N !== 0)
+  {
+    const expectedDistribution = probability.slice(1, 12);
+    const rollsDistribution = trackerObject.rollsHistogram.slice(2, 13)
+        .map(x => x / N);
+    kl.values[0] = klDivergence(expectedDistribution, rollsDistribution);
+    kl.values[1] = klDivergence(rollsDistribution, expectedDistribution);
+  }
+
+  console.info("KL-Divergence", kl);
 
   // -----------------------------------------------
 
@@ -1275,7 +1301,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     },
     annotations:
     [
-      {
+      { // Blue text box (minimal chance)
         // Pointed at position
         x: minChance.number,
         y: minChance.chance,
@@ -1303,7 +1329,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
           fontweight: "bold",
         },
       },
-      {
+      { // Red text box (minimal adjusted change)
         x: minAdjustedChance.number,
         y: minAdjustedChance.chance,
         xref: "x",
@@ -1318,9 +1344,6 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         bgcolor: "red",
         opacity: 0.8,
         showarrow: true,
-        arrowhead: 6,
-        arrowsize: 1,
-        arrowwidth: 1,
         arrowcolor: "darkred",
         font:
         {
@@ -1329,8 +1352,51 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
           fontweight: "bold",
         },
       },
-    ],
+      { // Green text box (KL divergence from should to is)
+        // Dummy values
+        x: 7, y: 0.5, xref: "x", yref: "y3",
+
+        ax: kl.xoffset,
+        ay: kl.yoffsets[0],
+        axref: "x",
+        ayref: "y3",
+
+        text: kl.values[0] === Infinity ? "-" : `<b>${(kl.values[0] * 100).toFixed(1)}%</b>`,
+        bgcolor: "green",
+        opacity: 0.8,
+        showarrow: true, // To allow fixed position
+        arrowcolor: "rgba(0,0,0,0)",
+        font:
+        {
+          size: 12,
+          color: "white",
+          fontweight: "bold",
+        },
+      },
+      { // Green text box (KL divergence from is to should)
+        // Dummy values
+        x: 7, y: 0.5, xref: "x", yref: "y3",
+
+        ax: kl.xoffset,
+        ay: kl.yoffsets[1],
+        axref: "x",
+        ayref: "y3",
+
+        text: kl.values[1] === Infinity ? "-" : `<b>${(kl.values[1] * 100).toFixed(1)}%</b>`,
+        bgcolor: "green",
+        opacity: 0.8,
+        showarrow: true, // To allow fixed position
+        arrowcolor: "rgba(0,0,0,0)",
+        font:
+        {
+          size: 12,
+          color: "white",
+          fontweight: "bold",
+        },
+      }
+    ], // annotations
   };
+  console.info("KL", kl);
 
   const config = { displayModeBar: false };
   const data =
