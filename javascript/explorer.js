@@ -154,6 +154,17 @@ function choose(n, k)
     return fac(n) / (fac(k) * fac(n-k));
 }
 
+function klDivergence(p, q)
+// Compute KL-Divergence between expected and actual rolls
+{
+  const kl = p
+    .map((x, i) => x === 0 ? 0 : (x * Math.log(x / q[i])))
+    .reduce((a, b) => a + b, 0);
+  return kl;
+}
+
+const trueProbability = [1,2,3,4,5,6,5,4,3,2,1].map(x => x / 36);
+
 // Replacement for setInterval, but time interval starts after completion of the
 // 'repeat' function (not independently in time). To continue program flow,
 // a callback 'then' is supplied that is invoked once, after 'repeat' returns

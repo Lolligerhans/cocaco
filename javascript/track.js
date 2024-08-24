@@ -7,19 +7,18 @@ class Track
 {
     constructor()
     {
-        // Save count of rolling the number N at 'rolls[N]', N \in [2,12].
-        // 'rolls[0]' is the roll total.
-        // 'rolls[1]' is the max of any roll (use when encoding with colour)
-        // 'rolls[2-12]' is the count of rolling so many eyes
         this.rolls = [];
+        // 'rollsHistogram[0]' is the roll total.
+        // 'rollsHistogram[1]' is the max of any roll (use when encoding with colour)
+        // 'rollsHistogram[2-12]' is the count of rolling so many eyes
         this.rollsHistogram = [];
+        this.rollsKLD = { forward: [], backward: [], };
 
         this.robs = {};          // robs = { "player1": {"player2":1, "player2":0, ... }, "player2" : {}, ... }
         this.robsTaken = {};     // robsTaken = {"player1":4, "player2":0, ...}
         this.robsLost = {};      // Like robsTaken
         this.robsTotal = -100;   // Scalar
         this.robsSeven = {};     // Like robsTaken
-
     }
 
     init(playerNames)
@@ -28,16 +27,9 @@ class Track
         this.initRobs(playerNames);
     }
 
-    // TODO Can we init in ctor?
-    initRolls()
-    {
-        this.rolls = [];
-        this.rollsHistogram = new Array(12 + 1).fill(0);
-    }
-
     addRoll(number)
     {
-        if (number < 2 || 12 < number)
+        if (number < 2 || 12 < number) // Sanity check
         {
             alertIf("addRoll(): invalid number " + number);
             return;
@@ -51,8 +43,10 @@ class Track
         this.rollsHistogram[0] += 1;
         this.rollsHistogram[1] = Math.max(this.rollsHistogram[1], this.rollsHistogram[number]);
 
+        this.updateKL();
+
         // Debugging
-    //    log(rolls, rollsHistogram);
+    //    log(rolls, rollsHistogram, rollsKLD);
     }
 
     // TODO Should this function really be? And be here?
@@ -70,25 +64,6 @@ class Track
         log("robsLost:", this.robsLost);
         log("robsTotal:", this.robsTotal);
         log("robsSeven:", this.robsSeven);
-    }
-
-    initRobs(playerNames = players)
-    {
-        console.assert(playerNames.length >= 2, "initRobs expects at least 2 players");
-        this.robs = {};
-        this.robsTaken = {};
-        this.robsLost = {};
-        this.robsTotal = 0;
-        this.robsSeven = {};
-        for (const player of playerNames)
-        {
-            this.robs[player] = {};
-            for (const p of playerNames) { this.robs[player][p] = 0; }
-            this.robsTaken[player] = 0;
-            this.robsLost[player] = 0;
-            this.robsSeven[player] = 0;
-        }
-        this.printRobs();
     }
 
     // The just the robbing action. No matter if from 7 or knight
@@ -113,6 +88,49 @@ class Track
         }
         this.robsSeven[player] += 1;
     }
+}
+
+// ╭───────────────────────────────────────────────────────────────────────────╮
+// │ Private                                                                   │
+// ╰───────────────────────────────────────────────────────────────────────────╯
+
+Track.prototype.initRolls = function()
+// Init the rolls members
+{
+    this.rolls = [];
+    this.rollsHistogram = new Array(12 + 1).fill(0);
+    this.rollsKLD = { forward: [], backward: [], };
+}
+
+Track.prototype.initRobs = function(playerNames)
+// Init the robbing members
+{
+    console.assert(playerNames.length >= 2, "initRobs expects at least 2 players");
+    this.robs = {};
+    this.robsTaken = {};
+    this.robsLost = {};
+    this.robsTotal = 0;
+    this.robsSeven = {};
+    for (const player of playerNames)
+    {
+        this.robs[player] = {};
+        for (const p of playerNames) { this.robs[player][p] = 0; }
+        this.robsTaken[player] = 0;
+        this.robsLost[player] = 0;
+        this.robsSeven[player] = 0;
+    }
+    this.printRobs();
+}
+
+Track.prototype.updateKL = function()
+// Write the KL values corresponding to the newest roll
+{
+    const n = this.rolls.length;
+    console.assert(n >= 1);
+    const rolls = this.rollsHistogram.slice(2, 13)
+                                     .map  (x => x / n);
+    this.rollsKLD.forward [n - 1] = klDivergence(trueProbability, rolls);
+    this.rollsKLD.backward[n - 1] = klDivergence(rolls, trueProbability);
 }
 
 // vim: shiftwidth=4:softtabstop=4:expandtab

@@ -127,15 +127,6 @@ function generatePerCountBubbles(allPlayers, distribution, player, resource, tot
     return [x, y, size, opacity];
 }
 
-function klDivergence(p, q)
-// Compute KL-Divergence between expected and actual rolls
-{
-  const kl = p
-    .map((x, i) => x === 0 ? 0 : (x * Math.log(x / q[i])))
-    .reduce((a, b) => a + b, 0);
-  return kl;
-}
-
 //============================================================
 // Scratchpad to test how plotting works
 //============================================================
@@ -1075,7 +1066,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
   minAdjustedChance.xoffset = minChance.xoffset;
   minAdjustedChance.yoffset = 0.15;
 
-  // KL-Divergence
+  // KL-Divergence boxes
   let kl =
   {
     values: [ 0, 0 ],
@@ -1084,14 +1075,17 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
   };
   if (N !== 0)
   {
-    const expectedDistribution = probability.slice(1, 12);
-    const rollsDistribution = trackerObject.rollsHistogram.slice(2, 13)
-        .map(x => x / N);
-    kl.values[0] = klDivergence(expectedDistribution, rollsDistribution);
-    kl.values[1] = klDivergence(rollsDistribution, expectedDistribution);
+    kl.values[0] = trackerObject.rollsKLD.forward[N-1];
+    kl.values[1] = trackerObject.rollsKLD.backward[N-1];
   }
 
-  console.info("KL-Divergence", kl);
+  // KL-Divergence line plot
+  const rollsKLD = {
+    xf: trackerObject.rollsKLD.forward .map((_v,i) => i),
+    yf: trackerObject.rollsKLD.forward,
+    xb: trackerObject.rollsKLD.backward.map((_v,i) => i),
+    yb: trackerObject.rollsKLD.backward,
+  };
 
   // -----------------------------------------------
 
@@ -1260,6 +1254,25 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
       symbol: "triangle-up",
     },
   };
+  let rollsKLDTraceForward = {
+    x: rollsKLD.xf,
+    y: rollsKLD.yf,
+    xaxis: "x2",
+    yaxis: "y4",
+    mode: "lines",
+    name: "KL-Divergence (forward)",
+    marker: { color: "purple" },
+  };
+  let rollsKLDTraceBackward = {
+    x: rollsKLD.xb,
+    y: rollsKLD.yb,
+    xaxis: "x2",
+    yaxis: "y4",
+    mode: "lines",
+    name: "KL-Divergence (forward)",
+    marker: { color: "purple" },
+    line: { dash: "dot" },
+  };
 
   const layout =
   {
@@ -1272,6 +1285,15 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     {
       tickvals: [2,3,4,5,6,7,8,9,10,11,12],
       autorage: false,
+    },
+    xaxis2:
+    // One tick per roll (not per number)
+    {
+        overlaying: "x",
+        side: "top",
+        showgrid: false,
+        showticklables: false,
+        zeroline: false,
     },
     yaxis:  // Rolls bar chart + expectation
     {
@@ -1298,6 +1320,17 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
       autorange: false,
       range: [1, 0],
       //autorange: "reversed",
+    },
+    yaxis4:
+    // Rolls KL-D axis
+    {
+      zeroline: false,
+      overlaying: "y",
+      side: "left",
+      showgrid: false,
+      showticklabels: false,
+      autorange: true,
+      type: "log",
     },
     annotations:
     [
@@ -1352,7 +1385,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
           fontweight: "bold",
         },
       },
-      { // Green text box (KL divergence from should to is)
+      { // Purple text box (KL divergence from should to is)
         // Dummy values
         x: 7, y: 0.5, xref: "x", yref: "y3",
 
@@ -1362,7 +1395,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         ayref: "y3",
 
         text: kl.values[0] === Infinity ? "-" : `<b>${(kl.values[0] * 100).toFixed(1)}%</b>`,
-        bgcolor: "green",
+        bgcolor: "purple",
         opacity: 0.8,
         showarrow: true, // To allow fixed position
         arrowcolor: "rgba(0,0,0,0)",
@@ -1373,7 +1406,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
           fontweight: "bold",
         },
       },
-      { // Green text box (KL divergence from is to should)
+      { // Purple text box (KL divergence from is to should)
         // Dummy values
         x: 7, y: 0.5, xref: "x", yref: "y3",
 
@@ -1383,7 +1416,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         ayref: "y3",
 
         text: kl.values[1] === Infinity ? "-" : `<b>${(kl.values[1] * 100).toFixed(1)}%</b>`,
-        bgcolor: "green",
+        bgcolor: "purple",
         opacity: 0.8,
         showarrow: true, // To allow fixed position
         arrowcolor: "rgba(0,0,0,0)",
@@ -1395,8 +1428,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         },
       }
     ], // annotations
-  };
-  console.info("KL", kl);
+  }; // layout
 
   const config = { displayModeBar: false };
   const data =
@@ -1404,7 +1436,8 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     rollTrace, expTrace,
     /*zeroTrace,*/ realLuckTrace,
     lessTrace, moreTrace, lessTraceStrict, moreTraceStrict,
-    adjustedRarityTrace, rarityTrace
+    adjustedRarityTrace, rarityTrace,
+    rollsKLDTraceForward, rollsKLDTraceBackward
   ];
   Plotly.newPlot(idToPlotInto, data, layout, config);
   //console.debug("📊 Finished plotting rolls histogram into", `ID=${idToPlotInto}`);
