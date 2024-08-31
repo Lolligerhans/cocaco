@@ -285,7 +285,7 @@ class Colony
         this.boundMainLoopToggle = Colony.prototype.mainLoopToggle.bind(this);
         this.boundRecoverCards = Colony.prototype.recoverCards.bind(this);
         this.boundRecoverNames = Colony.prototype.recoverNames.bind(this);
-        this.boundToggleTable = Colony.prototype.toggleTable.bind(this);
+        this.boundToggleTable = Colony.prototype.toggleTable.bind(this, null);
 
         // C&K has stateful messages. We add flags and reset after each roll
         this.turnState = Colony.emptyTurnState;
@@ -479,7 +479,7 @@ Colony.prototype.clearLog = function()
 // by faithfully utilizign the rendering code.
 //
 // All components are later initialized for real in initializeTracker().
-Colony.prototype.renderDummy = function Colony_prototype_waitForInitialPlacement()
+Colony.prototype.renderDummy = function Colony_prototype_renderDummy()
 {
     const dummyPlayers = ["Detecting", "Player", "Names"];
     const dummyColours = {"Detecting":"black", "Player":"red", "Names":"gold"};
@@ -495,8 +495,9 @@ Colony.prototype.renderDummy = function Colony_prototype_waitForInitialPlacement
         null,
         config.ownIcons ? alternativeAssets : Colony.colonistAssets
     );
-    this.renderObject.unrender(); // Remove leftovers during testing
-    this.renderObject.render();
+    this.renderObject.unrender(); // Removes DOM leftovers after restart
+    // this.toggleTable(true); // Use hidden === true
+    this.renderObject.render(); // Always trigger initial update/render
     return true;
 }
 
@@ -506,13 +507,18 @@ Colony.prototype.renderDummy = function Colony_prototype_waitForInitialPlacement
 // usual.
 //
 // To allow log message background colourisation, we exploit the very static
-// precedure during regular (non-recovery) startup: Each palyer produces five
+// procedure during regular (non-recovery) startup: Each player produces five
 // messages in total: four build messages (settles + roads) and one initial got
 // message. We want to exit after the first round, so the got messages can be
 // colourised by comeMrTallyManTallinitialResource() afterwards.
 //
+// Runs 'initializeTracker()' after every new player as a hack to 'update' the
+// resource table display. The tracking and rendering objects do not support
+// adding players post-hoc, so we replace them entirely. This is fine during
+// startup phase.
+//
 // At start of the game, set
-//  - 'palyerCount' to null so the number is deduced
+//  - 'playerCount' to null so the number is deduced
 //  - maxRepetitions to 2 so the loop exits after the first round.
 // In recoverNames(), set 'playerCount' to a number so the loop continues during
 // regular gameplay, including repetitions and rolls.
@@ -520,7 +526,7 @@ Colony.prototype.renderDummy = function Colony_prototype_waitForInitialPlacement
 // @param playerCount  If set, continue until 'playerCount' many player names
 //                     were found. Else, continue until the first roll.
 // @param maxRepetitions  If set, exit after finding a name more than
-//                        'maxRepetitions' times. use only with
+//                        'maxRepetitions' times. Use only with
 //                        playerCount===null.
 Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers
 (
@@ -529,7 +535,7 @@ Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers
 )
 {
     // NOTE If we make sure not to read initial placement messages, we can set
-    //      MSG_OFFEST to 0, too. Those can appear out-of-player-order, and we
+    //      MSG_OFFSET to 0, too. Those can appear out-of-player-order, and we
     //      imply the order from messages.
     //this.MSG_OFFSET = 0;
 
@@ -545,7 +551,7 @@ Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers
         else
             return playerCount - this.players.length === 0;
     };
-    console.assert(!done()); // Dont come back when done
+    console.assert(!done()); // Do not come back when done
 
     const newMsg = this.getNewMessages();
     for (const msg of newMsg)
@@ -587,7 +593,9 @@ Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers
 
 // Initializes the member objects once the required inputs are ready:
 // name + colour data must be handed to the member objects for construction.
-Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker()
+// @param doRecover  If true, provide doRecover functions to the new Render()
+//                   object. If false, uses 'null', preventing recovery.
+Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker(doRecover = true)
 {
     let noResources = {};
     for (const name of this.players)
@@ -602,14 +610,17 @@ Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker
     // removing the table, we need to create a permanent bind object to
     // prevent multi binds.
 
+    const recoverFunctions = doRecover
+        ? [ this.boundRecoverCards, this.boundRecoverNames ]
+        : [ null, null ];
+
     this.renderObject.unrender(); // Remove table to force redraw over update
     this.renderObject = new Render
     (
         this.multiverse, this.trackerCollection,
         this.players, this.playerColours,
         null,
-        this.boundRecoverCards,
-        this.boundRecoverNames,
+        ...recoverFunctions,
         config.ownIcons ? Colony.alternativeAssets : Colony.colonistAssets
     );
 
@@ -857,11 +868,11 @@ Colony.prototype.cssColourPlayer = function(playerName)
     return this.cssColour(this.playerColours[playerName]);
 }
 
-Colony.prototype.toggleTable = function()
+Colony.prototype.toggleTable = function(value = null)
 {
     if (this.renderObject)
     {
-        this.renderObject.toggle("resourceTable");
+        this.renderObject.toggle("resourceTable", value);
     }
 }
 
@@ -1812,19 +1823,19 @@ Colony.prototype.parseTurnName = function(element)
 //      • An accepting parser returns true
 //      • A rejecting parser returns false
 //      • A rejecting parser is a no-op (it may log things)
-// Typical parser structure
+// Typical parser structure:
 //      1) Verify message type (else return false)
 //      2) Determine semantic content
 //          • parse element
 //          • transform data formats
 //          • log
 //          • sanity checks
-//      3) Update Multiverse+Track objects
+//      3) Update Multiverse + Track objects
 //      4) Update 'turnState'
 //      5) Return true to indicate completion
 //
-// The parser 'parseInitialGotMessage()' is not included because it is only used
-// separately during initial placement phase.
+// The parser 'parseInitialGotMessage()' is not included in allParsers because
+// it is only used separately during initial placement phase.
 Colony.allParsers =
 [
     // The order is so that more common events are matched earlier
@@ -1873,12 +1884,12 @@ Colony.allParsers =
     Colony.prototype.parseDiplomatReposition,
 ];
 
-// TODO Spectator does not see some messages anymore
+// TODO: Spectator does not see some messages anymore
 //  - commercial harbour
 //  - ?
 
-// TODO Some rare events in C&K are not accounted for. These must currently be
-//      recovered from using card recovery.
+// TODO: Some rare events in C&K are not accounted for. These must currently be
+//       recovered from using card recovery.
 //  • Edge case card combinations
 //  • Unrealized development cards may be confused with regular action
 //      ◦ Building a knight regularly after using only 1 upgrade from an
@@ -1890,5 +1901,3 @@ Colony.allParsers =
 //      ◦ ...
 //      ◦ diplomat?
 //  • (I think medicine and crane are safe)
-
-// vim: set shiftwidth=4 softtabstop=4 expandtab:

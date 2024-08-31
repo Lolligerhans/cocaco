@@ -59,11 +59,16 @@ class Render
         };
     }
 
-    toggle(which)
+    /**
+     * @param value  If 'null', toggle. If 'true'/'false', set.
+     */
+    toggle(which, value = null)
     {
         if (typeof(which) === "number")
             which = Object.keys(this.configHidden)[which];
-        this.configHidden[which] = !this.configHidden[which];
+        this.configHidden[which] = value === null
+                                 ? !this.configHidden[which]
+                                 : value;
         console.log(`🖥Toggle ${which} ➜ ${this.configHidden[which] ? "hide" : "show"}`);
         this.mustRedraw = true;
         this.render();
@@ -93,8 +98,6 @@ class Render
     update()
     {
         //console.debug("🖥 Updating display...");
-        this.manyWorlds.mwUpdateStats();
-        // TODO generate and return stats object?
 
         // Display resource plot
         if (this.configHidden.bubbles === false)
@@ -134,6 +137,9 @@ class Render
             //console.debug("🖥 Skip display render");
             return;
         }
+
+        // TODO: Return stats object instead of direct access
+        this.manyWorlds.mwUpdateStats();
 
         if (this.mustRedraw === false)
         {
