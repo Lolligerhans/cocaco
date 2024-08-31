@@ -11,6 +11,7 @@
 | 🥷 | Record robs |
 | ⛵ 🛡 | All expansions |
 | 👁 | Spectate games |
+| ∫ | Bayesian stealing algorithm |
 | 👤 💡 | Include your own live deductions |
 
 | Display dense dice data | Rightfully revenge ridiculous robs |
@@ -44,7 +45,7 @@ git submodule update --init --recursive
 Install as temporary extension in your browser:
 
 - [Firefox](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
-  - Visist URL [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
+  - Visit URL [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
   - Temporary Extensions
   - Load Temporary Add-on...
   - Select 'explorer/manifest.json'
@@ -75,10 +76,10 @@ Install as temporary extension in your browser:
 ### Rolls plot
 
 - orange blocks: lighter = newer
-- greenline: expectation
+- green line: expectation
 - blue dots: `rarity(n) := sum {m : p(m) <= p(n)} {p(m)}` where n is the roll count
-- red dots: adjusted rarity. binomial probability to be rarity(n) lucky (once or
-more) with 11 bernoulli trials. This puts blue into perspective of 11
+- red dots: adjusted rarity. Binomial probability to be rarity(n) lucky (once or
+more) with 11 Bernoulli trials. This puts blue into perspective of 11
 opportunities.
 - bars: Luck factor. Inverse of rarity scaled with amount of cards over
 expectation. Proxy for influence of luck on rolls. `1 / rarity(n) * (n - E[N])`.
@@ -98,7 +99,7 @@ when less rare.
   - can-not-buy: click building cell
   - wrong guesses recover automatically
 - measure total resource count: click player name (must be true count)
-- toggle plots: click road/settlement/city icons
+- toggle plots: click road/settlement/dev-card icon
 
 ### Legacy
 
