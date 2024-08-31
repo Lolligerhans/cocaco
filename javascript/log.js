@@ -28,7 +28,7 @@ class MessageLog
     // elements.
     static styledElement(formatString, ...args)
     {
-        const html = formatString.replace(/%c([^%]*)/g, (match, text) =>
+        const html = formatString.replace(/%c([^%]*)/g, (_match, text) =>
         {
             const style = args.shift();
             return `<span style="${style}">${text}</span>`;
@@ -51,6 +51,13 @@ class MessageLog
     }
 
 }
+
+MessageLog.configOptions =
+{
+    // These keys must be in the gloval config element
+    "logMessages": MessageLog.prototype.logConsole,
+    "debugMessages": MessageLog.prototype.logDom,
+};
 
 MessageLog.prototype.clear = function()
 {
@@ -77,6 +84,18 @@ MessageLog.prototype.log = function(...args)
         l.call(this, ...args);
 }
 
+MessageLog.prototype.logChat = function( ...args)
+{
+    const element = MessageLog.styledElement(...args);
+    this.chatElement.appendChild(element);
+}
+
+MessageLog.prototype.logConsole = function(_messageElement, ...args)
+{
+    // Drop the first argument which is the DOM message element
+    console.log(...args);
+}
+
 // Switch between logMessage() and logChat() dependign on the presence of
 // a message element. Results in a dom element being added somewhere.
 MessageLog.prototype.logDom = function(messageElement, ...args)
@@ -87,30 +106,8 @@ MessageLog.prototype.logDom = function(messageElement, ...args)
         this.logChat(...args);
 }
 
-MessageLog.prototype.logChat = function( ...args)
-{
-    const element = MessageLog.styledElement(...args);
-    this.chatElement.appendChild(element);
-}
-
-MessageLog.prototype.logConsole = function(messageElement, ...args)
-{
-    // Drop the first argument which is the message
-    console.log(...args);
-}
-
 MessageLog.prototype.logMessage = function(messageElement, ...args)
 {
     const element = MessageLog.styledElement(...args);
     messageElement.appendChild(element);
 }
-
-MessageLog.configOptions =
-{
-    // These keys must be in the gloval config element
-    "logMessages": MessageLog.prototype.logConsole,
-    "debugMessages": MessageLog.prototype.logDom,
-};
-
-
-// vim: shiftwidth=4:softtabstop=4:expandtab

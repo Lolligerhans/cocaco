@@ -1260,7 +1260,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     xaxis: "x2",
     yaxis: "y4",
     mode: "lines",
-    name: "KL-Divergence (forward)",
+    name: "forward",
     marker: { color: "purple" },
   };
   let rollsKLDTraceBackward = {
@@ -1269,7 +1269,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     xaxis: "x2",
     yaxis: "y4",
     mode: "lines",
-    name: "KL-Divergence (forward)",
+    name: "backward",
     marker: { color: "purple" },
     line: { dash: "dot" },
   };
