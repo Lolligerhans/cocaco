@@ -1,8 +1,10 @@
+# Cannot end in /
+dependencies
 plotly
-
 statistics.js
 
-dotfiles-copy
-
-# Cannot end in /
+LICENSE
+assets
 data
+retired
+scripts

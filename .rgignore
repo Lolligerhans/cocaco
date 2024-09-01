@@ -1,1 +1,9 @@
-dotfiles-copy/*
+dependencies/
+plotly/
+statistics.js/
+
+LICENSE
+assets/
+data/
+retired/
+scripts/

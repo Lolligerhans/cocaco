@@ -11,12 +11,13 @@
 # │ ⚙ Boilerplate        │
 # ╰──────────────────────╯
 # shellcheck disable=SC2154,SC2034
-declare -gr dotfiles="${DOTFILES:-"./dependencies/dotfiles-copy"}"; # TOKEN_DOTFILES_GLOBAL
+declare -gr dotfiles="${DOTFILES:-"$HOME/dotfiles"}"; # TOKEN_DOTFILES_GLOBAL
 # ☯ Every file prevents multi-loads itself using this global dict
 declare -gA _sourced_files=( ["runscript"]="" ); # Source only once
 # 🖈 If the runscript requires a specific location, set it here
 #declare -gr this_location="";
-# shellcheck source=dependencies/dotfiles-copy/scripts/boilerplate.sh
+# HACK: Depends on location
+# shellcheck source=../../dotfiles/scripts/boilerplate.sh
 source "$dotfiles/scripts/boilerplate.sh" "${BASH_SOURCE[0]}" "$@";
 # ╭──────────────────────╮
 # │ 🛠Configuration      │

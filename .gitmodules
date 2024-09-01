@@ -1,6 +1,3 @@
 [submodule "statistics.js"]
 	path = dependencies/statistics.js
 	url = https://github.com/thisancog/statistics.js.git
-[submodule "dotfiles-copy"]
-	path = dependencies/dotfiles-copy
-	url = https://github.com/Lolligerhans/dotfiles.git
