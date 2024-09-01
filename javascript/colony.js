@@ -464,7 +464,7 @@ Colony.prototype.clearLog = function()
     console.assert(this.logger !== null);
     this.logger.clear();
     // HACK: Abusing "internal" logChat function. Originally this class was not meant to be used for regular text display, only for debugging.
-    this.logger.logChat(`🥥 version %c${version_string}%c`, this.cssColour("black"), "");
+    this.logger.logChat(`🥥 Version ${version_string}`);
     this.logger.logChat(`🥥 Hello ${this.playerUsername}`);
     return true;
 }
@@ -669,12 +669,11 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
 
     if (!foundRoll)
     {
-        console.debug("• Tallying initial resources");
         return false;
     }
 
     this.MSG_OFFSET = i;
-    console.debug(`• Starting from message ${i}`); // 28 for normal base game
+    // console.debug(`• Starting from message ${i}`); // 28 for normal base game
     return true;
 }
 

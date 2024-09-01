@@ -1000,43 +1000,17 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
   for (let number = 2; number <= 12; ++number)
     precomputeMoreOrLess(number);
 
-  let prob = (x, number) =>
-  {
-    if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
-    // Generate total probability mass with density <= p(x). x \in [0,N].
-    let sum = 0;
-    const pr = dist[number-2][x];
-    // Add small epsilon for stability
-    for (const d of dist[number-2]) { if (d <= pr+0.00000001) sum += d; }
-    sum = Math.min(Math.max(sum, 0), 1);
-    return sum;
-  };
-  let probAdjust = (p) =>
-  {
-    const distrib = stats.binomialDistribution(11, p);
-    const sum = distrib.reduce((acc, val) => acc + val) - distrib[0];
-    return Math.min(Math.max(sum, 0), 1);
-  };
-
   // Luck
-  // Old version: Luck := x / E(X)
-//  const luck = rollsHistogram.slice(2).map((v, i, arr) => { return v / ey[i+1] - 1 });
-//  const maxLuck = Math.max.apply(null, luck);
-  let minChance = { number: 7, chance: 0.9 }; // Arbitrary initialization
-  let minAdjustedChance = { number: 7, chance: probAdjust(0.9) }; // Arbitrary initialization
-  const rarity = trackerObject.rollsHistogram.slice(2).map((v,i,arr) =>
-  {
-    const p = prob(v, i + 2);
-    if (p <= minChance.chance)
-    {
-      minChance.number = i + 2;
-      minChance.chance = p;
-      minAdjustedChance.number = i + 2;
-      minAdjustedChance.chance = probAdjust(p);
-    }
-    return p;
-    // Return cumulative probability of an event this rare or rarer
-  });
+  const rarity = trackerObject.rollsRarity.single[N-1];
+  const adjustedRarity = trackerObject.rollsRarity.adjusted[N-1];
+  minChance = {
+    number: trackerObject.maxRarity.number[N-1],
+    chance: trackerObject.maxRarity.single[N-1],
+  };
+  minAdjustedChance = {
+    number: trackerObject.maxRarity.number[N-1],
+    chance: trackerObject.maxRarity.adjusted[N-1],
+  };
 
   const lessMoreChance = trackerObject.rollsHistogram.slice(2).map( (v,i) => lessMoreDist[i][v] );
   const lessChance = lessMoreChance.map( x => x[0] );
@@ -1044,8 +1018,6 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
   const lessStrict = lessChance.map( (p,i) => p - dist[i][trackerObject.rollsHistogram[i+2]] );
   const moreStrict = moreChance.map( (p,i) => p - dist[i][trackerObject.rollsHistogram[i+2]] );
 
-  const adjustedRarity = rarity.map(p => probAdjust(p));
-  // Define luck
   const realLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
   {
     // Alternative definitions: see 'histogramTest'
@@ -1053,8 +1025,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     // For 50% probability, multiply by 1
     // For 75% probability, multiply by 1/3
     const res = (1 / rarity[i] - 1) * (v - ey[i+1]);
-
-    // log(`[DEBUG] count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
+    // console.debug(`count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
     return res;
   });
   // const adjustedRealLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
@@ -1086,6 +1057,8 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     xb: trackerObject.rollsKLD.backward.map((_v,i) => i),
     yb: trackerObject.rollsKLD.backward,
   };
+
+  const rollsTicksX = trackerObject.rolls.map((_v, i) => i);
 
   // -----------------------------------------------
 
@@ -1135,8 +1108,10 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     },
   };
   */
-  // TODO Make zero line colored like the luck bar
+
+  // TODO: Make zero line colored like the luck bar
   const zeroColor = [luckColor[0]].concat(luckColor).concat(luckColor.slice(-1));
+
   /*
   let zeroTrace =
   {
@@ -1189,6 +1164,24 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
       size: 9,
       line: { color: "white", width: 2 },
     },
+  };
+  let rarityProgressionTrace = {
+    x: rollsTicksX,
+    y: trackerObject.maxRarity.single,
+    xaxis: "x2", // Per-roll
+    yaxis: "y3", // Probabilities 1 downto 0
+    mode: "lines",
+    name: "single rarity progression",
+    marker: { color: "midnightblue" },
+  };
+  let adjustedRarityProgressionTrace = {
+    x: rollsTicksX,
+    y: trackerObject.maxRarity.adjusted,
+    xaxis: "x2", // Per-roll
+    yaxis: "y3", // Probabilities 1 downto 0
+    mode: "lines",
+    name: "adjusted rarity progression",
+    marker: { color: "red" },
   };
   let lessTrace =
   {
@@ -1398,7 +1391,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         axref: "x",
         ayref: "y3",
 
-        text: kl.values[0] === Infinity ? "-" : `<b>${(kl.values[0] * 100).toFixed(1)}%</b>`,
+        text: kl.values[0] === Infinity ? "" : `<b>${(kl.values[0] * 100).toFixed(1)}%</b>`,
         bgcolor: "purple",
         opacity: 0.8,
         showarrow: true, // To allow fixed position
@@ -1435,13 +1428,17 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
   }; // layout
 
   const config = { displayModeBar: false };
+  const extraData = config.extraRollProbabilities
+    ? [lessTrace, moreTrace, lessTraceStrict, moreTraceStrict]
+    : [];
   const data =
   [
     rollTrace, expTrace,
+    rollsKLDTraceForward, rollsKLDTraceBackward,
+    rarityProgressionTrace, adjustedRarityProgressionTrace,
     /*zeroTrace,*/ realLuckTrace,
-    lessTrace, moreTrace, lessTraceStrict, moreTraceStrict,
+    ...extraData,
     adjustedRarityTrace, rarityTrace,
-    rollsKLDTraceForward, rollsKLDTraceBackward
   ];
   Plotly.newPlot(idToPlotInto, data, layout, config);
   //console.debug("📊 Finished plotting rolls histogram into", `ID=${idToPlotInto}`);
@@ -1460,3 +1457,5 @@ if (configPlotTests === true)
         if (document.getElementById(testHistogramPlotDivId) !== null) histogramTest();
     }, false);
 }
+
+// vim: shiftwidth=2:softtabstop=2:expandtab

@@ -3,16 +3,26 @@
 
 "use strict";
 
-class Track
-{
-    constructor()
-    {
+class Track {
+    static probAdjust = (p) => {
+        const distrib = stats.binomialDistribution(11, p);
+        const sum = distrib.reduce((acc, val) => acc + val) - distrib[0];
+        return Math.min(Math.max(sum, 0), 1);
+    };
+
+    constructor() {
+        // List of eye-sums (2-12) in order of occurence
         this.rolls = [];
         // 'rollsHistogram[0]' is the roll total.
         // 'rollsHistogram[1]' is the max of any roll (use when encoding with colour)
         // 'rollsHistogram[2-12]' is the count of rolling so many eyes
         this.rollsHistogram = [];
+        // Scalar data traces over rolls
         this.rollsKLD = { forward: [], backward: [], };
+        // 10-D data traces over rolls
+        this.rollsRarity = { single: [], adjusted: [] };
+        // Scalar data traces over rolls
+        this.maxRarity = { single: [], adjusted: [], number: [] };
 
         this.robs = {};          // robs = { "player1": {"player2":1, "player2":0, ... }, "player2" : {}, ... }
         this.robsTaken = {};     // robsTaken = {"player1":4, "player2":0, ...}
@@ -21,14 +31,13 @@ class Track
         this.robsSeven = {};     // Like robsTaken
     }
 
-    init(playerNames)
-    {
+    init(playerNames) {
         this.initRolls();
         this.initRobs(playerNames);
     }
 
-    addRoll(number)
-    {
+    // Updates the die roll data. Does NOT treat 7s specially.
+    addRoll(number) {
         if (number < 2 || 12 < number) // Sanity check
         {
             alertIf("addRoll(): invalid number " + number);
@@ -44,19 +53,15 @@ class Track
         this.rollsHistogram[1] = Math.max(this.rollsHistogram[1], this.rollsHistogram[number]);
 
         this.updateKL();
-
-        // Debugging
-    //    log(rolls, rollsHistogram, rollsKLD);
+        this.updateRarity();
     }
 
     // TODO Should this function really be? And be here?
-    fillRollPlot(element)
-    {
+    fillRollPlot(element) {
         plotRollsAsHistogram(this, element.id);
     }
 
-    printRobs()
-    {
+    printRobs() {
         if (config.printRobs !== true)
             return;
         log("robs:", this.robs);
@@ -67,9 +72,8 @@ class Track
     }
 
     // The just the robbing action. No matter if from 7 or knight
-    addRob(thief, victim, count = 1)
-    {
-        console.assert(typeof(count) === "number", "addRob: count must be a number");
+    addRob(thief, victim, count = 1) {
+        console.assert(typeof (count) === "number", "addRob: count must be a number");
         this.robs[thief][victim] += count;
         this.robsTaken[thief] += count;
         this.robsLost[victim] += count;
@@ -78,10 +82,8 @@ class Track
     }
 
     // Adjust seven counter. Does not affect robs. Call addRob() separately.
-    addSeven(player)
-    {
-        if (this.robsSeven[player] === undefined)
-        {
+    addSeven(player) {
+        if (this.robsSeven[player] === undefined) {
             // FIXME make error once working
             console.warn(`addSeven: ${player} not in ${Object.keys(this.robsSeven)}`);
             return;
@@ -94,25 +96,15 @@ class Track
 // │ Private                                                                   │
 // ╰───────────────────────────────────────────────────────────────────────────╯
 
-Track.prototype.initRolls = function()
-// Init the rolls members
-{
-    this.rolls = [];
-    this.rollsHistogram = new Array(12 + 1).fill(0);
-    this.rollsKLD = { forward: [], backward: [], };
-}
-
-Track.prototype.initRobs = function(playerNames)
 // Init the robbing members
-{
+Track.prototype.initRobs = function (playerNames) {
     console.assert(playerNames.length >= 2, "initRobs expects at least 2 players");
     this.robs = {};
     this.robsTaken = {};
     this.robsLost = {};
     this.robsTotal = 0;
     this.robsSeven = {};
-    for (const player of playerNames)
-    {
+    for (const player of playerNames) {
         this.robs[player] = {};
         for (const p of playerNames) { this.robs[player][p] = 0; }
         this.robsTaken[player] = 0;
@@ -122,15 +114,56 @@ Track.prototype.initRobs = function(playerNames)
     this.printRobs();
 }
 
-Track.prototype.updateKL = function()
+// Init the rolls member
+Track.prototype.initRolls = function () {
+    this.rolls = [];
+    this.rollsHistogram = new Array(12 + 1).fill(0);
+    this.rollsKLD = { forward: [], backward: [], };
+}
+
 // Write the KL values corresponding to the newest roll
-{
+Track.prototype.updateKL = function () {
     const n = this.rolls.length;
     console.assert(n >= 1);
     const rolls = this.rollsHistogram.slice(2, 13)
-                                     .map  (x => x / n);
-    this.rollsKLD.forward [n - 1] = klDivergence(trueProbability, rolls);
+        .map(x => x / n);
+    this.rollsKLD.forward[n - 1] = klDivergence(trueProbability, rolls);
     this.rollsKLD.backward[n - 1] = klDivergence(rolls, trueProbability);
+}
+
+// Generate the rarity values for the newest roll
+Track.prototype.updateRarity = function updateRolls() {
+    console.assert(this.rolls.length >= 1);
+    const N = this.rolls.length;
+    const index = N - 1; // Index updated in data traces
+    let dist = [];
+    for (let i = 2; i <= 12; ++i) {
+        dist[i - 2] = stats.binomialDistribution(N, trueProbability[i - 2]);
+    }
+    let prob = (x, number) => {
+        if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+        // Generate total probability mass with density <= p(x). x \in [0,N].
+        let sum = 0;
+        const pr = dist[number - 2][x];
+        // Add small epsilon for stability
+        for (const d of dist[number - 2]) { if (d <= pr + 0.00000001) sum += d; }
+        sum = Math.min(Math.max(sum, 0), 1);
+        return sum;
+    };
+    this.maxRarity.single[index] = Infinity; // Any probability compares <=
+    this.maxRarity.adjusted[index] = 0;
+    this.maxRarity.number[index] = 0;
+    let computeRarity = (v, i, _arr) => {
+        const p = prob(v, i + 2);
+        if (p <= this.maxRarity.single[index]) {
+            this.maxRarity.single[index] = p;
+            this.maxRarity.adjusted[index] = Track.probAdjust(p);
+            this.maxRarity.number[index] = i + 2;
+        }
+        return p;
+    };
+    this.rollsRarity.single[index] = this.rollsHistogram.slice(2).map(computeRarity);
+    this.rollsRarity.adjusted[index] = this.rollsRarity.single[index].map(Track.probAdjust);
 }
 
 // vim: shiftwidth=4:softtabstop=4:expandtab

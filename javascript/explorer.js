@@ -1,8 +1,8 @@
 // Extension entry point.
 //
-// Config
-// Globals
-// Helpers
+// - Configj
+// - Globals
+// - Helpers
 //
 // Dispatches into Colony/Oneore.
 
@@ -13,14 +13,15 @@ const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
 
-const config =
-{
+const config = {
+    // Features
+    extraRollProbabilities: false,
     // Style
     ownIcons: false,
     // Verbose
     logMessages: false,
     logWorldCount: false,
-    useTimer: false,
+    useTimer: true,
     printRobs: false,
     // Very verbose
     debugMessages: false,
@@ -163,6 +164,7 @@ function klDivergence(p, q)
   return kl;
 }
 
+// Probability to roll each number. Starting with nubmer 2 at index 0.
 const trueProbability = [1,2,3,4,5,6,5,4,3,2,1].map(x => x / 36);
 
 // Replacement for setInterval, but time interval starts after completion of the
