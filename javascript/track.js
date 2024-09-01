@@ -23,6 +23,13 @@ class Track {
         this.rollsRarity = { single: [], adjusted: [] };
         // Scalar data traces over rolls
         this.maxRarity = { single: [], adjusted: [], number: [] };
+        // 10-D data traces over rolls
+        this.extra = {
+            more: [],
+            less: [],
+            moreStrict: [],
+            lessStrict: [],
+        };
 
         this.robs = {};          // robs = { "player1": {"player2":1, "player2":0, ... }, "player2" : {}, ... }
         this.robsTaken = {};     // robsTaken = {"player1":4, "player2":0, ...}
@@ -54,6 +61,8 @@ class Track {
 
         this.updateKL();
         this.updateRarity();
+
+        // console.debug("extras: ", this.extra);
     }
 
     // TODO Should this function really be? And be here?
@@ -134,12 +143,32 @@ Track.prototype.updateKL = function () {
 // Generate the rarity values for the newest roll
 Track.prototype.updateRarity = function updateRolls() {
     console.assert(this.rolls.length >= 1);
+
+    // Precompute distribution helpers
     const N = this.rolls.length;
-    const index = N - 1; // Index updated in data traces
-    let dist = [];
+    const index = N - 1; // Index to update in data traces
+    let dist = []; // Cache binomial(N,p) for each number
     for (let i = 2; i <= 12; ++i) {
         dist[i - 2] = stats.binomialDistribution(N, trueProbability[i - 2]);
     }
+    const clampProb = p => Math.min(Math.max(p, 0), 1);
+    let lessMoreDist = [];  // <=, >=
+    const precomputeMoreOrLess = (number) => {
+        if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+        // (!) Start loop at i=1 and inline i=0
+        let lessOrEqualAcc = dist[number - 2][0];
+        let moreOrEqualAcc = 1;
+        lessMoreDist[number - 2] = [];
+        lessMoreDist[number - 2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+        for (let i = 1; i <= N; ++i) {
+            lessOrEqualAcc += dist[number - 2][i];
+            moreOrEqualAcc -= dist[number - 2][i - 1];
+            lessMoreDist[number - 2][i] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+        }
+    };
+    // TODO: symmetric: copy 2-6 to 12-8
+    for (let number = 2; number <= 12; ++number)
+        precomputeMoreOrLess(number);
     let prob = (x, number) => {
         if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
         // Generate total probability mass with density <= p(x). x \in [0,N].
@@ -150,6 +179,8 @@ Track.prototype.updateRarity = function updateRolls() {
         sum = Math.min(Math.max(sum, 0), 1);
         return sum;
     };
+
+    // maxRarity
     this.maxRarity.single[index] = Infinity; // Any probability compares <=
     this.maxRarity.adjusted[index] = 0;
     this.maxRarity.number[index] = 0;
@@ -162,8 +193,17 @@ Track.prototype.updateRarity = function updateRolls() {
         }
         return p;
     };
+
+    // rollsRarity
     this.rollsRarity.single[index] = this.rollsHistogram.slice(2).map(computeRarity);
     this.rollsRarity.adjusted[index] = this.rollsRarity.single[index].map(Track.probAdjust);
+
+    // extra
+    const lessMoreChance = this.rollsHistogram.slice(2).map( (v,i) => lessMoreDist[i][v] );
+    this.extra.less[index] = lessMoreChance.map( x => x[0] );
+    this.extra.more[index] = lessMoreChance.map( x => x[1] );
+    this.extra.lessStrict[index] = this.extra.less[index].map( (p,i) => p - dist[i][this.rollsHistogram[i+2]] );
+    this.extra.moreStrict[index] = this.extra.more[index].map( (p,i) => p - dist[i][this.rollsHistogram[i+2]] );
 }
 
 // vim: shiftwidth=4:softtabstop=4:expandtab

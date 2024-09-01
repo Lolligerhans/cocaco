@@ -58,7 +58,7 @@ function generateTraceFromMwDistribution(distribution, player, resource)
         for (let j = 0; j < fakeSampleCount; ++j)
             y.push(numb);
     }
-    const x = y.map(y => resource);
+    const x = y.map(_y => resource);
     return [x, y];
 }
 
@@ -175,28 +175,28 @@ function plotTest()
         type: 'box'
     };
 
-    const t1 = generateTraceFromMwDistribution(example_mwDistribution,
-        "Leon",
-        "wood");
-    var traceWood1 =
-    {
-        y: t1[1],
-        x: t1[0],
-        name: 'wood Leon',
-        marker: {color: '#00FF00'},
-        type: "box"
-    };
-    const t2 = generateTraceFromMwDistribution(example_mwDistribution,
-        "Leon",
-        "brick");
-    var tracebrick1 =
-    {
-        y: t2[1],
-        x: t2[0],
-        name: 'brick Leon',
-        marker: {color: '#00FF00'},
-        type: "box"
-    };
+    // const t1 = generateTraceFromMwDistribution(example_mwDistribution,
+    //     "Leon",
+    //     "wood");
+    // var traceWood1 =
+    // {
+    //     y: t1[1],
+    //     x: t1[0],
+    //     name: 'wood Leon',
+    //     marker: {color: '#00FF00'},
+    //     type: "box"
+    // };
+    // const t2 = generateTraceFromMwDistribution(example_mwDistribution,
+    //     "Leon",
+    //     "brick");
+    // var tracebrick1 =
+    // {
+    //     y: t2[1],
+    //     x: t2[0],
+    //     name: 'brick Leon',
+    //     marker: {color: '#00FF00'},
+    //     type: "box"
+    // };
 
     let LeonTraces = [];
     for (let i = 0; i < resourceTypes.length; ++i)
@@ -317,7 +317,7 @@ function bubbleTest()
         for (let i = 0; i < resourceTypes.length; ++i)
         {
             const res = resourceTypes[i];
-            let [tx, ty, tsize, topacity]  // Trace
+            let [tx, ty, _tsize, topacity]  // Trace
                 = generatePerCountBubbles(
                     example_players,
                     example_mwDistribution,
@@ -572,7 +572,7 @@ function histogramTest()
   logs(`chanceLevel: ${chanceLevel}`);
   logs(`1-minChance: ${minChance.number}: ${1-minChance.chance}`);
   log(`Sum of luck: ${luckSum}`);
-  const maxRealLuck = Math.max.apply(null, realLuck);
+  // const maxRealLuck = Math.max.apply(null, realLuck);
 
   // TRACES
   const layout =
@@ -846,6 +846,7 @@ function histogramTest()
       symbol: "triangle-up",
     },
   };
+  /*
   let trace4 =
   {
     x: [1.5, 12.5],
@@ -856,17 +857,18 @@ function histogramTest()
     marker: { color: "#69f" },
     line: { width: 1, dash: "line" },
   };
+  */
   // Test version
-//  let realLuckTrace =
-//  {
-//    x: testLineX.slice(1,13),
-//    y: realLuck,
-//    type: 'scatter',
-//    mode: "lines",
-//    yaxis: "y2",
-//    marker: {size: 20, color: "red"},
-//    name: "realLuck",
-//  };
+  // let realLuckTrace =
+  // {
+  //   x: testLineX.slice(1,13),
+  //   y: realLuck,
+  //   type: 'scatter',
+  //   mode: "lines",
+  //   yaxis: "y2",
+  //   marker: {size: 20, color: "red"},
+  //   name: "realLuck",
+  // };
   log("testLineY", testLineY);
   log("testHist:", testHist);
   log("histPercent:", histPercent);
@@ -897,7 +899,7 @@ function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map)
         for (let i = 0; i < resourceTypes.length; ++i)
         {
             const res = resourceTypes[i];
-            const [tx, ty, tsize, topacity]  // Trace
+            const [tx, ty, _tsize, topacity]  // Trace
                 = generatePerCountBubbles(
                     trackerObject.playerNames,
                     trackerObject.mwDistribution,
@@ -953,8 +955,7 @@ function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map)
 // 'ManyWorlds' TODO Fix that
 function plotRollsAsHistogram(trackerObject, idToPlotInto)
 {
-  // Rolls
-  const ones = new Array(trackerObject.rolls.length).fill(1);
+  // Preparation
   const c = [255, 102, 51]; // Base colour
   const colo = trackerObject.rolls.map((_, i) =>
   {
@@ -963,62 +964,29 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     const f = i / trackerObject.rolls.length;
     return `rgb(${Math.ceil(c[0] * f)},${Math.ceil(c[1] * f)},${Math.ceil(c[2] * f)})`;
   });
-
   const N = trackerObject.rolls.length;
   const n = trackerObject.rolls.length / 36;
+  // Pad by 1 value front + back back
+  const probability36 = [1, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 1];
+  const probability = probability36.map(x => x / 36);
+
+  // Rolls
+  const ones = new Array(trackerObject.rolls.length).fill(1);
 
   // Expectation
-  const probability36 = [1,1,2,3,4,5,6,5,4,3,2,1,1];
-  const probability = probability36.map(x => x / 36);
   const ex = [1.5,2,3,4,5,6,7,8,9,10,11,12,12.5]; // Cover the bars at the ends
   const ey = probability.map(x => N*x); // Expectation
 
-  // Precompute distributions
-  let dist = [];
-  for (let i = 2; i <= 12; ++i)
-  {
-    dist[i-2] = stats.binomialDistribution(N, probability[i-1]);
-  }
-  const clampProb = p => Math.min(Math.max(p, 0), 1);
-  let lessMoreDist = [];  // <=, >=
-  const precomputeMoreOrLess = (number) =>
-  {
-    if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
-    // (!) Start loop at i=1 and inline i=0
-    let lessOrEqualAcc = dist[number-2][0];
-    let moreOrEqualAcc = 1;
-    lessMoreDist[number-2] = [];
-    lessMoreDist[number-2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
-    for (let i = 1; i <= N; ++i)
-    {
-      lessOrEqualAcc += dist[number-2][i    ];
-      moreOrEqualAcc -= dist[number-2][i - 1];
-      lessMoreDist[number-2][i] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
-    }
-  };
-  // TODO symmetric: copy 2-6 to 12-8
-  for (let number = 2; number <= 12; ++number)
-    precomputeMoreOrLess(number);
+  // More or Less chances
+  const lessChance = trackerObject.extra.less[N-1];
+  const moreChance = trackerObject.extra.more[N-1];
+  const lessStrict = trackerObject.extra.lessStrict[N-1];
+  const moreStrict = trackerObject.extra.moreStrict[N-1];
 
   // Luck
   const rarity = trackerObject.rollsRarity.single[N-1];
   const adjustedRarity = trackerObject.rollsRarity.adjusted[N-1];
-  minChance = {
-    number: trackerObject.maxRarity.number[N-1],
-    chance: trackerObject.maxRarity.single[N-1],
-  };
-  minAdjustedChance = {
-    number: trackerObject.maxRarity.number[N-1],
-    chance: trackerObject.maxRarity.adjusted[N-1],
-  };
-
-  const lessMoreChance = trackerObject.rollsHistogram.slice(2).map( (v,i) => lessMoreDist[i][v] );
-  const lessChance = lessMoreChance.map( x => x[0] );
-  const moreChance = lessMoreChance.map( x => x[1] );
-  const lessStrict = lessChance.map( (p,i) => p - dist[i][trackerObject.rollsHistogram[i+2]] );
-  const moreStrict = moreChance.map( (p,i) => p - dist[i][trackerObject.rollsHistogram[i+2]] );
-
-  const realLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
+  const luck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
   {
     // Alternative definitions: see 'histogramTest'
     // For 25% probability, multiply the card gain by 3
@@ -1028,10 +996,14 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     // console.debug(`count=${v}, number=${i+2}, rarity=${rarity[i]}, luckNumber =`, res);
     return res;
   });
-  // const adjustedRealLuck = trackerObject.rollsHistogram.slice(2).map((v,i) =>
-  // {
-  //   return (1 / adjustedRarity[i] - 1) * (v - ey[i+1]);
-  // });
+  minChance = {
+    number: trackerObject.maxRarity.number[N-1],
+    chance: trackerObject.maxRarity.single[N-1],
+  };
+  minAdjustedChance = {
+    number: trackerObject.maxRarity.number[N-1],
+    chance: trackerObject.maxRarity.adjusted[N-1],
+  };
   minChance.xoffset = minChance.number <= 7 ? 11 : 3;
   minChance.yoffset = 0.05;
   minAdjustedChance.xoffset = minChance.xoffset;
@@ -1093,26 +1065,10 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     const col = `rgb(${r}, ${g}, 0)`;
     return col;
   });
-  /*
-  let luckTrace =
-  {
-    type: 'bar',
-    x: ex.slice(1,13),
-    y: luck,
-    yaxis: "y2",
-    width: 0.01,
-    name: "luck",
-    marker:
-    {
-      line: { color: "#69f", width: 3, },
-    },
-  };
-  */
 
+  /*
   // TODO: Make zero line colored like the luck bar
   const zeroColor = [luckColor[0]].concat(luckColor).concat(luckColor.slice(-1));
-
-  /*
   let zeroTrace =
   {
     x: ex,
@@ -1125,11 +1081,12 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     line: { width: 2, dash: "line" },
   };
   */
-  let realLuckTrace =
+
+  let luckTrace =
   {
     type: 'bar',
     x: ex.slice(1,13),
-    y: realLuck,
+    y: luck,
     yaxis: "y2",
     width: 0.2,
     marker: { color: luckColor, },
@@ -1412,7 +1369,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
         axref: "x",
         ayref: "y3",
 
-        text: kl.values[1] === Infinity ? "-" : `<b>${(kl.values[1] * 100).toFixed(1)}%</b>`,
+        text: kl.values[1] === Infinity ? "" : `<b>${(kl.values[1] * 100).toFixed(1)}%</b>`,
         bgcolor: "purple",
         opacity: 0.8,
         showarrow: true, // To allow fixed position
@@ -1436,7 +1393,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto)
     rollTrace, expTrace,
     rollsKLDTraceForward, rollsKLDTraceBackward,
     rarityProgressionTrace, adjustedRarityProgressionTrace,
-    /*zeroTrace,*/ realLuckTrace,
+    /*zeroTrace,*/ luckTrace,
     ...extraData,
     adjustedRarityTrace, rarityTrace,
   ];

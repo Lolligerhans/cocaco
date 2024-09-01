@@ -21,7 +21,7 @@ const config = {
     // Verbose
     logMessages: false,
     logWorldCount: false,
-    useTimer: true,
+    useTimer: false,
     printRobs: false,
     // Very verbose
     debugMessages: false,
