@@ -110,7 +110,8 @@ class Render
         if (this.configHidden.rolls === false)
         {
             let plt = this.ensureRollsPlot();
-            this.track.fillRollPlot(plt);
+            this.track.updateRollsData();
+            plotRollsAsHistogram(this.track, plt.id);
         }
 
         // Display table

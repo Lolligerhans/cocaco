@@ -346,13 +346,13 @@ function main()
 
     if (window.location.hostname === "colonist.io")
     {
-        console.log("🧭 Running on colonist.io");
+        console.log("🥥 Running on colonist.io");
         let colony = new Colony();
         colony.restartTracker();
     }
     else if (window.location.hostname === "twosheep.io")
     {
-        console.log("🧭 Running on twosheep.io");
+        console.log("🥥 Running on twosheep.io");
         console.assert(window.location.hostname === "twosheep.io");
         twosheep.restartTracker();
     }

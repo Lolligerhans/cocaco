@@ -4,8 +4,8 @@
 
 ## Features
 
-|||
-|-:|:-|
+| | |
+| -: | :- |
 | 🂠 | Track cards |
 | 🎲 | Analyze dice rolls |
 | 🥷 | Record robs |
@@ -15,8 +15,8 @@
 | 👤 💡 | Include your own live deductions |
 
 | Display dense dice data | Rightfully revenge ridiculous robs |
-|:-------------------------:|:-------------------------:|
-| ![rolls plot](assets/rolls.png?raw=true) |  ![robs table](assets/robs.png?raw=true) |
+| :-: | :-: |
+| ![rolls plot](assets/rolls.png?raw=true) | ![robs table](assets/robs.png?raw=true) |
 
 ## Getting started
 
