@@ -32,7 +32,9 @@ _run_config["log_loads"]=0;
 satisfy_version "$dotfiles/scripts/boilerplate.sh" "0.0.0";
 # Ensure versions even if included already
 load_version "$dotfiles/scripts/version.sh" "0.0.0";
+load_version "$dotfiles/scripts/bash_meta.sh" "0.0.0";
 load_version "$dotfiles/scripts/fileinteracts.sh" "0.0.0";
+load_version "$dotfiles/scripts/git_utils.sh" 0.0.0;
 load_version "$dotfiles/scripts/setargs.sh" "0.0.0";
 load_version "$dotfiles/scripts/termcap.sh" "0.0.0";
 load_version "$dotfiles/scripts/userinteracts.sh" "0.0.0";
@@ -85,7 +87,7 @@ command_check()
   echok "All good.";
 }
 
-command_pushall()
+command_release()
 {
   set_args "--force --help" "$@"
   eval "$get_args";
@@ -96,13 +98,19 @@ command_pushall()
   fi
 
   command git s || errchow "Could not display commits";
+
   declare choice;
-  choice="$(boolean_prompt "Are you sure you want to $force_flag PUSH EVERYTHING?")"
-  [[ "$choice" == "n" ]] && abort "Abort: No changes";
-  git push $force_flag origin &&
-  git push $force_flag origin --tags &&
-  git push $force_flag lolli &&
-  git push $force_flag lolli --tags;
+  choice="$(boolean_prompt "Confirm release ${text_user}${force_flag}${text_normal}?")";
+  if [[ "$choice" == "n" ]]; then
+    abort "Abort: No changes";
+  fi
+
+  add_git_tag --force="$force";
+  command git push $force_flag origin &&
+  command git push $force_flag origin --tags &&
+  command git push $force_flag lolli &&
+  command git push $force_flag lolli --tags;
+  echok "Released";
 }
 
 command_symbols()
@@ -125,15 +133,59 @@ command_uninstall()
 # ╭──────────────────────╮
 # │ 𝑓 Functional         │
 # ╰──────────────────────╯
+
+add_git_tag()
+{
+  set_args "--force" "$@";
+  eval "$get_args";
+
+  # Sanity check
+  if [[ "$(is_clean_master)" != "true" ]]; then
+    abort "Must be clean master";
+  fi
+
+  declare force_flag="";
+  if [[ "$force" == "true" ]]; then
+    force_flag="--force";
+  fi
+
+  declare tag_name;
+  tag_name="v$(current_version)";
+  command git tag $force_flag "$tag_name";
+  echok "git tag $force_flag $tag_name";
+}
+
+# Pritns currently present (raw) value for 'version' in manifest.json
+current_version()
+{
+  declare version;
+  version="$(jq -r .version manifest.json)";
+  printf -- "%s" "${version}";
+}
+
+# Prints "false" or "true"
+is_clean_master()
+{
+  declare current_branch clean;
+  current_branch="$(git_current_branch)";
+  git_is_clean clean;
+  if [[ "$current_branch" != "master"  || "$clean" != "y" ]]; then
+    >&2 show_variable current_branch;
+    >&2 show_variable clean;
+    printf -- "false";
+  else
+    printf -- "true";
+  fi
+}
 # ╭──────────────────────╮
 # │ 🖹 Help strings       │
 # ╰──────────────────────╯
-declare -r check_help_string="Verify files";
-declare -r pushall_help_string="Push branch to remotes
+declare -r check_help_string="Verify files with git-fsck";
+declare -r release_help_string="Release HEAD->master
 DESCRIPTION
-  Push both origin and lolli remotes, each with and without --tags.
+  Create version tag. Push remotes. Push tags.
 OPTIONS
-  --force: Use git push --force";
+  --force: Use --force for 'git tag' and 'git push'.";
 declare -r symbols_help_string="Show symbols available in plotly";
 # ╭──────────────────────╮
 # │ ⚙ Boilerplate        │
