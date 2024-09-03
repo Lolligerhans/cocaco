@@ -46,7 +46,7 @@ load_version "$dotfiles/scripts/utils.sh" "0.0.0";
 # │ ⌨  Commands          │
 # ╰──────────────────────╯
 
-function command_default()
+command_default()
 {
   echou "Execute '$0 install' to install the explorer extension";
   ok="$(boolean_prompt "Execute now?")"
@@ -97,6 +97,11 @@ command_release()
     force_flag="--force";
   fi
 
+  # Sanity check
+  if [[ "$(is_clean_master)" != "true" ]]; then
+    abort "Must be clean master";
+  fi
+
   command git s || errchow "Could not display commits";
 
   declare choice;
@@ -138,11 +143,6 @@ add_git_tag()
 {
   set_args "--force" "$@";
   eval "$get_args";
-
-  # Sanity check
-  if [[ "$(is_clean_master)" != "true" ]]; then
-    abort "Must be clean master";
-  fi
 
   declare force_flag="";
   if [[ "$force" == "true" ]]; then

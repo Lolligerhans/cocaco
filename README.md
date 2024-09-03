@@ -1,4 +1,5 @@
-# Correctly correlated Colonist card chance counter
+<!-- markdownlint-disable line-length -->
+# ![Icon](assets/coconut_32.png?raw=true) Correctly correlated Colonist card chance counter
 
 ![Outdated Screenshot](assets/screenshot.png?raw=true)
 
@@ -12,7 +13,7 @@
 | ⛵ 🛡 | All expansions |
 | 👁 | Spectate games |
 | ∫ | Bayesian tracking algorithm |
-| 👤 💡 | Include your own live deductions |
+| 👤 💡 | Include manual deductions |
 
 | Display dense dice data | Rightfully revenge ridiculous robs |
 | :-: | :-: |
@@ -62,7 +63,16 @@ Install as temporary extension in your browser:
 
 ## Usage
 
-See [doc/usage.md](/doc/usage.md).
+See [doc/usage.md](doc/usage.md).
+
+## Attribution
+
+<!-- <a href="https://www.flaticon.com/free-icons/food-and-restaurant" title="food and restaurant icons"> Food and restaurant icons created by @mingyue - Flaticon</a>  -->
+| Resource/Module | Attribution |
+| -: | :- |
+| Diagram plots | [Plotly][Plotly] |
+| Icon | [Food and restaurant icons created by @mingyue - Flaticon](https://www.flaticon.com/free-icons/food-and-restaurant "food and restaurant icons") |
+| statistics.js/ | [statistics.js](https://thisancog.github.io/statistics.js/index.html "Documentation")|
 
 <!--
  !  ╭─────────────────────────────────────────────────────────────────────────╮
@@ -70,4 +80,5 @@ See [doc/usage.md](/doc/usage.md).
  !  ╰─────────────────────────────────────────────────────────────────────────╯
 -->
 
-[Colonist]: https://colonist.io/ "Colonist website"
+[Plotly]: https://plotly.com/javascript/ "Plotly homepage"
+[Colonist]: https://colonist.io/ "Colonist homepage"

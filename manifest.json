@@ -4,9 +4,10 @@
   "manifest_version": 3,
   "author": "Lolligerhans",
   "description": "Correctly correlated Colonist card chance counter",
-  "version": "3.4.5",
+  "version": "3.4.6",
   "icons": {
-    "512": "assets/catan2.jpg"
+    "32": "assets/coconut_32.png",
+    "512": "assets/coconut_512.png"
   },
   "host_permissions": [
     "https://colonist.io/*",
@@ -39,7 +40,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/*.jpg"
+        "assets/*.jpg",
+        "assets/*.png"
       ],
       "matches": [
         "https://colonist.io/*",

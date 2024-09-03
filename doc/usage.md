@@ -2,12 +2,13 @@
 
 Follow [#Installation](../README.md#installation).
 
-After visiting [Colonist][Colonist], find the add-on in the browser toolbar at
-the top right. Click on _Catan Card Counter_ to start the tracker. If you choose
-"always allow", you may need to reload the website to start.
+Visit [Colonist][Colonist] and find the add-on in the browser toolbar at the top
+right. Click on `🥥 Colonist Card Counter` to start the tracker. If you select
+"always allow", you must reload the website.
 
-If a green version number is shown at the top you are done. Otherwise something
-went wrong.
+A successful start is indicated by a coconut icon in the background:
+
+![Icon](/assets/coconut_32.png?raw=true)
 
 ## Interaction
 
@@ -26,20 +27,20 @@ went wrong.
   - reset card counts: click resource card icon
   - reset player names: click 🌎 icon, later reset card counts
 
-## Resource table
+## Understanding resource table
 
-- `4 / 80%`
-  - count is 4 (> 99.9%, guaranteed if _world count_ == 1)
+- `4 / 80%` means:
+  - count is 4
   - 80% chance to rob this card (exact)
-- `4 (67%) / 73%`
+  - certainty > 99.9%, guaranteed if `1 🌎` is shown)
+- `4 (67%) / 73%` means:
+  - The most likely count is 4
   - 67% marginal probability that count is exactly 4
   - 73% chance to rob this card (across possible states)
-- Number of possible states (_world count_): top left table cell (usually `1 🌎`)
-- Cells show most likely marginal value and probabilities
-  - The shown combination of marginal probabilities is often impossible
-- [C&K] Unknown non-random exchanges are assumed uniform random
+- Number of possible states: top left table cell. `1 🌎` indicates 100% certainty.
+- The shown combination of marginal probabilities is often impossible
 
-## Rolls plot
+## Understanding rolls plot
 
 - orange blocks: lighter = newer
 - green line: expectation
@@ -47,10 +48,9 @@ went wrong.
 - red dots: adjusted rarity. Binomial probability to be rarity(n) lucky (once or
 more) with 11 Bernoulli trials. This puts blue into perspective of 11
 opportunities.
-- bars: Luck factor. Inverse of rarity scaled with amount of cards over
-expectation. Proxy for influence of luck on rolls. `1 / rarity(n) * (n - E[N])`.
-The bar is colour coded to be yellow if red == 50%. Red when more rare, green
-when less rare.
+- blue/red lines: Progression of highest blue/red dot.
+- bars: `luck/n) := 1 / rarity(n) * (n - E[N])`. Colour codes adjusted rarity in
+green, yellow, red.
 - purple line: KL-Divergence to expectation
 
 <!--

@@ -255,6 +255,11 @@ class Render
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.addEventListener("click", this.context.recoverNamesCallback, false);
         playerHeaderCell.className = "explorer-tbl-player-col-header";
+        // const icon = document.createElement("img");
+        // const text = document.createElement("div");
+        // icon.src = `${theBrowser.runtime.getURL("assets/coconut_32.png")}`;
+        // playerHeaderCell.appendChild(icon);
+        // playerHeaderCell.appendChild(text);
         for (let i = 0; i < Multiverse.resources.length; i++)
         {
             let resourceHeaderCell = headerRow.insertCell(i + 1);
@@ -413,7 +418,7 @@ class Render
         let header = tbl.tHead;
         let headerRow = header.rows[0];
         let playerHeaderCell = headerRow.cells[0];
-        playerHeaderCell.innerHTML = `${this.manyWorlds.worldCount()} 🌎`;
+        playerHeaderCell.textContent = `${this.manyWorlds.worldCount()} 🌎`;
         for (let i = 0; i < Multiverse.resources.length; i++)
         { // TODO use spans to separate number from icon
             let resourceType = Multiverse.getResourceName(i);

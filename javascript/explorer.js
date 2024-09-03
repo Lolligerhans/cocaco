@@ -8,7 +8,7 @@
 
 "use strict";
 
-const theBrowser = typeof(chrome) !== "undefined" ? chrome : browser;
+const theBrowser = typeof chrome !== "undefined" ? chrome : browser;
 const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
@@ -35,10 +35,19 @@ const config = {
 };
 console.table(config);
 
+const bgIcon = document.createElement("img");
+bgIcon.src = theBrowser.runtime.getURL("assets/coconut_512.png");
+bgIcon.id = "background-icon";
+document.body.prepend(bgIcon);
+
 let e = document.getElementById("header_navigation_store");
-if (e !== null) { e.textContent = "(CoCaCo " + version_string + ")"; e.style.background = "LightGreen"; }
+if (e !== null) {
+    e.textContent = "(CoCaCo " + version_string + ")";
+}
 e = document.querySelector(".betaTag")
-if (e !== null) { e.textContent = "CoCaCo " + version_string; e.style.background = "LightGreen"; }
+if (e !== null) {
+    e.textContent = "CoCaCo " + version_string;
+}
 
 // The text symbols are for outputting only ;)
 // TODO Not sure if we have to keep resources separately. Check if we can merge
