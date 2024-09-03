@@ -105,17 +105,19 @@ command_release()
   command git s || errchow "Could not display commits";
 
   declare choice;
-  choice="$(boolean_prompt "Confirm release ${text_user}${force_flag}${text_normal}?")";
+  declare version;
+  version="$(current_version)";
+  choice="$(boolean_prompt "Release ${text_user}${force_flag}${text_normal} ${version}?")";
   if [[ "$choice" == "n" ]]; then
     abort "Abort: No changes";
   fi
 
-  add_git_tag --force="$force";
+  add_git_tag --version="${version}" --force="$force";
   command git push $force_flag origin &&
   command git push $force_flag origin --tags &&
   command git push $force_flag lolli &&
   command git push $force_flag lolli --tags;
-  echok "Released";
+  echok "Released ${version}";
 }
 
 command_symbols()
@@ -141,7 +143,7 @@ command_uninstall()
 
 add_git_tag()
 {
-  set_args "--force" "$@";
+  set_args "--force --version" "$@";
   eval "$get_args";
 
   declare force_flag="";
@@ -149,8 +151,15 @@ add_git_tag()
     force_flag="--force";
   fi
 
+  declare version_str="";
+  if [[ "$version" != "false" ]]; then
+    version_str="$version";
+  else
+    version_str="$(current_version)";
+  fi
+
   declare tag_name;
-  tag_name="v$(current_version)";
+  tag_name="v${version_str}";
   command git tag $force_flag "$tag_name";
   echok "git tag $force_flag $tag_name";
 }
