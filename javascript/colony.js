@@ -417,10 +417,11 @@ Colony.prototype.findPlayerName = function Colony_prototype_findPlayerName()
     this.playerUsernameElement = document.getElementById("header_profile_username");
     console.assert(this.playerUsernameElement !== null, "should always be present, during and outside of games");
     this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
-    console.log("🥥 You are:", this.playerUsername);
+    console.debug("🥥 You are:", this.playerUsername);
 
     let e = document.getElementById("header_navigation_store");
-    if (e !== null) e.textContent = "CoCaCo " + version_string;
+    if (e !== null)
+        e.textContent = "🥥 " + version_string;
 
     return true;
 }

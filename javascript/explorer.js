@@ -41,13 +41,11 @@ bgIcon.id = "background-icon";
 document.body.prepend(bgIcon);
 
 let e = document.getElementById("header_navigation_store");
-if (e !== null) {
-    e.textContent = "(CoCaCo " + version_string + ")";
-}
+if (e !== null)
+    e.textContent = "(🥥 " + version_string + ")";
 e = document.querySelector(".betaTag")
-if (e !== null) {
+if (e !== null)
     e.textContent = "CoCaCo " + version_string;
-}
 
 // The text symbols are for outputting only ;)
 // TODO Not sure if we have to keep resources separately. Check if we can merge
