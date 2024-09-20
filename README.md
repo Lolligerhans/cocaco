@@ -31,7 +31,9 @@ Done!
 
 ```bash
 #!/usr/bin/env bash
-git clone https://github.com/Lolligerhans/explorer.git;
+git clone https://github.com/Lolligerhans/explorer.git &&
+cd explorer &&
+git checkout "$(git describe --tags --abbrev=0)";
 ```
 
 ### Manual download
