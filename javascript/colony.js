@@ -112,7 +112,7 @@ class Colony
 
     static snippets =
     {
-        initialPlacementDoneSnippet: "rolled",
+        initialPlacement: { split: " placed a " },
         receivedInitialResourcesSnippet: "received starting resources",  // Used to determine which resources each player should get in the initial phase
         gold: {present: "from gold tile", absent: "selecting resource from gold tile"},
         sufficientInitialPhaseMessageSnippet: "received starting resources", // Sufficient (not necessary) to identify messages from the initial phase
@@ -1807,7 +1807,7 @@ Colony.prototype.parseTurnName = function(element)
        || txt.includes(Colony.snippets.rolledSnippet)
        || txt.includes(Colony.snippets.placeInitialSettlementSnippet) )
     {
-        const actor = txt.substring(0, txt.indexOf(" "));
+        const actor = txt.split(Colony.snippets.initialPlacement.split)[0];
         const html = element.innerHTML;
         const colStr = "color:";
         const start = html.indexOf(colStr) + colStr.length;
