@@ -1,10 +1,10 @@
 // Extension entry point.
 //
-// - Configj
+// - Config
 // - Globals
 // - Helpers
 //
-// Dispatches into Colony/Oneore.
+// Dispatches into host specific main.
 
 "use strict";
 
@@ -13,46 +13,29 @@ const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
 
-const config = {
-    // Features
-    extraRollProbabilities: false,
-    // Style
-    ownIcons: false,
-    // Verbose
-    logMessages: false,
-    logWorldCount: false,
-    useTimer: false,
-    printRobs: false,
-    // Very verbose
-    debugMessages: false,
-    printWorlds: false,
-    // Debug
-    largeLog: false,
-    doDebug: false,
-    runManyWorldsTest: false,  // Run test and quit. Not a full unit test.
-    fixedPlayerName: false,    // Set true to use config.playerName
-    playerName: "John#1234",
-};
-console.table(config);
-
 const bgIcon = document.createElement("img");
 bgIcon.src = theBrowser.runtime.getURL("assets/coconut_512.png");
 bgIcon.id = "background-icon";
-document.body.prepend(bgIcon);
+setInterval(() => {
+    let e = document.body;
+    if (e)
+        document.body.prepend(bgIcon);
+}, 3000);
+
 
 let e = document.getElementById("header_navigation_store");
 if (e !== null)
-    e.textContent = "(🥥 " + version_string + ")";
+    e.textContent = "(🥥 Cocaco " + version_string + ")";
 e = document.querySelector(".betaTag")
 if (e !== null)
-    e.textContent = "CoCaCo " + version_string;
+    e.textContent = "🥥 Cocaco " + version_string;
 
 // The text symbols are for outputting only ;)
 // TODO Not sure if we have to keep resources separately. Check if we can merge
 //      with resourcesAsUtf8 below.
 const resourceIcons =
 {
-    wood:"🪵",
+    wood: "🪵",
     brick: "🧱",
     sheep: "🐑",
     wheat: "🌾",
@@ -110,9 +93,11 @@ const utf8Symbols =
     harbor: "⚓",
     move: "🧳",
     win: "🎉",
+    vp: "⭐",
+    yop: "🎁",
 };
 
-// @param resources: ...
+// @param resources: { wood: 3, wheat: 2, ... }
 function resourcesAsUtf8(resources)
 {
     let s = "";
@@ -128,15 +113,15 @@ function resourcesAsUtf8(resources)
 const alternativeAssets =
 {
     // More at 408f1c219dc04fb8746541fed624e6d4026aaaac
-    wood:       `<img src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    brick:      `<img src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    sheep:      `<img src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    wheat:      `<img src="${theBrowser.runtime.getURL("assets/wheat2.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    ore:        `<img src="${theBrowser.runtime.getURL("assets/ore27.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    road:       `<img src="${theBrowser.runtime.getURL("assets/street10.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    settlement: `<img src="${theBrowser.runtime.getURL("assets/settle7.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    devcard:    `<img src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="explorer-tbl-resource-icon"/>`,
-    city:       `<img src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="explorer-tbl-resource-icon"/>`
+    wood:       `<img src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    brick:      `<img src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    sheep:      `<img src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    wheat:      `<img src="${theBrowser.runtime.getURL("assets/wheat2.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    ore:        `<img src="${theBrowser.runtime.getURL("assets/ore27.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    road:       `<img src="${theBrowser.runtime.getURL("assets/street10.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    settlement: `<img src="${theBrowser.runtime.getURL("assets/settle7.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    devcard:    `<img src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    city:       `<img src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="cocaco-tbl-resource-icon"/>`
 };
 
 // Interpolate red-green over yellow
@@ -210,6 +195,46 @@ function setDoInterval(repeat, time, then = null)
     );
 }
 
+// Runs each job in order. Each job is repeated after an interval until
+// returning true. Uses setDoInterval to run jobs immediately one after anohter.
+// tasks = [ <...jobs> ]
+// job = { funct: function, done: false, name: "My Name"}
+// Properties "done" and "name" are optional.
+// PERF: Iterates n^2 for n jobs
+function executeWithRetries(tasks, retryTime = 3000)
+{
+    for (let i = 0; i < tasks.length; ++i)
+    {
+        let task = tasks[i];
+        if (!Object.hasOwn(task, "done")) {
+            task.done = false;
+        }
+        if (task.done) {
+            continue;
+        }
+        console.log(
+            `🧭 ( ${i} ) executeWithRetries:`,
+            task.name ?? task.funct.name
+        );
+        // Assume we will succeed and remember for when we come back
+        task.done = true;
+        setDoInterval(
+            task.funct,
+            retryTime,
+            // Recurse
+            executeWithRetries.bind(null, tasks),
+        );
+        // The program flow continues in the setDoInterval()
+        return;
+    }
+    console.log("🧭 ( ✔️  ) executeWithRetries completed");
+}
+
+function removeEntry(arr, index){
+    arr[index] = arr[arr.length - 1];
+    arr.pop();
+}
+
 function resize(element, w = 1000, h = 800)
 {
     console.log("resizing", element, w, h);
@@ -250,6 +275,32 @@ function log2(...args)
     logs(...args);
 }
 
+// HACK: NOt sure if this works but good enough to sanity check in testing
+function badEquals(x, y) {
+    if (!x || !y) {
+        return x === y;
+    }
+    if (typeof x === "string") {
+        return x === y;
+    }
+    if (typeof x === "number") {
+        return x === y;
+    }
+    if (typeof x === "object") {
+        const xKeys = Object.keys(x);
+        if (xKeys.length !== Object.keys(y).length) {
+            return false;
+        }
+        for (const k of xKeys) {
+            if (!badEquals(x[k], y[k])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return JSON.stringify(x) === JSON.stringify(y);
+}
+
 const wood = "wood";
 const ore = "ore";
 const wheat = "wheat";
@@ -260,7 +311,15 @@ const resourceTypes = [wood, brick, sheep, wheat, ore];
 function rotateToLastPosition(array, value)
 {
     const pos = array.indexOf(value);
-    console.assert(pos >= 0, "Expected error when spectating");
+    if (pos < 0) {
+        // Expected when spectating
+        console.warn("Could not rotate to last position:",
+            value,
+            "not found in",
+            array
+        );
+        return array;
+    }
     const rotation = array.length - pos - 1;
     const unrotatedCopy = deepCopy(array);
     for (let i = 0; i < array.length; ++i)
@@ -353,13 +412,22 @@ function main()
 
     if (window.location.hostname === "colonist.io")
     {
-        console.log("🥥 Running on colonist.io");
-        let colony = new Colony();
-        colony.restartTracker();
+        if (config.pipeline === "Colonist") {
+            console.log("🥥 Running Colonist on colonist.io");
+
+            let colonist = new Colonist();
+            colonist.start();
+        } else {
+            console.assert(config.pipeline === "Colony",
+                "Only valid pipelines")
+            console.log("🥥 Running Colony on colonist.io");
+            let colony = new Colony();
+            colony.restartTracker();
+        }
     }
     else if (window.location.hostname === "twosheep.io")
     {
-        console.log("🥥 Running on twosheep.io");
+        console.log("🥥 Running twosheep on twosheep.io");
         console.assert(window.location.hostname === "twosheep.io");
         twosheep.restartTracker();
     }
@@ -369,6 +437,80 @@ function main()
     }
 }
 
-main();
+// ╭───────────────────────────────────────────────────────────────────────────╮
+// │ Message passing                                                           │
+// ╰───────────────────────────────────────────────────────────────────────────╯
 
-// vim: shiftwidth=4:softtabstop=4:expandtab
+// TODO: Allow re-trying to connect later on, by putting this stuff in a class
+
+let handledCount = 0;
+let ackTime = Date.now();
+
+let portToBackground = theBrowser.runtime.connect( { name: "dump-port" });
+// console.debug("cocaco.js: Connected:", portToBackground);
+portToBackground.onDisconnect.addListener(() => {
+    console.log("cocaco.js: Disconnected from background script");
+    // console.error("Port closed. Game still running?");
+});
+portToBackground.onMessage.addListener((message) => {
+    console.assert(message.type, "Sanity check");
+    console.assert(message.type === "ack", "Only ack messages should go this direction");
+    console.debug(`Background: Ack ${message.payload} / ${handledCount}`);
+    if (Math.abs(handledCount - message.payload) > 100) // Arbitrary value
+        cosole.warn("cocaco.js: Background out of sync");
+});
+console.log("🛜 cocaco.js: Prepared background port")
+
+function acknowledge() {
+    // Send ack message every now and then for debugging
+    // console.debug("cocaco.js acknowledge(): ", handledCount, ackTime);
+    ++handledCount;
+    const now = Date.now();
+    if (now < ackTime)
+        return;
+    portToBackground.postMessage({
+        type: "ack",
+        payload: handledCount
+    });
+    ackTime = now + 120 * 1000;
+}
+
+let doDump = config.dump;
+function handleMessage(message) {
+    Reparse.applyAll(message);
+    if (!doDump) {
+        return;
+    }
+    try {
+        portToBackground.postMessage({ type: "dump", payload: message });
+        acknowledge();
+    } catch (e) {
+        console.error("Dump failed:", e);
+        console.warn("Dump off");
+        doDump = false;
+    }
+}
+
+// Some reparsers use Colony properties which are not ready at startup (the
+// content-script may not even loaded yet). Effectively we cache the first
+// messages until the first message after setting messageStash=true. It may take
+// until the first user action to trigger replaying the cache.
+let messageStash = { messages: [], ready: false };
+function receive(message) {
+    messageStash.messages.push(message);
+    if (!messageStash.ready) {
+        return;
+    }
+    messageStash.messages.forEach(message => {
+        try {
+            handleMessage(message)
+        } catch (e) {
+            console.error("Error parsing message:", message, e);
+        }
+    });
+    messageStash.messages.length = 0;
+}
+
+exportFunction(receive, window, { defineAs: "receive" });
+
+main();

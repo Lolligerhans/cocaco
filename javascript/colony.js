@@ -1,5 +1,10 @@
 "use strict";
 
+const enumNames = {
+    resources: { 1: "wood", 2: "brick", 3: "sheep", 4: "wheat", 5: "ore" },
+    devcards: { 11: "knight", 12: "vp", 13: "monopoly", 14: "roadBuilder", 15: "yop" },
+};
+
 class Colony
 {
     static refreshRate = 3000;
@@ -7,9 +12,9 @@ class Colony
     static yellow = "LightGoldenRodYellow";
     static red = "LightCoral";
 
-    //==========================================================================
+    //==========================================================
     // Static
-    //==========================================================================
+    //==========================================================
 
     // Returns resource type of any resource card found in the element. Use when
     // there is only one resource card.
@@ -106,9 +111,9 @@ class Colony
         }
     }
 
-    //==========================================================================
+    //==========================================================
     // Constants
-    //==========================================================================
+    //==========================================================
 
     static snippets =
     {
@@ -212,20 +217,20 @@ class Colony
 
     static colonistAssets =
     {
-        wood:       `<img src="dist/images/${Colony.imageNameSnippets["wood"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        brick:      `<img src="dist/images/${Colony.imageNameSnippets["brick"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        sheep:      `<img src="dist/images/${Colony.imageNameSnippets["sheep"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        wheat:      `<img src="dist/images/${Colony.imageNameSnippets["wheat"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        ore:        `<img src="dist/images/${Colony.imageNameSnippets["ore"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        cloth:      `<img src="dist/images/${Colony.imageNameSnippets["cloth"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        coin:       `<img src="dist/images/${Colony.imageNameSnippets["coin"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        paper:      `<img src="dist/images/${Colony.imageNameSnippets["paper"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        unknown:    `<img src="dist/images/${Colony.imageNameSnippets["unknown"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        road:       `<img src="dist/images/${Colony.imageNameSnippets["road"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        settlement: `<img src="dist/images/${Colony.imageNameSnippets["settlement"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        devcard:    `<img src="dist/images/${Colony.imageNameSnippets["devcard"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        city:       `<img src="dist/images/${Colony.imageNameSnippets["city"]}.svg" class="explorer-tbl-resource-icon"/>`,
-        ship:       `<img src="dist/images/${Colony.imageNameSnippets["ship"]}.svg" class="explorer-tbl-resource-icon"/>`,
+        wood:       `<img src="dist/images/${Colony.imageNameSnippets["wood"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        brick:      `<img src="dist/images/${Colony.imageNameSnippets["brick"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        sheep:      `<img src="dist/images/${Colony.imageNameSnippets["sheep"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        wheat:      `<img src="dist/images/${Colony.imageNameSnippets["wheat"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        ore:        `<img src="dist/images/${Colony.imageNameSnippets["ore"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        cloth:      `<img src="dist/images/${Colony.imageNameSnippets["cloth"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        coin:       `<img src="dist/images/${Colony.imageNameSnippets["coin"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        paper:      `<img src="dist/images/${Colony.imageNameSnippets["paper"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        unknown:    `<img src="dist/images/${Colony.imageNameSnippets["unknown"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        road:       `<img src="dist/images/${Colony.imageNameSnippets["road"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        settlement: `<img src="dist/images/${Colony.imageNameSnippets["settlement"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        devcard:    `<img src="dist/images/${Colony.imageNameSnippets["devcard"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        city:       `<img src="dist/images/${Colony.imageNameSnippets["city"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        ship:       `<img src="dist/images/${Colony.imageNameSnippets["ship"]}.svg" class="cocaco-tbl-resource-icon"/>`,
     };
 
     static emptyTurnState =
@@ -293,9 +298,9 @@ class Colony
 
 } // class Colony
 
-//==============================================================================
+//==============================================================
 // Messages
-//==============================================================================
+//==============================================================
 
 Colony.prototype.getAllMessages = function()
 {
@@ -348,19 +353,20 @@ Colony.prototype.applyParsers = function(
     return unidentified;
 }
 
-//==============================================================================
+//==============================================================
 // Program flow
-//==============================================================================
+//==============================================================
 
 Colony.prototype.restartTracker = function Colony_prototype_restartTracker(tasks =
 [
     { "funct": Colony.prototype.reset.bind(this),                             "ok": false },
     { "funct": Colony.prototype.findPlayerName.bind(this),                    "ok": false },
     { "funct": Colony.prototype.findElements.bind(this),                      "ok": false },
+    { "funct": Colony.prototype.registerReparsers.bind(this),                 "ok": false },
     { "funct": Colony.prototype.clearLog.bind(this),                          "ok": false },
     { "funct": Colony.prototype.renderDummy.bind(this),                       "ok": false },
     { "funct": Colony.prototype.recoverUsers.bind(this, null, 2),             "ok": false },
-    { "funct": Colony.prototype.initializeTracker.bind(this),                 "ok": false },
+    { "funct": Colony.prototype.initialiseTracker.bind(this),                 "ok": false },
     { "funct": () => { this.MSG_OFFSET = 0; return true; },                   "ok": false },
     { "funct": Colony.prototype.comeMrTallyManTallinitialResource.bind(this), "ok": false },
     { "funct": Colony.prototype.restartMainLoop.bind(this),                   "ok": false },
@@ -409,6 +415,30 @@ Colony.prototype.reset = function Colony_prototype_reset()
     // We use the logger to multiplex logging for debugging
     this.logger = null;
 
+    if (this.source && this.source !== null)
+        this.source.disable();
+    // TODO: If we use a Source actually we may need to allow it to dictate the
+    //       state of the game, or buffer trigger activation.
+    this.source = new Source();
+    this.source.onTrigger("roll", x => {
+        console.info("Colony (roll trigger):", JSON.stringify(x));
+    });
+    this.source.onTrigger("transfer", x => {
+        console.info("Colony (transfer trigger):", JSON.stringify(x));
+    });
+    this.source.onTrigger("mono", x => {
+        console.info("Colony (mono trigger):", JSON.stringify(x));
+    });
+    this.source.onTrigger("trade_offer", x => {
+        console.info("Colony (trade_offer trigger):", JSON.stringify(x));
+    });
+    this.source.onTrigger("trade_counter", x => {
+        console.info("Colony (trade_counter trigger):", JSON.stringify(x));
+    });
+    this.source.onTrigger("steal_random", x => {
+        console.info("Colony (steal_random trigger):", JSON.stringify(x));
+    });
+
     return true;
 }
 
@@ -417,16 +447,20 @@ Colony.prototype.findPlayerName = function Colony_prototype_findPlayerName()
     this.playerUsernameElement = document.getElementById("header_profile_username");
     console.assert(this.playerUsernameElement !== null, "should always be present, during and outside of games");
     this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
+    if (this.playerUsername === "") {
+        return false;
+    }
+
     console.debug("🥥 You are:", this.playerUsername);
 
     let e = document.getElementById("header_navigation_store");
     if (e !== null)
-        e.textContent = "🥥 " + version_string;
+        e.textContent = "🥥 Cocaco " + version_string;
 
     return true;
 }
 
-Colony.prototype.findElements = function Colony_prototype_findLog()
+Colony.prototype.findElements = function Colony_prototype_findElements()
 {
     console.assert(!this.logElement);
     console.assert(!this.chatElement);
@@ -434,6 +468,8 @@ Colony.prototype.findElements = function Colony_prototype_findLog()
     if (!this.logElement)
         return false;
     this.chatElement = document.getElementById("game-chat-text");
+    if (!this.chatElement)
+        console.error("A chat element is obligatory when we show information there");
     if (this.chatElement)
     {
         if (Colony.enlarger)
@@ -460,12 +496,106 @@ Colony.prototype.findElements = function Colony_prototype_findLog()
     return true;
 }
 
-Colony.prototype.clearLog = function()
+function message_listener(message, _sender, _sendResponse)
+{
+    console.log("🦄 content script got message:", message);
+}
+
+Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers() {
+    // TODO: Put reparsers into their own object with callbacks to set Colony
+    //       properties as appropriate.
+    let reparsers = [];
+    reparsers.push(new Reparse(
+        "ColonyEchoType",
+        Reparse.applyDoers.always,
+        Reparse.entryPoints.data,
+        check_type,
+        t => {
+            console.debug(`type=${t}`);
+            return false;
+        },
+    ));
+    if (config.parseTypes)
+        typeRep.register(); // For debugging
+    reparsers.push(new Reparse(
+        "ColonyMatchCountries",
+        Reparse.applyDoers.byKind({type: [4]}),
+        Reparse.entryPoints.playerUserStates,
+        check_country_code,
+        groups => {
+            let any = false;
+            for (let group of groups) {
+                this.logger.logChat(`${group.code}: ${group.players}`)
+                any = true;
+            }
+            if (any === false) {
+                this.logger.logChat("No country matches");
+            }
+            return true;
+        },
+    ).register());
+    let playerUserStates = null; // For mapping index to name
+    let getPlayerName = function(colourIndex) {
+        if (playerUserStates === null) {
+            console.error("getPlayerName called before setting playerUserStates");
+            return "<unknown>"; // Only used for display so return something
+        }
+        // Two equal signs to compare with string type colourIndex
+        const player = playerUserStates.find(x => x.selectedColor == colourIndex);
+        console.assert(player !== undefined, `Player with colour index ${colourIndex} not found in playerUserStates`);
+        return player.username;
+        // --index; // The messaging is 1-based (for player indices only)
+        // return playerUserStates[index].username;
+    };
+    reparsers.push(new Reparse(
+        "Set PlayerUserStates",
+        Reparse.applyDoers.byKind({ type: [4], id: "130" }),
+        Reparse.entryPoints.playerUserStates,
+        state => state,
+        state => {
+            playerUserStates = state;
+            console.info("playerUserStates:", playerUserStates);
+            return false;
+        }
+    ).register());
+
+    reparsers.push(new Reparse(
+        "ColonyDevState",
+        Reparse.applyDoers.byKind({ type: [4, 91], id: "130" }),
+        Reparse.entryPoints.developmentCardsState,
+        check_development_cards,
+        cards => {
+            if (Object.hasOwn(cards, "bank")) {
+                const names = cards.bank.map(card => enumNames.devcards[card]);
+                const icons = names.map(name => utf8Symbols[name]);
+                const show = `Bank: ${icons.join("")}`;
+                console.debug(show);
+                this.logger.logChat(show);
+            }
+            for (let [index, player_cards] of Object.entries(cards.players)) {
+                const names = player_cards.map(card => enumNames.devcards[card]);
+                const icons = names.map(name => utf8Symbols[name]);
+                const playerName = getPlayerName(index);
+                const show = `${playerName}: ${icons.join("")}`;
+                console.debug(show);
+                this.logger.logChat(show);
+            }
+            return false;
+        }
+    ).register());
+
+    messageStash.ready = true;
+
+    return true;
+} // registerReparsers()
+
+Colony.prototype.clearLog = function Colony_prototype_clearLog()
 {
     console.assert(this.logger !== null);
     this.logger.clear();
-    // HACK: Abusing "internal" logChat function. Originally this class was not meant to be used for regular text display, only for debugging.
-    this.logger.logChat(`🥥 Version ${version_string}`);
+    // HACK: Abusing "internal" logChat function. Originally this class was not
+    //       meant to be used for regular text display, only for debugging.
+    this.logger.logChat(`🥥 Cocaco ${version_string}`);
     this.logger.logChat(`🥥 Hello ${this.playerUsername}`);
     return true;
 }
@@ -479,7 +609,7 @@ Colony.prototype.clearLog = function()
 // At the same time, it allows us to identify generic rendering problems earlier
 // by faithfully utilizign the rendering code.
 //
-// All components are later initialized for real in initializeTracker().
+// All components are later initialized for real in initialiseTracker().
 Colony.prototype.renderDummy = function Colony_prototype_renderDummy()
 {
     const dummyPlayers = ["Detecting", "Player", "Names"];
@@ -513,7 +643,7 @@ Colony.prototype.renderDummy = function Colony_prototype_renderDummy()
 // message. We want to exit after the first round, so the got messages can be
 // colourised by comeMrTallyManTallinitialResource() afterwards.
 //
-// Runs 'initializeTracker()' after every new player as a hack to 'update' the
+// Runs 'initialiseTracker()' after every new player as a hack to 'update' the
 // resource table display. The tracking and rendering objects do not support
 // adding players post-hoc, so we replace them entirely. This is fine during
 // startup phase.
@@ -577,7 +707,7 @@ Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers
             this.playerColours[name] = colour;
             msg.style.background = this.playerColours[name];
             this.logger.log(msg, `🥥 Found player %c${name}%c with colour ${colour}`, this.cssColourPlayer(name), "");
-            this.initializeTracker(false);
+            this.initialiseTracker(false);
         }
         this.foundCount[name] = (this.foundCount[name] || 0) + 1;
         if (maxRepetitions !== null && this.foundCount[name] > maxRepetitions)
@@ -596,7 +726,7 @@ Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers
 // name + colour data must be handed to the member objects for construction.
 // @param doRecover  If true, provide doRecover functions to the new Render()
 //                   object. If false, uses 'null', preventing recovery.
-Colony.prototype.initializeTracker = function Colony_prototype_initializeTracker(doRecover = true)
+Colony.prototype.initialiseTracker = function Colony_prototype_initialiseTracker(doRecover = true)
 {
     let noResources = {};
     for (const name of this.players)
@@ -693,6 +823,7 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
         const msg = allMessages[idx];
         const unidentified = this.applyParsers(msg, idx, allMessages);
         msg.style.background = unidentified ? Colony.yellow : Colony.green;
+        console.debug("Colony Multiverse:")
         this.multiverse.printWorlds();
         if (config.logWorldCount) console.log("🌎", this.multiverse.worlds.length);
         if (0 === this.multiverse.worldCount()) // Implies error
@@ -780,14 +911,14 @@ Colony.prototype.recoverNames = function()
         { "funct": this.findElements.bind(this), "ok": false },
         { "funct": this.renderDummy.bind(this), "ok": false },
         { "funct": this.recoverUsers.bind(this, playerCount), "ok": false },
-        { "funct": this.initializeTracker.bind(this), "ok": false },
+        { "funct": this.initialiseTracker.bind(this), "ok": false },
         { "funct": () => { this.renderObject.render(); return true; }, "ok": false },
     ]);
 }
 
-//==============================================================================
+//==============================================================
 // Main loop
-//==============================================================================
+//==============================================================
 
 Colony.prototype.isActiveMainLoop = function()
 {
@@ -841,9 +972,9 @@ Colony.prototype.mainLoopToggle = function()
     }
 }
 
-//==============================================================================
+//==============================================================
 // Misc (any but messages, program flow, main loop, parsers)
-//==============================================================================
+//==============================================================
 
 // Assumes this.playerUsername has been set. Rotates that player to last position.
 Colony.prototype.reorderPlayerNames = function()
@@ -876,9 +1007,9 @@ Colony.prototype.toggleTable = function(value = null)
     }
 }
 
-//==============================================================================
+//==============================================================
 // Parsers
-//==============================================================================
+//==============================================================
 
 // Special parser: Using during initial phase, but not part of 'ALL_PARSERS'
 Colony.prototype.parseInitialGotMessage = function(element)
@@ -1067,7 +1198,7 @@ Colony.prototype.parseBuiltMessage = function(element)
         else if (img.src.includes("ship"))
         {
             console.assert(false, "unreachable");
-            // TODO If in seafarers ships are built we would need to add it here
+            // TODO: If in seafarers ships are built we would need to add it here
             alertIf("Ships should be placed (I think)");
         }
     }
@@ -1083,7 +1214,7 @@ Colony.prototype.parseBuiltMessage = function(element)
     return true;
 }
 
-Colony.prototype.parseRolls = function(element)
+Colony.prototype.parseRolls = function parseRolls(element)
 {
     const textContent = element.textContent;
     if (!textContent.includes(Colony.snippets.rolledSnippet)) return false;
@@ -1170,7 +1301,10 @@ Colony.prototype.parseMonopoly = function(element)
     const stolenResource = Colony.findSingularResourceImageInElement(element);
     this.logger.log(element, `${utf8Symbols.monopoly} (regular) %c${thief}%c ${resourceIcons[stolenResource]}`, this.cssColourPlayer(thief), "");
 
-    this.multiverse.transformMonopoly(thief, Multiverse.getResourceIndex(stolenResource));
+    this.multiverse.transformMonopoly(
+        thief,
+        Multiverse.getResourceIndex(stolenResource)
+    );
 
     // TODO What to do with turnstate here?
 
@@ -1331,7 +1465,7 @@ Colony.prototype.stealKnown = function(element)
     );
 
     return true;
-}
+} // stealKnown
 
 // <div><img><span><span>StealingPlayer</span> stole <img>  from <span>VictimPlayer</span></span></div>
 // "StealingPlayer stole   from VictimPlayer"
@@ -1428,7 +1562,7 @@ Colony.prototype.stealUnknown = function(element)
     this.multiverse.branchSteal(targetPlayer, stealingPlayer);
 
     return true;
-}
+} // stealUnknown
 
 Colony.prototype.parseMoveRobber = function(element)
 {
@@ -1839,8 +1973,6 @@ Colony.prototype.parseTurnName = function(element)
 Colony.allParsers =
 [
     // The order is so that more common events are matched earlier
-    // TODO: Not yet for expansion parsers
-
     Colony.prototype.parseAlways, // Must come first
 
     // --------------------------------------
@@ -1867,24 +1999,24 @@ Colony.allParsers =
     // --------------------------------------
     // Expansion parsers
     // --------------------------------------
-    Colony.prototype.parseMoveRobber,
-    Colony.prototype.parseMoveShip,
-    Colony.prototype.parsePlaceShipRoad,
-    Colony.prototype.parsePlaceKnight,
-    Colony.prototype.parseActivateKnight,
-    Colony.prototype.parseUpgradeKnight,
     Colony.prototype.parseAqueduct,
-    Colony.prototype.parseUpgradeCity,
+    Colony.prototype.parseMoveRobber,
     Colony.prototype.parseProgressCard, // The activation only, not the effects
+    Colony.prototype.parseActivateKnight,
+    Colony.prototype.parsePlaceKnight,
+    Colony.prototype.parseUpgradeKnight,
+    Colony.prototype.parseUpgradeCity,
+    Colony.prototype.parseDiplomatReposition,
     Colony.prototype.parseResourceMonopoly,
     Colony.prototype.parseCommodityMonopoly,
+    Colony.prototype.parsePlaceShipRoad,
     Colony.prototype.parseCommercialHarborTheirs, // Without our involvement
     Colony.prototype.parseCommercialHarborOurs, // With our involvement
     Colony.prototype.parseSpecialBuildPhase,
-    Colony.prototype.parseDiplomatReposition,
+    Colony.prototype.parseMoveShip,
 ];
 
-// TODO: Spectator does not see some messages anymore
+// FIXME: Spectator does not see some messages anymore
 //  - commercial harbour
 //  - ?
 

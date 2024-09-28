@@ -1,0 +1,9 @@
+{
+  "name": "cocaco_dump",
+  "description": "Cocaco data collector",
+  "path": "HOME_DIR_PLACEHOLDER/.local/share/cocaco/cocaco_dump.py",
+  "type": "stdio",
+  "allowed_extensions": [
+    "cocaco@lolligerhans"
+  ]
+}

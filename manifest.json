@@ -1,18 +1,24 @@
 {
-  "name": "Colonist Card Counter",
-  "short_name": "CoCaCo",
+  "name": "Correct Catan Counter",
+  "short_name": "Cocaco",
   "manifest_version": 3,
   "author": "Lolligerhans",
-  "description": "Correctly correlated Colonist card chance counter",
-  "version": "3.4.7-dev",
+  "description": "Correctly correlated Catan card chance Counter",
+  "version": "4.0.0",
   "icons": {
     "32": "assets/coconut_32.png",
     "512": "assets/coconut_512.png"
   },
   "host_permissions": [
     "https://colonist.io/*",
-    "https://twosheep.io/*"
+    "https://twosheep.io/*",
+    "wss://socket.svr.colonist.io/"
   ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
   "content_scripts": [
     {
       "matches": [
@@ -20,21 +26,42 @@
         "https://twosheep.io/*"
       ],
       "css": [
-        "css/explorer-styles.css"
+        "css/cocaco-styles.css"
       ],
       "run_at": "document_idle",
       "js": [
         "statistics.js/statistics.min.js",
         "plotly/plotly-2.25.2.min.js",
+        "javascript/config.js",
+        "javascript/trigger.js",
+        "javascript/observer.js",
+        "javascript/multiverse.js",
+        "javascript/reparse.js",
+        "javascript/colonist/source.js",
+        "javascript/colonist/observer.js",
+        "javascript/state.js",
+        "javascript/source.js",
         "javascript/log.js",
         "javascript/track.js",
         "javascript/render.js",
         "javascript/colony.js",
+        "javascript/colonist/colonist.js",
         "javascript/oneore.js",
-        "javascript/multiverse.js",
         "javascript/plot.js",
-        "javascript/explorer.js"
+        "javascript/cocaco.js"
       ]
+    },
+    {
+      "world": "MAIN",
+      "matches": [
+        "https://colonist.io/*"
+      ],
+      "js": [
+        "javascript/config.js",
+        "msgpack.js/msgpack.min.js",
+        "javascript/socket.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
@@ -48,5 +75,19 @@
         "https://twosheep.io/*"
       ]
     }
-  ]
+  ],
+  "permissions": [
+    "nativeMessaging"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "cocaco@lolligerhans"
+    }
+  },
+  "action": {
+    "default_icon": {
+      "32": "assets/coconut_32.png",
+      "512": "assets/coconut_512.png"
+    }
+  }
 }

@@ -3,7 +3,7 @@
 Follow [#Installation](../README.md#installation).
 
 Visit [Colonist][Colonist] and find the add-on in the browser toolbar at the top
-right. Click on `🥥 Colonist Card Counter` to start the tracker. If you select
+right. Click on `🥥 Correct Card Counter` to start the tracker. If you select
 "always allow", you must reload the website.
 
 A successful start is indicated by a coconut icon in the background:

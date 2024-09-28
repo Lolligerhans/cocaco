@@ -39,7 +39,7 @@
 }
 
 /* for test main.HTML */
-#explorer-plt
+#cocaco-plt
 {
   /* Hight determined by plot.js ('divideSizes') */
     position: absolute;
@@ -49,7 +49,7 @@
     top: 202px;
 }
 
-#explorer-plt-rolls
+#cocaco-plt-rolls
 {
   position: absolute;
   border: none;
@@ -60,7 +60,7 @@
   left: 315px;
 }
 
-#explorer-tbl
+#cocaco-tbl
 {
     position: absolute;
     background-color: #ccc;
@@ -74,7 +74,7 @@
     border-spacing: 0;
 }
 
-#explorer-rob-tbl
+#cocaco-rob-tbl
 {
     position: absolute;
     background-color: #ccc;
@@ -90,18 +90,18 @@
     border-spacing: 0;
 }
 
-.explorer-tbl-header {
+.cocaco-tbl-header {
     border: none;
     text-align: left;
 }
 
-.explorer-tbl-header,.explorer-tbl-cell,.explorer-tbl-total-cell
+.cocaco-tbl-header,.cocaco-tbl-cell,.cocaco-tbl-total-cell
 {
     padding: 4px 4px 2px; /* default override cell padding */
     border: none;
 }
 
-.explorer-tbl-row {
+.cocaco-tbl-row {
     /*border: solid 1px #555;*/
     height: 1.5em;
     text-align: left;
@@ -110,14 +110,14 @@
 
 
 
-.explorer-tbl-row:nth-child(2n-1) { background-color: #eeeeee; }
-.explorer-tbl-row:nth-child(2n) { background-color: #f9f9f9; }
-.explorer-tbl-total-row
+.cocaco-tbl-row:nth-child(2n-1) { background-color: #eeeeee; }
+.cocaco-tbl-row:nth-child(2n) { background-color: #f9f9f9; }
+.cocaco-tbl-total-row
 {
-    /* background inherit from explorer-tbl */
+    /* background inherit from cocaco-tbl */
 }
 
-.explorer-tbl-cell,.explorer-tbl-total-cell
+.cocaco-tbl-cell,.cocaco-tbl-total-cell
 {
     border: none;
     box-sizing: unset;
@@ -129,12 +129,12 @@
     line-height: 1.2em;
 }
 
-.explorer-tbl-total-cell
+.cocaco-tbl-total-cell
 {
     background-color: #ccc;
 }
 
-.explorer-tbl-player-col-cell,.explorer-rob-tbl-player-col-cell
+.cocaco-tbl-player-col-cell,.cocaco-rob-tbl-player-col-cell
 {
     border: none;
     /*! display: inline-flex; */
@@ -142,31 +142,31 @@
     line-height: 1.5em;
 }
 
-.explorer-rob-tbl-player-col-cell
+.cocaco-rob-tbl-player-col-cell
 {
     text-align: right !important;
 }
 
-.explorer-tbl-player-col-cell-color {
+.cocaco-tbl-player-col-cell-color {
     /*width: 8px;*/
     display: inline-block;
     font-family: monospace;
 }
 
-.explorer-tbl-player-name {
+.cocaco-tbl-player-name {
     font-weight: bold;
     margin: 0px 8px 0 4px;
     white-space: pre;
     font-family: monospace;
 }
 
-.explorer-tbl-unknown-stats
+.cocaco-tbl-unknown-stats
 {
     font-weight: lighter;
     color: black;
 }
 
-.explorer-tbl-player-col-header {
+.cocaco-tbl-player-col-header {
     font-weight: bold;
     /* text-transform: uppercase; */
     border: none;
@@ -174,7 +174,7 @@
     font-size: 85%;
 }
 
-.explorer-tbl-resource-icon {
+.cocaco-tbl-resource-icon {
     width: 36;
     height: 36px;
 }

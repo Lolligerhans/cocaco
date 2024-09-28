@@ -106,6 +106,18 @@ class Track {
         }
         this.robsSeven[player] += 1;
     }
+
+    equals(other) {
+        // NOTE: Ignore some derived variables
+        let equal = true;
+        equal = equal && badEquals(this.rolls, other.rolls);
+        equal = equal && badEquals(this.robs, other.robs);
+        equal = equal && badEquals(this.robsTotal, other.robsTotal);
+        equal = equal && badEquals(this.robsLost, other.robsLost);
+        equal = equal && badEquals(this.robsTaken, other.robsTaken);
+        equal = equal && badEquals(this.robsSeven, other.robsSeven);
+        return equal;
+    }
 }
 
 // ╭───────────────────────────────────────────────────────────────────────────╮

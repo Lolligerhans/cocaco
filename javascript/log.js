@@ -52,13 +52,6 @@ class MessageLog
 
 }
 
-MessageLog.configOptions =
-{
-    // These keys must be in the gloval config element
-    "logMessages": MessageLog.prototype.logConsole,
-    "debugMessages": MessageLog.prototype.logDom,
-};
-
 MessageLog.prototype.clear = function()
 {
     MessageLog.clear();
@@ -88,6 +81,7 @@ MessageLog.prototype.logChat = function( ...args)
 {
     const element = MessageLog.styledElement(...args);
     this.chatElement.appendChild(element);
+    element.scrollIntoView();
 }
 
 MessageLog.prototype.logConsole = function(_messageElement, ...args)
@@ -111,3 +105,10 @@ MessageLog.prototype.logMessage = function(messageElement, ...args)
     const element = MessageLog.styledElement(...args);
     messageElement.appendChild(element);
 }
+
+MessageLog.configOptions =
+{
+    // These keys must be in the gloval config element
+    "logMessages": MessageLog.prototype.logConsole,
+    "debugMessages": MessageLog.prototype.logDom,
+};

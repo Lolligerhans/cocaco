@@ -224,7 +224,7 @@ generateEmptyResourceList: function(playerNameList)
 //
 // In principle, this function could run any kind of functions in order, but
 // here we only needed it to chain the intervalled functions used during
-// startup. This prevents the interval mess of old explorer, because this is the
+// startup. This prevents the interval mess of old cocaco, because this is the
 // only function that sees intervals. The other functions only need to return
 // appropriately (true to continue, false to stop).
 restartTracker: function(done =
@@ -428,14 +428,14 @@ findIcons: function()
     //console.debug("◦ Found settlement of arbitrary colour:", anyColour);
     twosheep.icons =
     {
-        wood: `<img src="${document.querySelector(`img[src*="wood_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
-        brick: `<img src="${document.querySelector(`img[src*="brick_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
-        sheep: `<img src="${document.querySelector(`img[src*="sheep_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
-        wheat: `<img src="${document.querySelector(`img[src*="wheat_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
-        ore: `<img src="${document.querySelector(`img[src*="ore_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
+        wood: `<img src="${document.querySelector(`img[src*="wood_icon"][src$=".svg"]`).src}" class="cocaco-tbl-resource-icon"/>`,
+        brick: `<img src="${document.querySelector(`img[src*="brick_icon"][src$=".svg"]`).src}" class="cocaco-tbl-resource-icon"/>`,
+        sheep: `<img src="${document.querySelector(`img[src*="sheep_icon"][src$=".svg"]`).src}" class="cocaco-tbl-resource-icon"/>`,
+        wheat: `<img src="${document.querySelector(`img[src*="wheat_icon"][src$=".svg"]`).src}" class="cocaco-tbl-resource-icon"/>`,
+        ore: `<img src="${document.querySelector(`img[src*="ore_icon"][src$=".svg"]`).src}" class="cocaco-tbl-resource-icon"/>`,
         // "devcards_icon" not "devcard_icon"
-        devcard: `<img src="${document.querySelector(`img[src*="devcards_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
-        road: `<img src="${document.querySelector(`img[src*="road_icon"][src$=".svg"]`).src}" class="explorer-tbl-resource-icon"/>`,
+        devcard: `<img src="${document.querySelector(`img[src*="devcards_icon"][src$=".svg"]`).src}" class="cocaco-tbl-resource-icon"/>`,
+        road: `<img src="${document.querySelector(`img[src*="road_icon"][src$=".svg"]`).src}" class="cocaco-tbl-resource-icon"/>`,
         // In the log element: <svg height="20" width="20" overflow="visible"><use href="#settlement-def-red" style="transform: translate(13px, 11px) scale(0.06);"></use></svg>
         settlement: `<svg height="20" width="20" overflow="visible"><use href="#settlement-def-${anyColour}" style="transform: translate(13px, 13px) scale(0.07);"></use></svg>`,
         city: `<svg height="20" width="20" overflow="visible"><use href="#city-def-${anyColour}" style="transform: translate(6px, 13px) scale(0.08);"></use></svg>`,

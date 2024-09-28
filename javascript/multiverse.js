@@ -181,9 +181,9 @@ Multiverse.sliceUseUnknowns = function(slice)
 // Member functions
 //==============================================================================
 
-Multiverse.prototype.printWorlds = function()
+Multiverse.prototype.printWorlds = function(force = false)
 {
-    if (config.printWorlds === false)
+    if (force === false && config.printWorlds === false)
         return;
     if (this.worlds.length > 1000)
     {
@@ -199,7 +199,10 @@ Multiverse.prototype.printWorlds = function()
         for (const pl of this.players)
         {
             const pIndx = this.getPlayerIndex(pl);
-            console.debug(`\t\t[${i}][${pl}] =`, Multiverse.asNames(this.worlds[i][pIndx]));
+            let p = Multiverse.asNames(this.worlds[i][pIndx]);
+            if (config.shortWorlds)
+                p = resourcesAsUtf8(p); // FIXME: Defined only later
+            console.debug(`\t\t[${i}][${pl}] =`, p);
         }
     }
 }
@@ -224,7 +227,7 @@ Multiverse.prototype.mwCardRecovery = function(counts)
 
 // Requires existing users array. Some stats objects are pre-filled with the
 // names and they keep them always.
-// @param startingResources: { "alice": {"wood": 5, ...}, ... }
+// @param startingResources: { "alice": { "wood": 5, ... }, ... }
 Multiverse.prototype.initWorlds = function(startingResources)
 {
     // Init only once
@@ -823,6 +826,7 @@ Multiverse.prototype.mwHumanReadableWorld = function()
 // This is slow.
 Multiverse.prototype.compareToManyworlds = function(manyWorlds)
 {
+    debugger;
     this.normalizeManyWorlds();
     manyWorlds.normalizeManyWorlds();
     const our = this.mwHumanReadableWorld();
@@ -830,13 +834,12 @@ Multiverse.prototype.compareToManyworlds = function(manyWorlds)
     let matchingIndices = new Set();
     for (let i = 0; i < our.length; ++i)
     {
-        // Slow
+        // PERF: Slow
         const foundAt = their.findIndex(w => worldCompare(w, our[i]));
         matchingIndices.add(i);
         if (foundAt === -1)
         {
             console.warn(`${this.compareToManyworlds.name}: Inconsistency found`);
-            debugger;
             return false;
         }
     }
@@ -844,7 +847,6 @@ Multiverse.prototype.compareToManyworlds = function(manyWorlds)
     if (matchingIndices.size !== our.length)
     {
         console.warn(`${this.compareToManyworlds.name}: Inconsistency found`);
-        debugger;
         return false;
     }
     return true;

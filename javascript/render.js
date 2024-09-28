@@ -24,10 +24,10 @@ class Render
         console.assert(![ManyWorldsObject, TrackObject, playerNames, colour_map, iconAssets].includes(null));
         this.ids =
         {
-            resourceTable: "explorer-tbl",
-            bubblePlot: "explorer-plt",
-            rollsPlot: "explorer-plt-rolls",
-            robTable: "explorer-rob-tbl"
+            resourceTable: "cocaco-tbl",
+            bubblePlot: "cocaco-plt",
+            rollsPlot: "cocaco-plt-rolls",
+            robTable: "cocaco-rob-tbl"
         };
         this.playerNames = playerNames;
         this.colour_map = colour_map;
@@ -36,14 +36,8 @@ class Render
         this.iconElements = iconAssets;
         this.context =
         {
-            // TODO: Previously didnt exist. The new moduling thing means we can
-            // more easily reset the tracker state completely. This would help
-            // a lot for debugging because we can replay the same log messages
-            // without setting up a separate msg replayer.
             resetCallback: resetCallback,
-            // Previously was 'mwManualRecoverCards' bound to the MW object
             recoverCardsCallback: recoverCardsCallback,
-            // Previously was 'mwManualFullRecovery' bound to the MW object
             recoverNamesCallback: recoverNamesCallback
         };
 
@@ -250,11 +244,11 @@ class Render
         //----------------------------------------------------------------------
 
         let header = tbl.createTHead();
-        header.className = "explorer-tbl-header";
+        header.className = "cocaco-tbl-header";
         let headerRow = header.insertRow(0);
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.addEventListener("click", this.context.recoverNamesCallback, false);
-        playerHeaderCell.className = "explorer-tbl-player-col-header";
+        playerHeaderCell.className = "cocaco-tbl-player-col-header";
         // const icon = document.createElement("img");
         // const text = document.createElement("div");
         // icon.src = `${theBrowser.runtime.getURL("assets/coconut_32.png")}`;
@@ -264,12 +258,12 @@ class Render
         {
             let resourceHeaderCell = headerRow.insertCell(i + 1);
             resourceHeaderCell.addEventListener("click", this.context.recoverCardsCallback, false);
-            resourceHeaderCell.className = "explorer-tbl-cell";
+            resourceHeaderCell.className = "cocaco-tbl-cell";
         }
         for (const [i, name] of Object.keys(Multiverse.costs).entries())
         {
             let headerCell = headerRow.insertCell(i + 1 + Multiverse.resources.length);
-            headerCell.className = "explorer-tbl-cell";
+            headerCell.className = "cocaco-tbl-cell";
             headerCell.innerHTML = this.iconElements[name];
 
             // Abuse the building header cells to toggle subplots. We do not
@@ -335,16 +329,16 @@ class Render
         {
             const player = this.playerNames[i];
             let row = tblBody.insertRow(i);
-            row.className = "explorer-tbl-row";
+            row.className = "cocaco-tbl-row";
             let playerRowCell = row.insertCell(0);
-            playerRowCell.className = "explorer-tbl-player-col-cell";   // Same as for rob table
+            playerRowCell.className = "cocaco-tbl-player-col-cell";   // Same as for rob table
             playerRowCell.addEventListener("click", measureTotalCountFunction.bind(null, player), false);
             // Resources
             for (let j = 0; j < Multiverse.resources.length; j++)
             {
                 const res = Multiverse.getResourceName(j);
                 let cell = row.insertCell(j + 1);
-                cell.className = "explorer-tbl-cell";   // Same as for rob table
+                cell.className = "cocaco-tbl-cell";   // Same as for rob table
                 cell.addEventListener("click", guessCardCountFunction.bind(null, player, j, this.manyWorlds.worldGuessAndRange[player][res][2]), false);
             }
             // Buildings
@@ -353,7 +347,7 @@ class Render
             {
                 let cell = row.insertCell(j);
                 cell.addEventListener("click", guessHasNoBuilding.bind(null, player, b), false);
-                cell.className = "explorer-tbl-cell";
+                cell.className = "cocaco-tbl-cell";
                 ++j;
             };
             Object.keys(Multiverse.costs).forEach(addBuildFunc);
@@ -477,54 +471,54 @@ class Render
 
         // Player name and total steal count header cells
         let header = robTable.createTHead();
-        header.className = "explorer-tbl-header";
+        header.className = "cocaco-tbl-header";
         let headerRow = header.insertRow(0);
         let playerHeaderCell = headerRow.insertCell(0);
-        playerHeaderCell.className = "explorer-tbl-player-col-header";
+        playerHeaderCell.className = "cocaco-tbl-player-col-header";
         let i = 0;
         for (i = 0; i < this.playerNames.length; i++)
         {
             let playerHeaderCell = headerRow.insertCell(i + 1);
-            playerHeaderCell.className = "explorer-tbl-cell";
-            playerHeaderCell.innerHTML = `<div class="explorer-tbl-player-col-cell-color" style="background-color:${this.colour_map[this.playerNames[i]]}">  </div>`; // Spaces to show the background colour only
+            playerHeaderCell.className = "cocaco-tbl-cell";
+            playerHeaderCell.innerHTML = `<div class="cocaco-tbl-player-col-cell-color" style="background-color:${this.colour_map[this.playerNames[i]]}">  </div>`; // Spaces to show the background colour only
         }
         i = this.playerNames.length;
         let totalHeaderCell = headerRow.insertCell(i + 1);
-        totalHeaderCell.className = "explorer-tbl-total-cell";
+        totalHeaderCell.className = "cocaco-tbl-total-cell";
 
         // Rows for player i robbing player j. And one last cell for rob total
         let tblBody = robTable.createTBody();
         for (i = 0; i < this.playerNames.length; i++)
         {
             let row = tblBody.insertRow(i);
-            row.className = "explorer-tbl-row";
+            row.className = "cocaco-tbl-row";
             let playerRowCell = row.insertCell(0);
-            playerRowCell.className = "explorer-rob-tbl-player-col-cell";   // Same as for resource table
+            playerRowCell.className = "cocaco-rob-tbl-player-col-cell";   // Same as for resource table
             for (let j = 0; j < this.playerNames.length; ++j)
             {
                 let cell = row.insertCell(j + 1);
-                cell.className = "explorer-tbl-cell";   // Same as for resource table
+                cell.className = "cocaco-tbl-cell";   // Same as for resource table
             }
             let j = this.playerNames.length;
             let cell = row.insertCell(j + 1);
-            // Originally we wanted class 'explorer-tbl-total-cell' here but it looks terrible
-            cell.className = "explorer-tbl-cell";
+            // Originally we wanted class 'cocaco-tbl-total-cell' here but it looks terrible
+            cell.className = "cocaco-tbl-cell";
         }
 
         // Final row for lost totals and steal totals
         i = this.playerNames.length;
         let row = tblBody.insertRow(i);
-        row.className="explorer-tbl-total-row";
+        row.className="cocaco-tbl-total-row";
         let totalRowCell = row.insertCell(0)
-        totalRowCell.className = "explorer-tbl-cell";
+        totalRowCell.className = "cocaco-tbl-cell";
         for (let j = 0; j < this.playerNames.length; ++j)
         {
             let cell = row.insertCell(j + 1);
-            cell.className = "explorer-tbl-cell";
+            cell.className = "cocaco-tbl-cell";
         }
         let j = this.playerNames.length;
         let cell = row.insertCell(j + 1);
-        cell.className = "explorer-tbl-total-cell";
+        cell.className = "cocaco-tbl-total-cell";
 
         return robTable;
     }
@@ -540,17 +534,17 @@ class Render
             const padding = value >= 10 ? "" : " ";
             const sumString = gar[3] === 0 ? "  " : `${padding}${value}`;
             const post = definite ? "" : ` (${Math.round(gar[1] * 100)}%) | ${gar[0]} - ${gar[3]}`;
-            return `<span class="explorer-tbl-player-name" style="color:${this.colour_map[player]}">${sumString} ${player}</span><span class="explorer-tbl-unknown-stats">${post}</span>`;
+            return `<span class="cocaco-tbl-player-name" style="color:${this.colour_map[player]}">${sumString} ${player}</span><span class="cocaco-tbl-unknown-stats">${post}</span>`;
         }
         else
         {
             const diff = this.track.robsTaken[player] - this.track.robsLost[player];
             const diffStr = diff ? (diff < 0 ? "" : "+") + diff : "  ";
             //const justNumber = `${diffStr}`;
-            //return `<span class="explorer-tbl-player-col-cell-color" style="background-color:${this.colour_map[player]}">${justNumber}</span>`;
+            //return `<span class="cocaco-tbl-player-col-cell-color" style="background-color:${this.colour_map[player]}">${justNumber}</span>`;
             const fullText = ` ${diffStr}`;
-            return `<span class="explorer-tbl-player-name" style="color:${this.colour_map[player]}">${player}${fullText}</span>`
-                + `<span class="explorer-tbl-player-col-cell-color" style="background-color:${this.colour_map[player]}">  </span>`;
+            return `<span class="cocaco-tbl-player-name" style="color:${this.colour_map[player]}">${player}${fullText}</span>`
+                + `<span class="cocaco-tbl-player-col-cell-color" style="background-color:${this.colour_map[player]}">  </span>`;
         }
     }
 

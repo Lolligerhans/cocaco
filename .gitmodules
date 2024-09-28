@@ -1,3 +1,6 @@
 [submodule "statistics.js"]
 	path = dependencies/statistics.js
 	url = https://github.com/thisancog/statistics.js.git
+[submodule "dependencies/msgpack.js"]
+	path = dependencies/msgpack.js
+	url = https://github.com/ygoe/msgpack.js.git

@@ -1,7 +1,3 @@
-[*.js]
-  indent_style = sapce
+[*.{js,json,md}]
   indent_size = 4
-
-[*.md]
-  indent_style = sapce
-  indent_size = 4
+  indent_style = space
