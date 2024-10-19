@@ -15,6 +15,7 @@
         - [`player` property](#player-property)
         - [`players` property](#players-property)
         - [`colours` property](#colours-property)
+        - [`phase` property](#phase-property)
         - [`trader` property](#trader-property)
         - [`resource` property](#resource-property)
         - [`resources` property](#resources-property)
@@ -23,6 +24,9 @@
         - [`buyable` property](#buyable-property)
       - [List of standard observations](#list-of-standard-observations)
         - [`buy` observation](#buy-observation)
+        - [`collude` observation](#collude-observation)
+        - [`collusionAcceptance` observation](#collusionacceptance-observation)
+        - [`collusionOffer` observation](#collusionoffer-observation)
         - [`discard` observation](#discard-observation)
         - [`got` observation](#got-observation)
         - [`mono` observation](#mono-observation)
@@ -30,7 +34,9 @@
         - [`roll` observation](#roll-observation)
         - [`start` observation](#start-observation)
         - [`steal` observation](#steal-observation)
+        - [`turn` observation](#turn-observation)
         - [`trade` observation](#trade-observation)
+        - [`yop` observation](#yop-observation)
 <!--toc:end-->
 
 Input into the Cocaco extension flows through multiple pipelining steps before
@@ -196,6 +202,19 @@ colour: "#ff8800"
 colour: "rgb(255,128,0)"
 ```
 
+##### `phase` property
+
+A string representing the game phase. This property breaks generality a bit
+since it is dependent on the interface through which the game is presented.
+
+Currently we only differentiate `"main"` which is the moment suitable for
+automatic actions, and `""` to not specify a phase.
+
+```JSON
+phase: "main"
+phase: ""
+```
+
 ##### `trader` property
 
 A [player](#player-property) or the `"bank"`.
@@ -217,6 +236,7 @@ resource: "brick"
 resource: "sheep"
 resource: "wheat"
 resource: "ore"
+resource: "unknown"
 ```
 
 ##### `resources` property
@@ -300,6 +320,46 @@ observation: {
 ```
 
 - cost: Use the specified resource instead of the default cost.
+
+##### `collude` observation
+
+The player issues a collusion instruction. It is the observers responsibility to
+ensure that `players` includes the user. If the selected pair is already
+colluding, nothing happens.
+
+```JSON
+observation: {
+  type: "collude",
+  payload: {
+    players: <players>,
+  },
+}
+```
+
+##### `collusionAcceptance` observation
+
+Another player accepted a trade.
+
+<!-- TODO: Add details once we know the details -->
+
+##### `collusionOffer` observation
+
+<!-- FIXME: This is no longer the collusion model. Rewrite once we know better
+how we want collusion to work exactly. -->
+
+Another player created a collusion-abiding trade. `accept` is a function
+callback for the state to accept on the action. By calling `accept()`, the trade
+is accepted (attempted).
+
+The observation does not mean: A player offers to collude.
+
+```JSON
+collusionOffer: {
+  player: <player>,
+  trade: <trade>,
+  decide: <function>
+}
+```
 
 ##### `discard` observation
 
@@ -393,10 +453,14 @@ match the host interface. If missing, black is used as colour.
 Must be the first observation and emitted exactly once. It allows the state to
 initialize its own components.
 
+The `us` property identifies our own name. This is meant to be set from the DOM
+parsing result. It is unneeded for passive tracking and only used in colluding.
+
 ```JSON
 observation: {
   type: "start",
   payload: {
+    us: <player>,
     players: <players>,
     colours: <colours>,
   },
@@ -420,6 +484,25 @@ observation: {
 }
 ```
 
+##### `turn` observation
+
+Identifies to moment for actions. The phase is `"main"` refers the build/trade
+phase where emitting actions for trades would be appropriate. Phase empty `""`
+is used to omit specifying a phase. `player` identifies who's turn it is.
+
+This observation breaks the state generality a little bit.
+
+```JSON
+observation: {
+  type: "turn",
+  payload: {
+    player: <player>,
+    phase: "main",
+    phase: "",
+  },
+}
+```
+
 ##### `trade` observation
 
 A player trades resources with another player, or with the bank.
@@ -432,5 +515,20 @@ observation: {
     give: <transfer>,
     take: <transfer>,
   },
+}
+```
+
+##### `yop` observation
+
+`player` uses a "Year of Plenty" development card. `resources` contains the
+resources chosen from the bank.
+
+```JSON
+observation: {
+  type: "yop",
+  payload: {
+    player: <player>,
+    resources: <resources>,
+  }
 }
 ```

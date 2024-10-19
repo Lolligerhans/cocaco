@@ -29,6 +29,12 @@
 
 Done!
 
+---
+
+### Requirements
+
+- Firefox browser
+
 ### Linux download
 
 ```bash
@@ -42,29 +48,27 @@ git checkout "$(git describe --tags --abbrev=0)";
 
 1. Download the newest version as `.zip` file from
 [GitHub](https://github.com/Lolligerhans/cocaco/tags).
-    - Stable: Version 3
-    - Experimental: Version 4 (base game only)
 1. Extract the `.zip` file, producing the `cocaco/` folder.
 
 ### Installation
 
-Install as temporary extension in your browser:
+Install as [temporary extension](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ "Tutorial") in Firefox:
 
-- [Firefox](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ "Tutorial")
-  - Visit URL [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
-  - Temporary Extensions
-  - Load Temporary Add-on...
-  - Select 'cocaco/manifest.json'
-- [Chrome](https://www.cnet.com/tech/services-and-software/how-to-install-chrome-extensions-manually/ "Tutorial") (Version 3 only)
-  - Visit URL [chrome://extensions/](chrome://extensions/)
-  - Enable developer mode
-  - Load unpacked
-  - Select the 'cocaco/' directory. (The inner one if there are two.)
+- Visit URL [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
+- Temporary Extensions
+- Load Temporary Add-on...
+- Select 'cocaco/manifest.json'
+<!--Chrome worked in the Game Log version, but socket is FF only.-->
+<!-- - [Chrome](https://www.cnet.com/tech/services-and-software/how-to-install-chrome-extensions-manually/ "Tutorial") -->
+<!--   - Visit URL [chrome://extensions/](chrome://extensions/) -->
+<!--   - Enable developer mode -->
+<!--   - Load unpacked -->
+<!--   - Select the 'cocaco/' directory. (The inner one if there are two.) -->
 
 > [!NOTE]
-> Firefox/Chrome do not allow permanent installation of local extensions.
-> Bookmark the URL to repeat these steps more easily after restarting the
-> browser. (Developer versions may allow it.)
+> Firefox does not allow permanent installation of local extensions. Bookmark
+> the URL to repeat these steps more easily after restarting the browser.
+> (Developer versions may allow it.)
 
 ## Usage
 

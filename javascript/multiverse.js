@@ -183,7 +183,7 @@ Multiverse.sliceUseUnknowns = function(slice)
 
 Multiverse.prototype.printWorlds = function(force = false)
 {
-    if (force === false && config.printWorlds === false)
+    if (force === false && cocaco_config.printWorlds === false)
         return;
     if (this.worlds.length > 1000)
     {
@@ -200,7 +200,7 @@ Multiverse.prototype.printWorlds = function(force = false)
         {
             const pIndx = this.getPlayerIndex(pl);
             let p = Multiverse.asNames(this.worlds[i][pIndx]);
-            if (config.shortWorlds)
+            if (cocaco_config.shortWorlds)
                 p = resourcesAsUtf8(p); // FIXME: Defined only later
             console.debug(`\t\t[${i}][${pl}] =`, p);
         }

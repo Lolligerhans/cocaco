@@ -5,8 +5,10 @@
 class ColonistSource extends Trigger {
     // Functions producing the log message Source packets
     static logInterpreters = {};
+    static chatInterpreters = {};
+    static gameStateInterpreters = {};
     // Function name used to interpret each log-message type
-    static typemap = {
+    static logTypeMap = {
         1: "buyDev",
         5: "buyBuilding",
         10: "roll",
@@ -22,6 +24,13 @@ class ColonistSource extends Trigger {
         117: "tradeCounter",
         118: "tradeOffer",
     };
+    static turnStateMap = {
+        2: "main",
+    };
+    static actionStateMap = {
+        0: "main",
+    };
+
     constructor() {
         super();
         this.registerPacketGenerators();
@@ -34,34 +43,89 @@ class ColonistSource extends Trigger {
 
 // Register reparsers for log elements
 ColonistSource.prototype.registerPacketGenerators = function () {
-    new Reparse(
+
+    // It is generally a good idea to use 'setInterval()' when reacting to data,
+    // to ensure that the rest of the frame has been parsed. And even that the
+    // same frame has been parsed by the remaining reparsers.
+
+    Reparse.register(
+        "receive",
         "ColonistSource-playerUserStates",
         Reparse.applyDoers.isState(),
         Reparse.entryPoints.payload,
+        // The payload of this type always contains a playerUserStates object
         payload => this.readPlayerUserStatesData(payload),
         packet => {
             this.activateTrigger("playerUserStates", packet);
-            return true; // Done -> matched reparser only once
+            return { isDone: true };
         },
-    ).register();
-    new Reparse(
+    );
+
+    Reparse.register(
+        "receive",
         "ColonistSource-gameLogState",
         Reparse.applyDoers.isStateOrDiff(),
         Reparse.entryPoints.gameLogState,
         gameLogState => gameLogState,
         gameLogState => {
             Object.entries(gameLogState).forEach(([logIndex, logMessage]) => {
-                const packet = this.readGameLogData(logIndex, logMessage)
-                if (packet) {
-                    this.activateTrigger("gameLogState", packet);
+                const packet = this.readGameLogData(logIndex, logMessage);
+                if (packet === null) {
+                    return { isDone: false };
                 }
                 else {
+                    this.activateTrigger("gameLogState", packet);
+                }
+            });
+            return { isDone: false };
+        },
+    );
+
+    Reparse.register(
+        // 'gameLogState' is excempt because we reparse it separately
+        "receive",
+        "ColonistSource-gameState",
+        Reparse.applyDoers.isStateOrDiff(),
+        Reparse.entryPoints.stateOrDiff,
+        (gameState, frame) => {
+            const ret = this.readGameStateData(
+                gameState,
+                // Accept both state and diff frames, but know which it is
+                frame.data.type === 91,
+            );
+            return ret;
+        },
+        packets => {
+            packets.forEach(packet => {
+                if (packet === null) {
+                    debugger; // TEST: Can this happen?
+                    return { isDone: false };
+                }
+                this.activateTrigger("gameState", packet);
+            });
+            return { isDone: false };
+        },
+    );
+
+    Reparse.register(
+        "receive",
+        "ColonistSource-detectCollude",
+        Reparse.applyDoers.isStateOrDiff(),
+        Reparse.entryPoints.gameChatState,
+        gameChatState => gameChatState,
+        gameChatState => {
+            Object.entries(gameChatState).forEach(([chatIndex, chatMessage]) => {
+                const packet = this.readGameChatData(chatIndex, chatMessage);
+                if (packet) {
+                    this.activateTrigger("gameChatState", packet);
+                } else {
                     // Nothing
                 }
             });
-            return false; // Not done -> repeat reparser
+            return { isDone: false };
         },
-    ).register();
+    );
+
     // HACK: Allow the user to enter username manually to determine "us". It may
     //       be that the first entry of playerUserStates
     //       is always "us", but for now we use the DOM element.
@@ -88,7 +152,7 @@ ColonistSource.prototype.readPlayerUserStatesData = function (payload) {
 ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
     console.assert(logMessage.text);
     console.assert(logMessage.text.type != null); // Neither undefined nor null
-    const type = ColonistSource.typemap[logMessage.text.type];
+    const type = ColonistSource.logTypeMap[logMessage.text.type];
     if (!type || !ColonistSource.logInterpreters[type]) {
         return null;
     }
@@ -99,6 +163,44 @@ ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
     };
     const packet = { type: "gameLogState", data: data };
     return packet;
+}
+
+ColonistSource.prototype.readGameChatData = function (chatIndex, chatMessage) {
+    chatIndex; // Ignore
+
+    const text = chatMessage.text.message;
+    const collusionRegex = /^hi (?<other>\w*)$/;
+    const search = text.match(collusionRegex);
+    if (search === null) {
+        return null;
+    }
+    const type = "collude";
+    const data = {
+        index: chatIndex,
+        type: "collude",
+        payload: ColonistSource.chatInterpreters[type](
+            chatMessage,
+            search.groups.other,
+        ),
+    };
+    const packet = { type: "gameChatState", data: data };
+    return packet;
+}
+
+ColonistSource.prototype.readGameStateData = function (gameState, isUpdate) {
+    let packets = [];
+    Object.entries(gameState).forEach(([k, v]) => {
+        if (!ColonistSource.gameStateInterpreters[k]) {
+            return null;
+        }
+        const data = {
+            type: k,
+            isUpdate: isUpdate,
+            payload: ColonistSource.gameStateInterpreters[k](v, isUpdate),
+        };
+        packets.push({ type: "gameState", data: data });
+    });
+    return packets;
 }
 
 ColonistSource.prototype.setPlayerUsername = function (name) {
@@ -242,6 +344,44 @@ ColonistSource.logInterpreters.stealAgainstThem = function (logMessage) {
         cards: logMessage.text.cardEnums,
     };
     return payload;
+}
+
+// ╭───────────────────────────────────────────────────────────╮
+// │ Chat-message interpreters                                 │
+// ╰───────────────────────────────────────────────────────────╯
+
+ColonistSource.chatInterpreters.collude = function (chatMessage, other) {
+    const payload = {
+        player: chatMessage.text.from,
+        other: other,
+    };
+    return payload;
+}
+
+// ╭───────────────────────────────────────────────────────────╮
+// │ Game state interpreters                                   │
+// ╰───────────────────────────────────────────────────────────╯
+
+ColonistSource.gameStateInterpreters.currentState = function (currentState) {
+    // Leave undefined what is missing. Set to null what is available but
+    // irrelevant. Observer should store and incrementally update what is not
+    // undefined.
+    let turnState = ColonistSource.turnStateMap[currentState.turnState];
+    let actionState = ColonistSource.actionStateMap[currentState.actionState];
+    turnState ??= null; // Set null if value is there but meaning doesnt matter
+    actionState ??= null;
+    const payload = {
+        currentTurnPlayerColor: currentState.currentTurnPlayerColor,
+        // Use undefined if not there
+        turnState: currentState.turnState === undefined ? undefined : turnState,
+        actionState: currentState.actionState === undefined ? undefined : actionState,
+    };
+    return payload;
+}
+
+ColonistSource.gameStateInterpreters.tradeState = function (tradeState) {
+    // TODO: Remap indices to something readable
+    return tradeState;
 }
 
 // ╭───────────────────────────────────────────────────────────╮

@@ -35,10 +35,9 @@ The `Reparse` class is used as Data module. Reparsers hook WebSocket
 communication and allow some rudimentary filtering. We use them to obtain
 updates to selects parts of the game state.
 
-Reparsers work by instantiating `Reparse` and calling `register()` on the
-instance. Instantiation takes a filters; typically we would choose from the list
-of predefined filter functions, or use no-op/identity functions to obtain
-unfiltered data.
+Reparsers are added by `Reparse.register()`. The arguments are a set of filter
+functions; typically we would choose from the list of predefined filter
+functions, or use no-op/identity functions to obtain unfiltered data.
 
 ### Source
 

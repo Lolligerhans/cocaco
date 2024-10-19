@@ -14,6 +14,7 @@ class Observer extends Trigger {
     static allResources = ["wood", "brick", "sheep", "wheat", "ore", "unknown"];
     static buyables = ["road", "settlement", "city", "devcard"];
     static property = {};
+    static phases = ["main", ""];
 
     // The State module/class set a callback to be notified on observations
     constructor(theState) { // TODO: Rename to just state and rename this.state
@@ -51,6 +52,42 @@ class Observer extends Trigger {
         if (cost) {
             observation.payload.cost = Observer.property.resources(cost);
         }
+        this.#observe(observation);
+    }
+
+    collude({ players }) {
+        let observation = {
+            type: "collude",
+            payload: {
+                players: Observer.property.players(players),
+            },
+        };
+        this.#observe(observation);
+    }
+
+    collusionAcceptanceOffer({player, trade, accept}) {
+        console.assert(typeof accept === "function");
+        let observation = {
+            type: "collusionAcceptanceOffer",
+            payload: {
+                player: Observer.property.player(player),
+                trade: Observer.property.trade(trade),
+                accept: accept,
+            },
+        };
+        this.#observe(observation);
+    };
+
+    collusionOffer({player, trade, accept}) {
+        console.assert(typeof accept === "function");
+        let observation = {
+            type: "collusionOffer",
+            payload: {
+                player: Observer.property.player(player),
+                trade: Observer.property.trade(trade),
+                accept: accept,
+            },
+        };
         this.#observe(observation);
     }
 
@@ -98,6 +135,9 @@ class Observer extends Trigger {
                 isCounter: isCounter,
             },
         };
+        // if (observation.payload.offer.give.to == null) {
+        //     debugger; // FIXME: Bug
+        // }
         this.#observe(observation);
     }
 
@@ -113,12 +153,15 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
-    start({ players, colours }) {
+    start({ us, players, colours }) {
         console.assert(players.length === 4,
-            "Can remove this check when more palyers are intended");
+            "Can remove this check when more players are intended");
+        console.assert(players.includes(us.name),
+            "We should participate in the game");
         let observation = {
             type: "start",
             payload: {
+                us: Observer.property.player(us),
                 players: Observer.property.players(players),
                 colours: Observer.property.colours(players, colours),
             }
@@ -148,11 +191,33 @@ class Observer extends Trigger {
     trade({ give, take }) {
         // TODO: Allow monodirectional trades?
         console.assert(give && take);
-        let observation = {
+        const observation = {
             type: "trade",
             payload: {
                 give: Observer.property.transfer(give),
                 take: Observer.property.transfer(take),
+            },
+        };
+        this.#observe(observation);
+    }
+
+    turn({ player, phase }) {
+        const observation = {
+            type: "turn",
+            payload: {
+                player: Observer.property.player(player),
+                phase: Observer.property.phase(phase),
+            },
+        };
+        this.#observe(observation);
+    }
+
+    yop({player, resources}) {
+        const observation = {
+            type: "yop",
+            payload: {
+                player: Observer.property.player(player),
+                resources: Observer.property.resources(resources),
             },
         };
         this.#observe(observation);
@@ -235,5 +300,10 @@ Observer.property.trade = function ({ give = null, take = null }) {
 
 Observer.property.buyable = function (arg) {
     console.assert(Observer.buyables.includes(arg));
+    return arg;
+}
+
+Observer.property.phase = function (arg) {
+    console.assert(Observer.phases.includes(arg));
     return arg;
 }

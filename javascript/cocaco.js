@@ -98,13 +98,18 @@ const utf8Symbols =
 };
 
 // @param resources: { wood: 3, wheat: 2, ... }
-function resourcesAsUtf8(resources)
-{
+function resourcesAsUtf8(resources) {
     let s = "";
-    for (const entry of Object.entries(resources))
-    {
-        if (entry[1] === 0) continue;
-        s += resourceIcons[entry[0]].repeat(Math.abs(entry[1]));
+    for (const entry of Object.entries(resources)) {
+        if (entry[1] === 0) {
+            continue;
+        }
+        const icons = resourceIcons[entry[0]].repeat(Math.abs(entry[1]));
+        if (entry[1] < 0) {
+            s += "(" + icons + ")";
+        } else {
+            s += icons;
+        }
         s += " ";
     }
     return s.trim();
@@ -113,15 +118,20 @@ function resourcesAsUtf8(resources)
 const alternativeAssets =
 {
     // More at 408f1c219dc04fb8746541fed624e6d4026aaaac
-    wood:       `<img src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    brick:      `<img src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    sheep:      `<img src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    wheat:      `<img src="${theBrowser.runtime.getURL("assets/wheat2.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    ore:        `<img src="${theBrowser.runtime.getURL("assets/ore27.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    road:       `<img src="${theBrowser.runtime.getURL("assets/street10.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    settlement: `<img src="${theBrowser.runtime.getURL("assets/settle7.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    devcard:    `<img src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    city:       `<img src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="cocaco-tbl-resource-icon"/>`
+    wood:       `<img alt="wood" src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    brick:      `<img alt="brick" src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    sheep:      `<img alt="sheep" src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    wheat:      `<img alt="wheat" src="${theBrowser.runtime.getURL("assets/wheat2.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    ore:        `<img alt="ore" src="${theBrowser.runtime.getURL("assets/ore27.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    cloth:      `<img alt="cloth" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    coin:       `<img alt="coin" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    paper:      `<img alt="paper" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    unknown:    `<img alt="unknown" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    ship:       `<img alt="ship" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    road:       `<img alt="road" src="${theBrowser.runtime.getURL("assets/street10.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    settlement: `<img alt="settlement" src="${theBrowser.runtime.getURL("assets/settle7.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    devcard:    `<img alt="devcard" src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    city:       `<img alt="city" src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="cocaco-tbl-resource-icon"/>`
 };
 
 // Interpolate red-green over yellow
@@ -176,6 +186,7 @@ const trueProbability = [1,2,3,4,5,6,5,4,3,2,1].map(x => x / 36);
 //         ↑          |---|   |---|             |---|     ↑
 //      first         wait    wait              wait     then
 //
+const isDone = { yes: true, no: false };
 function setDoInterval(repeat, time, then = null)
 {
     if ( repeat() )
@@ -227,12 +238,26 @@ function executeWithRetries(tasks, retryTime = 3000)
         // The program flow continues in the setDoInterval()
         return;
     }
-    console.log("🧭 ( ✔️  ) executeWithRetries completed");
+    console.log("🧭 ( ✅ ) executeWithRetries completed");
 }
 
 function removeEntry(arr, index){
     arr[index] = arr[arr.length - 1];
     arr.pop();
+}
+
+// Maps values of an Object like Array.map(). Assigns the resulting values to
+// the values of @param object. Probably slow.
+// @param func: Function (value, key) => newValue
+function mapObject(object, func) {
+    Object.entries(object).forEach(([k, v]) => {
+        object[k] = func(v, k);
+    });
+}
+
+function clamp(x, minimum, maximum) {
+    const ret = Math.min(Math.max(x, minimum), maximum);
+    return ret;
 }
 
 function resize(element, w = 1000, h = 800)
@@ -256,11 +281,6 @@ const unhide = (...rest) => rest.forEach(e => {
     if (e) e.classList.remove("hidden")
 });
 
-// For debugging
-function p(object)
-{
-    return JSON.stringify(object);
-}
 function log(...args)
 {
     console.log(...args);
@@ -301,6 +321,18 @@ function badEquals(x, y) {
     return JSON.stringify(x) === JSON.stringify(y);
 }
 
+function hasOneOf(obj, property, values) {
+    if (!Object.hasOwn(obj, property)) {
+        return false;
+    }
+    if (!Array.isArray(values)) {
+        values = [values];
+    }
+    const search = obj[property];
+    const ret = values.includes(search);
+    return ret;
+}
+
 const wood = "wood";
 const ore = "ore";
 const wheat = "wheat";
@@ -336,7 +368,7 @@ function deepCopy(object)
 function alertIf(message)
 {
     console.error("alert(", message, ")");
-    if (config.doDebug)
+    if (cocaco_config.doDebug)
     {
         alert(message);
         debugger;
@@ -404,21 +436,28 @@ function allTests()
 
 function main()
 {
-    if (config.runManyWorldsTest === true)
+    if (cocaco_config.runManyWorldsTest === true)
     {
         allTests();
         return
     }
 
+    if (cocaco_config.replay)
+    {
+        console.log("🥥 Running replay");
+        new Colonist().start();
+        return;
+    }
+
     if (window.location.hostname === "colonist.io")
     {
-        if (config.pipeline === "Colonist") {
+        if (cocaco_config.pipeline === "Colonist") {
             console.log("🥥 Running Colonist on colonist.io");
 
             let colonist = new Colonist();
             colonist.start();
         } else {
-            console.assert(config.pipeline === "Colony",
+            console.assert(cocaco_config.pipeline === "Colony",
                 "Only valid pipelines")
             console.log("🥥 Running Colony on colonist.io");
             let colony = new Colony();
@@ -433,7 +472,7 @@ function main()
     }
     else
     {
-        console.assert(false, "unreachable");
+        console.assert(false, "Should only run on a Catan website");
     }
 }
 
@@ -470,47 +509,190 @@ function acknowledge() {
         return;
     portToBackground.postMessage({
         type: "ack",
-        payload: handledCount
+        payload: handledCount,
     });
     ackTime = now + 120 * 1000;
 }
 
-let doDump = config.dump;
-function handleMessage(message) {
-    Reparse.applyAll(message);
-    if (!doDump) {
-        return;
-    }
-    try {
-        portToBackground.postMessage({ type: "dump", payload: message });
+let doDump = cocaco_config.dump;
+function dumpEvent(event) {
+    if (doDump[event.direction]) try {
+        portToBackground.postMessage({ type: "dump", payload: event.frame });
         acknowledge();
     } catch (e) {
-        console.error("Dump failed:", e);
-        console.warn("Dump off");
-        doDump = false;
+        console.error("Dump", event.direction, "failed:", e);
+        console.warn("Dump", event.direction, "off");
+        doDump[event.direction] = false;
     }
 }
 
-// Some reparsers use Colony properties which are not ready at startup (the
-// content-script may not even loaded yet). Effectively we cache the first
-// messages until the first message after setting messageStash=true. It may take
-// until the first user action to trigger replaying the cache.
-let messageStash = { messages: [], ready: false };
-function receive(message) {
-    messageStash.messages.push(message);
-    if (!messageStash.ready) {
+function dispatch(event) {
+    dumpEvent(event);
+    if (event.reparse.doReparse === false) {
+        console.log("cocaco.js: dispatch(): Skip reparsing opaque event");
+        return undefined;
+    }
+    try {
+        let ret = Reparse.applyAll(
+            event.direction,
+            event.frame,
+            event.reparse,
+        );
+        return ret;
+    } catch (e) {
+        console.error("Error reparsing", event.direction, "frame:", event.frame, e);
+    }
+}
+
+let socketsReady = false;
+let incoming = new FrameQueue();
+let outgoing = new FrameQueue(); // Reactions of the extension
+
+function handle(event = null) {
+    // Allow calling explicitly in main, without event, to get starting
+    if (event !== null) {
+        incoming.add(event);
+    }
+    if (socketsReady === false) {
+        // HACK: This way we can not react to the events before being ready.
+        // TODO: Add an index to every event. Save the return value for each
+        //       index. Query the reparser return from MAIN.
+        return undefined;
+    }
+
+    // When a received frame event occurs while an outgoing event is stalled
+    // (e.g. by the debugger).
+    if (incoming.isOccupied()) {
         return;
     }
-    messageStash.messages.forEach(message => {
-        try {
-            handleMessage(message)
-        } catch (e) {
-            console.error("Error parsing message:", message, e);
-        }
-    });
-    messageStash.messages.length = 0;
+
+    incoming.occupy();
+    console.assert(!incoming.isEmpty(), "The new event should available");
+    let ret;
+    while(!incoming.isEmpty()) {
+        const event = incoming.take();
+        ret = dispatch(event);
+    }
+    incoming.free();
+    return ret;
 }
 
-exportFunction(receive, window, { defineAs: "receive" });
+function post_handle() {
+    if (outgoing.isOccupied()) {
+        // The occupying (recursing) invocation will take care of the rest
+        console.debug("cocaco.js: post_handle(): Backing out - already handling");
+        return;
+    }
+    outgoing.occupy();
+    while(!outgoing.isEmpty()) {
+        const event = outgoing.take();
+        console.debug("[!] Outgoing event injection:", event);
+        switch (event.direction) {
+            case "receive":
+                console.assert(false, "Not implemented");
+                break;
+            case "send":
+                const encodedFrame = cocaco_encode_send(event.frame);
+                if (cocaco_config.replay === true) {
+                    console.warn("Dropping outgoing frame during replay");
+                    break;
+                }
+                // WebSocket_MAIN.send(encodedFrame, event.reparse);
+                WebSocket_MAIN.wrappedJSObject.send(
+                    cloneInto(encodedFrame, window),
+                    event.reparse,
+                );
+                break;
+            default:
+                console.assert(false, "Invalid direction");
+                break;
+        }
+        console.debug("[!] Outgoing event done:", event);
+    }
+    outgoing.free();
+}
+
+// Call this after any action that may inject 'Resend' frames. This ensures that
+// the sending happens in the next event cycle. This is important to keep
+// sequence numbers in order. At the same time, we delay sending after the
+// current event cycle so the current sequence number remains valid.
+// When the sequence number changes by another native frame (before this takes
+// effect) we will have to add a different mechanism for ensuring correctness.
+function post_MAIN() {
+    setTimeout(post_handle, 0);
+}
+
+// Append-only stash for logging
+let receivedMessages = [];
+let sentMessages = [];
+
+function receive_MAIN(
+    encodedFrame,
+    reparse = { doReparse: true, native: true },
+) {
+    let ret;
+    try {
+        const frame = cocaco_decode_receive(new Uint8Array(encodedFrame));
+        if (cocaco_config.logReceive) {
+            receivedMessages.push({ frame: frame, dataLength: encodedFrame.byteLength });
+            let type = frame.data.type ?? -1;
+            console.debug("🛜 ←", receivedMessages.length, "|",
+                type, "(", encodedFrame.byteLength, ")", frame);
+            if (receivedMessages.length % 10 === 0) {
+                console.debug("(receivedMessages):", receivedMessages);
+            }
+        }
+        ret = handle(
+            { direction: "receive", frame: frame, reparse: reparse },
+        );
+    } catch (e) {
+        console.error("receive_MAIN(): Failed with error:", e);
+    }
+    return cloneInto(ret, window);
+}
+
+function send_MAIN(encodedFrame, reparse) {
+    let ret;
+    try {
+        const frame = cocaco_decode_send(new Uint8Array(encodedFrame));
+        if (cocaco_config.logSend) {
+            sentMessages.push({
+                encoded: encodedFrame,
+                frame: frame,
+                length: encodedFrame.byteLength,
+            });
+            let sequence;
+            if (frame.message && frame.message.sequence) {
+                sequence = `seq=${frame.message.sequence}`;
+            } else {
+                sequence = "seq=?";
+            }
+            let visibility = " ";
+            if (reparse.native === false) {
+                visibility = reparse.doReparse ? " 🔔" : " 🔕";
+            }
+            console.debug(
+                "🛜 →", sentMessages.length, `| [${visibility}`, sequence, "] |",
+                frame.v0, frame.v1,
+                "(", encodedFrame.byteLength, ")", frame.message,
+                frame, encodedFrame
+            );
+            // console.debug("raw:", JSON.stringify(frame));
+            if (sentMessages.length % 10 === 0) {
+                console.debug("(all sentMessages):", sentMessages);
+            }
+        }
+        ret = handle(
+            { direction: "send", frame: frame, reparse: reparse },
+        );
+    } catch (e) {
+        console.error("send_MAIN(): Failed with error:", e);
+    }
+    return cloneInto(ret, window);
+}
+
+exportFunction(post_MAIN, window, { defineAs: "post_MAIN" });
+exportFunction(receive_MAIN, window, { defineAs: "receive_MAIN" });
+exportFunction(send_MAIN, window, { defineAs: "send_MAIN" });
 
 main();

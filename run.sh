@@ -66,14 +66,11 @@ command_game()
 
   if [[ "$list" == "true" ]]; then
     command ls --color=auto -Fh -A -ltr "$dump_data_dir/"*".json";
-    show_variable dump_data_dir;
+    command du -h "$dump_data_dir";
     return 0;
   fi
 
-  if ! &>/dev/null command jq --version; then
-    echol "Installing 'jq'";
-    sudo apt install jq;
-  fi
+  ensure_jq;
 
   # Copy to temporary location
   declare tmp_dir;
@@ -189,7 +186,10 @@ command_release()
 
   declare choice;
   declare version;
+  declare tag;
   version="$(current_version)";
+  tag="$(get_tag_name "$version")";
+  echot "Did not test new tag creation and push yet";
   choice="$(boolean_prompt "Release ${text_user}${force_flag}${text_normal} ${version}?")";
   if [[ "$choice" == "n" ]]; then
     abort "Abort: No changes";
@@ -197,9 +197,9 @@ command_release()
 
   add_git_tag --version="${version}" --force="$force";
   command git push $force_flag origin &&
-  command git push $force_flag origin --tags &&
+  command git push $force_flag origin "$tag" &&
   command git push $force_flag lolli &&
-  command git push $force_flag lolli --tags;
+  command git push $force_flag lolli "$tag";
   echok "Released ${version}";
 }
 
@@ -252,14 +252,25 @@ add_git_tag()
   fi
 
   declare tag_name;
-  tag_name="v${version_str}";
+  tag_name="$(get_tag_name "$version_str")";
   command git tag $force_flag "$tag_name";
   echok "git tag $force_flag $tag_name";
 }
 
-# Pritns currently present (raw) value for 'version' in manifest.json
+get_tag_name() {
+  # @param $1: Version string
+  # @output: Tag name
+  if (( "$#" != 1 )); then
+    abort "Must have exactly one argument";
+  fi
+  printf -- "%s" "v${1}";
+}
+
+# Prints currently present (raw) value for 'version' in manifest.json
 current_version()
 {
+  ensure_jq;
+
   declare version;
   version="$(jq -r .version manifest.json)";
   printf -- "%s" "${version}";
@@ -286,6 +297,47 @@ is_clean_master()
     printf -- "false";
   else
     printf -- "true";
+  fi
+}
+
+sanity_check_version_loose() {
+  # This function prints errors when finding obviously misconfigured versions.
+  # Not a thorough version check.
+
+  declare tag version expected tag;
+  tag="$(git tag --points-at HEAD)";
+  version="$(current_version)";
+  expected_tag="$(get_tag_name "$version")";
+  declare -r tag version expected tag;
+  1>&2 show_variable version;
+
+  # if [[ "$(is_clean_master 2>/dev/null )" != "true" ]]; then
+  #   return;
+  # fi
+
+  # During development, set -dev version
+  if [[ "$tag" == "" && "$version" != *"dev"* ]]; then
+    errchoe "Forgot to set to dev version?";
+  fi
+
+  # If we have a tag, it should match the manifest version
+  if [[ "$tag" == v* ]]; then
+    if [[ "$tag" != "$expected_tag" ]]; then
+      errchoe "Unexpected version tag";
+      show_variable tag;
+      show_variable expected_tag;
+    fi
+  fi
+}
+
+ensure_jq() {
+  if ! &>/dev/null command jq --version; then
+    echol "Installing 'jq'";
+    sudo apt install jq;
+  fi
+  if ! &>/dev/null command jq --version; then
+    abort "Unable to install 'jq'";
+    return 1;
   fi
 }
 # ╭──────────────────────╮
@@ -315,6 +367,7 @@ declare -r symbols_help_string="Show symbols available in plotly";
 # ╭──────────────────────╮
 # │ ⚙ Boilerplate        │
 # ╰──────────────────────╯
+sanity_check_version_loose;
 # ⌂ Transition to provided command
 subcommand "${@}";
 # ╭──────────────────────╮

@@ -4,7 +4,7 @@
   "manifest_version": 3,
   "author": "Lolligerhans",
   "description": "Correctly correlated Catan card chance Counter",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "icons": {
     "32": "assets/coconut_32.png",
     "512": "assets/coconut_512.png"
@@ -16,7 +16,7 @@
   ],
   "background": {
     "scripts": [
-      "background.js"
+      "javascript/background.js"
     ]
   },
   "content_scripts": [
@@ -33,23 +33,43 @@
         "statistics.js/statistics.min.js",
         "plotly/plotly-2.25.2.min.js",
         "javascript/config.js",
+        "javascript/utils.js",
+        "javascript/log.js",
+        "javascript/delay.js",
+        "javascript/resources.js",
+        "javascript/collude.js",
+        "javascript/frame_queue.js",
         "javascript/trigger.js",
+        "javascript/trade.js",
         "javascript/observer.js",
         "javascript/multiverse.js",
         "javascript/reparse.js",
+        "javascript/resend.js",
         "javascript/colonist/source.js",
         "javascript/colonist/observer.js",
         "javascript/state.js",
-        "javascript/source.js",
-        "javascript/log.js",
         "javascript/track.js",
         "javascript/render.js",
         "javascript/colony.js",
-        "javascript/colonist/colonist.js",
+        "javascript/replay.js",
+        "javascript/colonist/main.js",
+        "data/example.js",
         "javascript/oneore.js",
         "javascript/plot.js",
         "javascript/cocaco.js"
       ]
+    },
+    {
+    "world": "ISOLATED",
+      "matches": [
+        "https://colonist.io/*"
+      ],
+      "js": [
+        "msgpack.js/msgpack.min.js",
+        "javascript/serialize.js",
+        "javascript/socket_isolated.js"
+      ],
+      "run_at": "document_start"
     },
     {
       "world": "MAIN",
@@ -57,9 +77,6 @@
         "https://colonist.io/*"
       ],
       "js": [
-        "javascript/config.js",
-        "msgpack.js/msgpack.min.js",
-        "javascript/socket.js"
       ],
       "run_at": "document_start"
     }

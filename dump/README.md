@@ -7,8 +7,8 @@ data is found in `~/.local/share/cocaco/data`.
 
 The manifest is `cocaco_dump.json.template`. We edit the template file with `ed`
 to generate the literal manifest used by Firefox. This is needed because we
-install dump in `~/.local/share/cocaco/`, but Firefox wants an absolute path. We edit
-the path based on `$ whoami`.
+install dump in `~/.local/share/cocaco/`, but Firefox wants an absolute path. We
+edit the path based on `$ whoami`.
 
 ## Dump
 

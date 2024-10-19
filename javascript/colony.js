@@ -415,30 +415,6 @@ Colony.prototype.reset = function Colony_prototype_reset()
     // We use the logger to multiplex logging for debugging
     this.logger = null;
 
-    if (this.source && this.source !== null)
-        this.source.disable();
-    // TODO: If we use a Source actually we may need to allow it to dictate the
-    //       state of the game, or buffer trigger activation.
-    this.source = new Source();
-    this.source.onTrigger("roll", x => {
-        console.info("Colony (roll trigger):", JSON.stringify(x));
-    });
-    this.source.onTrigger("transfer", x => {
-        console.info("Colony (transfer trigger):", JSON.stringify(x));
-    });
-    this.source.onTrigger("mono", x => {
-        console.info("Colony (mono trigger):", JSON.stringify(x));
-    });
-    this.source.onTrigger("trade_offer", x => {
-        console.info("Colony (trade_offer trigger):", JSON.stringify(x));
-    });
-    this.source.onTrigger("trade_counter", x => {
-        console.info("Colony (trade_counter trigger):", JSON.stringify(x));
-    });
-    this.source.onTrigger("steal_random", x => {
-        console.info("Colony (steal_random trigger):", JSON.stringify(x));
-    });
-
     return true;
 }
 
@@ -477,7 +453,7 @@ Colony.prototype.findElements = function Colony_prototype_findElements()
             this.chatElement.removeEventListener("click", Colony.enlarger, false);
             Colony.enlarger = null;
         }
-        if (config.largeLog)
+        if (cocaco_config.largeLog)
         {
             Colony.enlarger = enlarge.bind(null, this.logElement);
             this.chatElement.addEventListener("click", Colony.enlarger, false);
@@ -488,6 +464,7 @@ Colony.prototype.findElements = function Colony_prototype_findElements()
     // this.logElement.addEventListener("click", this.boundMainLoopToggle, false);
     this.logElement.addEventListener("click", this.boundToggleTable, false);
     this.logger = new MessageLog(this.chatElement);
+    this.logger.enabled = cocaco_config.log.colony;
 
     // Reset background after extension restart. Has no effect the first time.
     for (e of this.logElement.children)
@@ -502,22 +479,21 @@ function message_listener(message, _sender, _sendResponse)
 }
 
 Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers() {
-    // TODO: Put reparsers into their own object with callbacks to set Colony
-    //       properties as appropriate.
-    let reparsers = [];
-    reparsers.push(new Reparse(
-        "ColonyEchoType",
-        Reparse.applyDoers.always,
-        Reparse.entryPoints.data,
-        check_type,
-        t => {
-            console.debug(`type=${t}`);
-            return false;
-        },
-    ));
-    if (config.parseTypes)
-        typeRep.register(); // For debugging
-    reparsers.push(new Reparse(
+    if (cocaco_config.parseTypes) {
+        Reparse.register(
+            "receive",
+            "ColonyEchoType",
+            Reparse.applyDoers.always,
+            Reparse.entryPoints.data,
+            check_type,
+            t => {
+                console.debug(`type=${t}`);
+                return { isDone: false };
+            },
+        );
+    }
+    Reparse.register(
+        "receive",
         "ColonyMatchCountries",
         Reparse.applyDoers.byKind({type: [4]}),
         Reparse.entryPoints.playerUserStates,
@@ -531,9 +507,9 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
             if (any === false) {
                 this.logger.logChat("No country matches");
             }
-            return true;
+            return { isDone: true };
         },
-    ).register());
+    );
     let playerUserStates = null; // For mapping index to name
     let getPlayerName = function(colourIndex) {
         if (playerUserStates === null) {
@@ -547,7 +523,8 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
         // --index; // The messaging is 1-based (for player indices only)
         // return playerUserStates[index].username;
     };
-    reparsers.push(new Reparse(
+    Reparse.register(
+        "receive",
         "Set PlayerUserStates",
         Reparse.applyDoers.byKind({ type: [4], id: "130" }),
         Reparse.entryPoints.playerUserStates,
@@ -555,11 +532,12 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
         state => {
             playerUserStates = state;
             console.info("playerUserStates:", playerUserStates);
-            return false;
+            return { isDone: false };
         }
-    ).register());
+    );
 
-    reparsers.push(new Reparse(
+    Reparse.register(
+        "receive",
         "ColonyDevState",
         Reparse.applyDoers.byKind({ type: [4, 91], id: "130" }),
         Reparse.entryPoints.developmentCardsState,
@@ -569,7 +547,7 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
                 const names = cards.bank.map(card => enumNames.devcards[card]);
                 const icons = names.map(name => utf8Symbols[name]);
                 const show = `Bank: ${icons.join("")}`;
-                console.debug(show);
+                // console.debug(show);
                 this.logger.logChat(show);
             }
             for (let [index, player_cards] of Object.entries(cards.players)) {
@@ -577,14 +555,14 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
                 const icons = names.map(name => utf8Symbols[name]);
                 const playerName = getPlayerName(index);
                 const show = `${playerName}: ${icons.join("")}`;
-                console.debug(show);
+                // console.debug(show);
                 this.logger.logChat(show);
             }
-            return false;
+            return { isDone: false };
         }
-    ).register());
+    );
 
-    messageStash.ready = true;
+    socketsReady = true;
 
     return true;
 } // registerReparsers()
@@ -624,7 +602,7 @@ Colony.prototype.renderDummy = function Colony_prototype_renderDummy()
         null,
         null,
         null,
-        config.ownIcons ? alternativeAssets : Colony.colonistAssets
+        cocaco_config.ownIcons ? alternativeAssets : Colony.colonistAssets
     );
     this.renderObject.unrender(); // Removes DOM leftovers after restart
     // this.toggleTable(true); // Use hidden === true
@@ -752,7 +730,7 @@ Colony.prototype.initialiseTracker = function Colony_prototype_initialiseTracker
         this.players, this.playerColours,
         null,
         ...recoverFunctions,
-        config.ownIcons ? Colony.alternativeAssets : Colony.colonistAssets
+        cocaco_config.ownIcons ? Colony.alternativeAssets : Colony.colonistAssets
     );
 
     this.renderObject.render();
@@ -768,7 +746,7 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
 {
     let foundNewResources = false;
     let foundRoll = false;
-    if(config.useTimer) console.time("tallyLoop");
+    if(cocaco_config.useTimer) console.time("tallyLoop");
     let [allMessages, i] = this.getNewMessages(true);
     for (; i < allMessages.length; ++i)
     {
@@ -791,12 +769,12 @@ Colony.prototype.comeMrTallyManTallinitialResource = function Colony_prototype_c
             msg.style.background = Colony.green;
         }
     };
-    if (config.useTimer) console.timeEnd("tallyLoop");
+    if (cocaco_config.useTimer) console.timeEnd("tallyLoop");
     this.multiverse.printWorlds();
 
-    if (config.useTimer) console.time("render");
+    if (cocaco_config.useTimer) console.time("render");
     this.renderObject.render(() => foundNewResources);
-    if (config.useTimer) console.timeEnd("render");
+    if (cocaco_config.useTimer) console.timeEnd("render");
 
     if (!foundRoll)
     {
@@ -815,7 +793,7 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
     if (!continueIf())
         return true; // Return true to signal completion to setDoInterval
     console.assert(this.startupFlag === false);
-    if(config.useTimer) console.time("mainLoop");
+    if(cocaco_config.useTimer) console.time("mainLoop");
 
     const [allMessages, index] = this.getNewMessages(true);
     for (let idx = index; idx < allMessages.length; ++idx)
@@ -823,9 +801,8 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
         const msg = allMessages[idx];
         const unidentified = this.applyParsers(msg, idx, allMessages);
         msg.style.background = unidentified ? Colony.yellow : Colony.green;
-        console.debug("Colony Multiverse:")
         this.multiverse.printWorlds();
-        if (config.logWorldCount) console.log("🌎", this.multiverse.worlds.length);
+        if (cocaco_config.logWorldCount) console.log("🌎", this.multiverse.worlds.length);
         if (0 === this.multiverse.worldCount()) // Implies error
         {
             msg.style.background = Colony.red;
@@ -835,11 +812,11 @@ Colony.prototype.mainLoop = function(continueIf = () => true)
             return true; // Return true to signal completion
         }
     }
-    if (config.useTimer) console.timeEnd("mainLoop");
+    if (cocaco_config.useTimer) console.timeEnd("mainLoop");
 
-    if (config.useTimer) console.time("render");
+    if (cocaco_config.useTimer) console.time("render");
     this.renderObject.render(() => this.isNewMessage(this.MSG_OFFSET));
-    if (config.useTimer) console.timeEnd("render");
+    if (cocaco_config.useTimer) console.timeEnd("render");
 }
 
 // Recovers MW state from unknown cards. Player array is used and assumed
@@ -930,7 +907,7 @@ Colony.prototype.stopMainLoop = function()
     console.info("🥥 Stopping main loop ", this.activeIndex);
     this.activeIndex += 1;
 
-    if (config.useTimer) console.timeEnd("mainLoop");
+    if (cocaco_config.useTimer) console.timeEnd("mainLoop");
 }
 
 Colony.prototype.restartMainLoop = function Colony_prototype_restartMainLoop()
@@ -980,11 +957,11 @@ Colony.prototype.mainLoopToggle = function()
 Colony.prototype.reorderPlayerNames = function()
 {
     // Determine our own name
-    if (config.fixedPlayerName || !this.playerUsername)
+    if (cocaco_config.fixedPlayerName || !this.playerUsername)
     {
-        if (!config.fixedPlayerName)
+        if (!cocaco_config.fixedPlayerName)
             console.warn("Username not found. Using fixed name.");
-        this.playerUsername = config.playerName;
+        this.playerUsername = cocaco_config.playerName;
     }
 
     this.players = rotateToLastPosition(this.players, this.playerUsername);
@@ -1091,7 +1068,7 @@ Colony.prototype.parseYearOfPlenty = function(element)
 // (except logging).
 Colony.prototype.parseAlways = function(element, idx)
 {
-    if (!config.logMessages) return false;
+    if (!cocaco_config.logMessages) return false;
     console.info(`Message [${idx}] ${element.textContent} 🔍`, element);
     return false;
 }

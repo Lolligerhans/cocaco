@@ -59,7 +59,7 @@ class Track {
     }
 
     printRobs() {
-        if (config.printRobs !== true)
+        if (cocaco_config.printRobs !== true)
             return;
         log("robs:", this.robs);
         log("robsTaken:", this.robsTaken);

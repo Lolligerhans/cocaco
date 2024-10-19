@@ -177,6 +177,7 @@
 .cocaco-tbl-resource-icon {
     width: 36;
     height: 36px;
+    /*border: solid 3px green;*/
 }
 
 /* Percentages added to numbers in the table */
