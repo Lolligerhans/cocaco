@@ -30,6 +30,16 @@ class ColonistSource extends Trigger {
     static actionStateMap = {
         0: "main",
     };
+    static actionMap = {
+        0: "sendChatMessage",
+        2: "rollDice",
+        6: "endTurn",
+        49: "tradeOfferCreate",
+        50: "tradeOfferRespond",
+        51: "tradeOfferFinalise",
+        52: "toggleEmbargo",
+        68: "forceReload",
+    };
 
     constructor() {
         super();
@@ -166,21 +176,22 @@ ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
 }
 
 ColonistSource.prototype.readGameChatData = function (chatIndex, chatMessage) {
-    chatIndex; // Ignore
-
     const text = chatMessage.text.message;
-    const collusionRegex = /^hi (?<other>\w*)$/;
-    const search = text.match(collusionRegex);
-    if (search === null) {
+    let type;
+    if (text.match("^" + cocaco_config.collude.phrases.start + " ")) {
+        type = "collusionStart";
+    } else if (text.match("^" + cocaco_config.collude.phrases.stop + "$")) {
+        type = "collusionStop";
+    }
+    else {
         return null;
     }
-    const type = "collude";
     const data = {
         index: chatIndex,
-        type: "collude",
+        type: type,
         payload: ColonistSource.chatInterpreters[type](
-            chatMessage,
-            search.groups.other,
+            chatMessage.text.from,
+            text,
         ),
     };
     const packet = { type: "gameChatState", data: data };
@@ -350,10 +361,29 @@ ColonistSource.logInterpreters.stealAgainstThem = function (logMessage) {
 // │ Chat-message interpreters                                 │
 // ╰───────────────────────────────────────────────────────────╯
 
-ColonistSource.chatInterpreters.collude = function (chatMessage, other) {
+ColonistSource.chatInterpreters.collusionStart = function (player, text) {
+    let others = [];
+    const regEx = new RegExp(
+        / (?<name>[^,]+)/g,
+    );
+    console.debug("Searching", text);
+    const search = text.matchAll(regEx);
+    for (const other of search) {
+        console.debug("Adding", other.groups.name, other);
+        others.push(other.groups.name);
+    }
+    console.debug("ColonistSource: Start colluding with", others);
     const payload = {
-        player: chatMessage.text.from,
-        other: other,
+        player: player,
+        others: others,
+    };
+    return payload;
+}
+
+ColonistSource.chatInterpreters.collusionStop = function (player, text) {
+    text; // Unused
+    const payload = {
+        player: player,
     };
     return payload;
 }

@@ -1,5 +1,14 @@
 "use strict";
 
+// Class representing any set of resource counts with whole nummbers (including
+// negative). Watch out, many operations are in-place.
+
+// There is currently the competing Observer property 'resources'. Long term we
+// should probably replace that format with this 'Resoruces' class.
+
+// Currently 'Resources' class has its own array of resource names. Long term it
+// should either adopt a global one or become the global one.
+
 class Resources {
 
     abs() {
@@ -54,21 +63,50 @@ class Resources {
     // Do not modify. Use 'new Resources()' instead.
     static emptyResources = {}; // Filled after class definition.
 
+    equals(otherResources) {
+        // Compare to another 'Resources' object.
+        // @param otherResources: Resources object to compare to. Can be also be
+        //                        other objects with the same keys-value pairs.
+        // @return true or false
+        const ret = Resources.resourceNames.every(res =>
+            this[res] === otherResources[res]
+        );
+        return ret;
+    }
+
     filter(predicate) {
         // Mutate resetting values that do not match to 0
         mapObject(this, v => predicate(v) ? v : 0);
     }
 
     static fromList(nameList) {
-        // Factory to convert from observer property 'resources'.
+        // Factory to convert from Observer property 'resources'.
         // @param nameList: Array of resource names ["wood", ... , "unknown"]
         let ret = new Resources();
         nameList.forEach(r => ++ret[r]);
         return ret;
     }
 
+    static fromObserverTrade(trade) {
+        // Construct 'Resources' object from Observer propert 'trade'. The
+        // result is equivalent to the difference offer - demand.
+        // @param trade: Observer property 'trade'.
+        let offer = Resources.fromList(trade.give.resources);
+        const demand = Resources.fromList(trade.take.resources);
+        offer.subtract(demand);
+        return offer;
+    }
+
     halve() {
         mapObject(this, x => Math.trunc(x / 2));
+    }
+
+    hasSpecial() {
+        // Test whether the resource object has some of the special "unknown"
+        // resources.
+        // @return true or false
+        const ret = this.unknown !== 0;
+        return ret;
     }
 
     max() {
@@ -140,7 +178,9 @@ class Resources {
     }
 
     toList() {
-        // Construct array of names. Example: ["wood", "brick"].
+        // Convert to array of names. Example: ["wood", "wood", brick"]. Must
+        // not have negative amounts.
+        // @return New array containing the resources as list.
         let list = new Array(this.sum()).fill(0);
         let i = 0;
         Object.entries(this).forEach(([k, v]) => {

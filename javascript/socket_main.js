@@ -34,9 +34,8 @@ function reportReceive(event) {
         console.debug("socket_main.js: reportReceive: Replacing frame with:",
             returnedFrame
         );
-        event.data = returnedFrame; // TODO: Not sure if this works
+        event.data = returnedFrame;
     }
-    // post_MAIN();
 }
 
 function reportSend(data_raw, reparse, ...rest) {
@@ -78,9 +77,6 @@ if (typeof cocaco_MAIN === "undefined") {
                 console.debug("frame:", frame, "data:", data);
                 res = send_real.call(webSocket, frame);
             }
-            // NOTE: Must not be executed within send(), which would confuse the
-            //       host sequence counter.
-            // post_MAIN();
             return res;
         };
         console.log("🛜 WebSocket decorated");

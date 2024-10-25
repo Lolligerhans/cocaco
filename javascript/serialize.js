@@ -61,7 +61,7 @@ function cocaco_encode_send({ v0, v1, str, message }) {
     console.assert(isByte(v1));
     console.assert(isByte(str.length)); // We only reserve 1 length byte
 
-    // TODO: Use msgpack fixstr/int helpers
+    // TODO: Use msgpack fixstr/int helpers?
     const messageSerialized = msgpack.serialize(message);
     const strOffset = 3;
     const strAsAscii = [...Array(str.length).keys()].map(i => str.charCodeAt(i));

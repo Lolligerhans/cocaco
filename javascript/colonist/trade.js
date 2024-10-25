@@ -1,7 +1,20 @@
 "use strict";
 
 class Trade {
+    // Save the trade objects transported by Source packets in the same manner
+    // the host presumably would, updating on new 'tradeState' frames.
+    #tradeState = {};
+    #creators = {};
+    // Enable knowing which trades were added last time. These trades are
+    // assumed to potentially be open for response. This way we do not respond
+    // more than once to each trade.
+    #newTrades = new Set();
+    #oldTrades = new Set();
     #logger = new MessageLog();
+
+    // Test if trade IDs repeat. If this doesnt fire once we test a game or two
+    // remove it.
+    testRepetition = new Set();
 
     // Used to filter 'tradeState' Source packets to keep only new, "active"
     // trades. This prevents responding to every Source packet containing
@@ -10,69 +23,50 @@ class Trade {
     #cleanup() {
         // Remove entries with value 'null' from 'this.trades'. Trades will get
         // that value when they are no longer available. We stop tracking at
-        // that point, except in the 'this.oldTrades', which we assume stays
-        // reasonably small.
+        // that point, except in '#oldTrades'.
         const filterTrades = trades => {
             const closedTrades = Object.keys(trades).filter(
                 key => trades[key] == null,
             );
             closedTrades.forEach(key => delete trades[key]);
         };
-        filterTrades(this.tradeState.activeOffers ?? {});
-        filterTrades(this.tradeState.closedOffers ?? {});
+        filterTrades(this.#tradeState.activeOffers ?? {});
+        filterTrades(this.#tradeState.closedOffers ?? {});
     }
 
     countActiveTrades() {
         // @return Number of entries in the active trades
-        let ret = Object.keys(this.tradeState.activeOffers ?? {}).length;
+        let ret = Object.keys(this.#tradeState.activeOffers ?? {}).length;
         return ret;
     }
 
     countClosedTrades() {
         // @return Number of entries in the closed trades
-        let ret = Object.keys(this.tradeState.closedOffers ?? {}).length;
+        let ret = Object.keys(this.#tradeState.closedOffers ?? {}).length;
         return ret;
     }
 
     countOldTrades() {
         // @return Number of entries in the old trades
-        let ret = this.oldTrades.size;
+        let ret = this.#oldTrades.size;
         return ret;
     }
 
     constructor() {
-        // Save the trade objects transported by Source packets in the same
-        // manner the host presumably would, updating on new 'tradeState' frames.
-        this.tradeState = {};
-        this.creators = {};
-        // Enable knowing which trades were added last time. These trades are
-        // assumed to potentially be open for response. This way we do not
-        // respond more than once to each trade.
-        this.newTrades = new Set();
-        this.oldTrades = new Set();
-        this.testRepetition = new Set();
+        this.#logger.enabled = cocaco_config.log.trade;
     }
 
     creatorOfTrade(trade) {
-        // If we join after some trades already existed, we may not know the
-        // original creator, returning nullish.
         const ret = this.creatorOfTradeId(trade.id);
-        if (ret == null) {
-            debugger; // FIXME: Bug
-        }
         return ret;
     }
 
     creatorOfTradeId(id) {
-        const ret = this.creators[id];
+        const ret = this.#creators[id];
+        // If we join after some trades already existed, we may not know the
+        // original creator, returning nullish.
         if (ret == null) {
-            debugger; // FIXME: Bug
-        }
-        if (ret == null) {
-            console.warn(
-                `Creator of trade ${id} not found.`,
-                "This may happen whenstarting the extension too late?",
-            );
+            Trade.#printWarn("noCreatorLookup", id);
         }
         return ret;
     }
@@ -100,7 +94,7 @@ class Trade {
         // Return all states currently active and responded to by any player
         // with the given response.
         let ret = {};
-        Object.entries(this.tradeState.activeOffers).forEach(([id, trade]) => {
+        Object.entries(this.#tradeState.activeOffers).forEach(([id, trade]) => {
             if (Object.values(trade.playerResponses).includes(response)) {
                 ret[id] = structuredClone(trade);
             }
@@ -108,37 +102,14 @@ class Trade {
         return ret;
     }
 
-    getByResponseAndPlayer(playerIndex, response = 1) {
-        // Return all states currently active and responded to by the given
-        // player with the given response.
-        // FIXME: Unused function?
+    #getNewTrades() {
         let ret = {};
-        Object.entries(this.tradeState.activeOffers).forEach(([id, trade]) => {
-            if (trade.playerResponses[playerIndex] === response) {
-                ret[id] = structuredClone(trade);
-            } else {
-                if (cocaco_config.tradeTest === true) {
-                    if (trade.playerResponses[2] === 2) {
-                        console.warn(
-                            `Returning trade ${id} that was not accepted by player 2`
-                        );
-                        ret[id] = structuredClone(trade);
-                    }
-                }
-            }
-        });
-        return ret;
-    }
-
-    #newTrades() {
-        let ret = {};
-        this.newTrades.forEach(key => {
-            console.assert(Object.hasOwn(this.tradeState.activeOffers, key));
-            ret[key] = this.tradeState.activeOffers[key];
+        this.#newTrades.forEach(key => {
+            console.assert(Object.hasOwn(this.#tradeState.activeOffers, key));
+            ret[key] = this.#tradeState.activeOffers[key];
         });
         if (Object.values(ret).includes(undefined)) {
-            // Bug when a trade is 'undefiend'?
-            debugger; // FIXME: Bug?
+            debugger; // Can this happen?
         }
 
         return ret;
@@ -149,13 +120,13 @@ class Trade {
         // @param tradeState: 'tradeState' object as given in Source packets
         // @return Object of newly active offers as represented in source
         //         packets.
-        this.newTrades.clear();
+        this.#newTrades.clear();
         Object.keys(tradeState.activeOffers).forEach(
-            key => this.newTrades.add(key)
+            key => this.#newTrades.add(key)
         );
-        this.tradeState = structuredClone(tradeState);
+        this.#tradeState = structuredClone(tradeState);
         this.#cleanup();
-        return this.#newTrades();
+        return this.#getNewTrades();
     }
 
     static tradesHaveSameParticipants(trade1, trade2) {
@@ -163,7 +134,7 @@ class Trade {
         // Assumes both trades have two distinct players each. And assumes that,
         // within a trade, transfers have the same traders. Assumes none of the
         // traders is the "bank".
-        // @param trade1: Trade in Source packet format
+        // @param trade1: Trade as observer property 'trade'
         // @param trade2: Trade in Source packet format
         // @return true or false
         debugger; // TEST: Does it work?
@@ -218,10 +189,7 @@ class Trade {
         //                  ('trade.take').
         // @param trade: Trade as observer 'trade' property
         const tradeCombined = Trade.tradeCombined(trade);
-        if (tradeCombined.unknown !== 0) {
-            debugger; // TEST: Does it work?
-            return false;
-        }
+        console.assert(tradeCombined.hasSpecial() === false);
         const intervalContainsValue = (interval, x) => {
             return interval[0] <= x && x <= interval[1];
         };
@@ -236,7 +204,6 @@ class Trade {
         const allConformToTemplate = templateCopy.countHamming() === 0;
         if (!allConformToTemplate) {
             const tradeStr = tradeCombined.toSymbols();
-            const templateStr = template.toSymbols();
             console.debug(
                 trade.give.from.name,
                 `${tradeStr} 🚫 ${Collude.formatTemplate(template)}`,
@@ -244,6 +211,29 @@ class Trade {
             );
         }
         return allConformToTemplate;
+    }
+
+    static #printWarn(reason, ...args) {
+        // Helper to collect lengthy prints statements
+        switch (reason) {
+            case "noCreator":
+                console.warn("Trade without creator");
+                console.info("This may happend when starting in the middle of a game");
+                break;
+            case "noCreatorLookup":
+                console.warn(
+                    `Creator of trade ${args} not found.`,
+                    "This may happen whenstarting the extension too late",
+                );
+                console.info("This may happend when starting in the middle of a game");
+                break;
+            case "nullTrade":
+                console.warn("Unexpected null trade");
+                console.info("This may happend when starting in the middle of a game");
+                break;
+            default:
+                console.assert(false, "No known warning reason:", reason);
+        }
     }
 
     testNewTurn() {
@@ -256,10 +246,10 @@ class Trade {
         // will be considered in the next call to 'subtrades()'.
         // @return Object of newly active offers as represented in source
         //         packets.
-        this.newTrades.clear();
+        this.#newTrades.clear();
         Object.entries(tradeState.activeOffers ?? {}).forEach(
             ([tradeId, trade]) => {
-                if (this.oldTrades.has(tradeId)) {
+                if (this.#oldTrades.has(tradeId)) {
                     if (!this.testRepetition.has(tradeId)) {
                         // We must ensure that we excclude trades from this
                         // round because it may just be the same trade.
@@ -270,10 +260,10 @@ class Trade {
                         );
                         debugger;
                     }
-                    console.debug("Old trade:", tradeId);
+                    // console.debug("Old trade:", tradeId);
                     if (trade !== null) {
                         // This is just a test to check if the creator is always
-                        // comuted identically. If trade IDs are reused they
+                        // computed identically. If trade IDs are reused they
                         // might change.
                         let newCreator;
                         if (Object.hasOwn(trade, "counterOfferInResponseToTradeId")) {
@@ -284,39 +274,37 @@ class Trade {
                             const setTo = trade.creator;
                             newCreator = setTo;
                         }
-                        if (newCreator != null && newCreator !== this.creators[tradeId]) {
+                        if (newCreator != null && newCreator !== this.#creators[tradeId]) {
+                            console.error("Inconsistent creator");
                             debugger; // FIXME: Bug
                         }
                     }
                     return;
                 }
-                this.oldTrades.add(tradeId);
+                this.#oldTrades.add(tradeId);
                 this.testRepetition.add(tradeId);
-                this.newTrades.add(tradeId);
+                this.#newTrades.add(tradeId);
                 if (trade === null) {
-                    debugger;
-                    console.assert(
-                        false,
-                        "Can we assume that trades are never null when presented for the first time?",
-                    );
+                    Trade.#printWarn("nullTrade");
+                    debugger; // Does this ever happen?
                     return;
                 }
                 if (trade.counterOfferInResponseToTradeId != null) {
-                    this.creators[tradeId] = this.creatorOfTradeId(
+                    this.#creators[tradeId] = this.creatorOfTradeId(
                         trade.counterOfferInResponseToTradeId,
                     );
                 } else {
                     const setTo = trade.creator;
                     if (setTo == null) {
-                        debugger; // FIXME: Bug
+                        Trade.#printWarn("noCreator");
                     }
-                    this.creators[tradeId] = setTo;
+                    this.#creators[tradeId] = setTo;
                 }
             }
         );
-        this.tradeState = combineObject(this.tradeState, tradeState);
+        this.#tradeState = combineObject(this.#tradeState, tradeState);
         this.#cleanup();
-        const newTrades = this.#newTrades();
+        const newTrades = this.#getNewTrades();
 
         if (Object.values(newTrades).includes(undefined)) {
             // Bug when a trade is 'undefiend'?

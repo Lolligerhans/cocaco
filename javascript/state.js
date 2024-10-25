@@ -1,17 +1,44 @@
 "use strict";
 
-// Generic Catan state updated by Observers
+// Class 'State' implements the response to opbservations of the host.
 
 class State extends Trigger {
-    collude = null;
+
+    // Other Modules
+    collusionPlanner = null;
+    #updateDelay = new Delay(
+        () => this.#update(),
+        {
+            delayTime: cocaco_config.timeout,
+            delayInitially: false,
+            refresh: false,
+        },
+    );
+    multiverse = new Multiverse();
+    render = null; // Must wait for colours
+    renderCards = null;
+    resend = null;
+    track = new Track();
+
+    outputElement = null; // Used for logging
+
+    // State
+    us = null;
+
+    // Debug
+    #allObservations = [];
+
+    // Each observation has its own implementor
     static implementor = {};
 
+    // TODO Always set costs in the observer?
     static costs = {
         "city": ["wheat", "wheat", "ore", "ore", "ore"],
         "devcard": ["sheep", "wheat", "ore"],
         "road": ["wood", "brick"],
         "settlement": ["wood", "brick", "sheep", "wheat"],
     };
+
     static resourceListToNames(nameList) {
         // TODO: Replace with Resources.fromList
         let result = {};
@@ -21,56 +48,13 @@ class State extends Trigger {
         return result;
     };
 
-    constructor(toggleElement, resend) {
+    constructor(toggleElement, resend, outputElement) {
         super();
-
-        // Components
-        this.multiverse = new Multiverse();
-        this.track = new Track();
-        this.render = null; // Must wait for colours
+        this.outputElement = outputElement;
         this.resend = resend;
-
-        // Collusion testing
-        // TODO: This is too much for the state module. This should all go intu
-        //       the collusion module!
-        //       Maybe even put the timing into the observer module?
-        this.us = null;
-        // this.playerNames = null;
-        this.expectedSequence = null;
-        this.collusionDelay = new Delay(
-            () => {
-                // Make sure we do not update when leaving the valid state
-                // during the collusion delay.
-                this.updateCollusion(
-                    () => {
-                        const sequenceNow = this.resend.nextSequence();
-                        const isStillValid = sequenceNow === this.expectedSequence;
-                        console.debug("valid():",
-                            isStillValid, this.expectedSequence,
-                            sequenceNow,
-                        );
-                        return isStillValid;
-                    }
-                );
-            },
-            {
-                delayTime: 1000,
-                delayInitially: true,
-                refresh: true,
-            }
-        );
-        // Names to request from collusion module
-        this.colludingPair = null;
-        this.ourTurn = false; // Set dependign on "actilbleActions" or some such
 
         this.onTrigger("observation",
             observation => this.#observe(observation));
-        // this.onTrigger(null, data => {
-        //     console.debug("State: incoming trigger for:", data);
-        // })
-
-        this.renderTimeout = -1; // Set when on cooldown. Reset  to -1 after.
-        this.needsUpdate = false; // Set when updating during cooldown
 
         // Bind "click" callback to make them compare equal
         this.boundToggle = State.prototype.toggle.bind(this, null);
@@ -81,52 +65,66 @@ class State extends Trigger {
                 this.boundToggle, false);
         }
         console.assert(cocaco_config.replay === true || toggleElement != null,
-            "Toggle element required in regular mode");
-
-        // Debug
-        this.allObservations = [];
+            "Toggle element expected (unless in replay mode)");
     }
 
     #observe(observation) {
         if (cocaco_config.logObservations) {
-            this.allObservations.push(observation);
-            console.debug("👀", this.allObservations.length,
+            this.#allObservations.push(observation);
+            console.debug("👀", this.#allObservations.length,
                 observation.type, observation,
                 // "all:", this.allObservations,
             );
-            // this.multiverse.printWorlds(true);
+            this.multiverse.printWorlds();
         }
         State.implementor[observation.type].call(this, observation.payload);
-
-        this.#update();
-
+        this.#updateRequest();
         return false;
     }
 
-    // Schedule update. Update at most once per second. Update immediately if
-    // possible.
-    #update() {
-        console.assert(this.render !== null,
-            "Must generate start observation first");
-
-        // On cooldown?
-        if (this.renderTimeout !== -1) {
-            this.needsUpdate = true;
-            return;
-        }
-
-        this.needsUpdate = false;
-        this.render.render();
-
-        // Start cooldown
-        this.renderTimeout = setTimeout(
-            () => {
-                this.renderTimeout = -1; // Takes precendence over 'needsUpdate'
-                this.render.render(() => this.needsUpdate);
-            },
-            cocaco_config.timeout,
+    sendTradeHelper = function (trade) {
+        console.assert(trade.give.from.name === this.us.name);
+        const toFrameIndexList = res => res.map(
+            // Convert from Observer property 'resources' to frame format
+            r => ColonistObserver.cardMapInverse[r],
         );
+        const offerList = toFrameIndexList(trade.give.resources);
+        const demandList = toFrameIndexList(trade.take.resources);
+        const message = {
+            action: 49,
+            payload: {
+                creator: this.us.index,
+                isBankTrade: false,
+                counterOfferInResponseToTradeId: null,
+                offeredResources: offerList,
+                wantedResources: demandList,
+            },
+            sequence: -1, // Auto selected
+        };
+        console.debug(
+            "State: Sending collusion offer for",
+            trade.give.to.name,
+            p(message),
+        );
+        this.resend.sendMessage(message);
     }
+
+    #update() {
+        // Refreshes the UI. Use with delay because the plots are costly.
+        console.assert(
+            this.render !== null,
+            "Must generate start observation first",
+        );
+        // We could think about setting a flag whenever something actually
+        // changes. For now we trigger on every observation, which is often
+        // unnecessary.
+        this.render.render();
+    }
+
+    #updateRequest() {
+        this.#updateDelay.request();
+    }
+
 };
 
 // ╭───────────────────────────────────────────────────────────╮
@@ -144,87 +142,63 @@ State.implementor.buy = function ({ player, object, cost }) {
     );
 }
 
-State.implementor.collude = function ({ players }) {
+State.implementor.collusionStart = function ({ player, players }) {
     console.debug("New Collusion:", p(players));
-    this.colludingPair = players;
-    this.collude = new Collude(players.map(p => p.name));
+    const allPlayerNames = [player, ...players].map(p => p.name);
+    this.collusionPlanner.start(allPlayerNames);
+}
+
+State.implementor.collusionStop = function ({ player }) {
+    console.assert(player.name === this.us.name, "Cannot stop collusion of others");
+    this.collusionPlanner.stop();
 }
 
 State.implementor.collusionOffer = function ({ player, trade, accept }) {
+    player; // Unused
+    if (!this.collusionPlanner.isStarted()) {
+        return;
+    }
     this.multiverse.mwUpdateStats();
     const guessAndRange = this.multiverse.worldGuessAndRange;
-    if (this.collude === null) {
-        console.debug("Ignoring collusion offer: No collusion yet");
-        return;
-    }
-    if (trade.give.from === null || trade.give.to === null) {
-        debugger; // FIXME: Bug
-    }
-    if (trade.give.from.name === this.us.name) {
-        console.debug("Ignoring collusion offer: From ourselves");
-        return;
-    }
-    let newTemplate = this.collude.getCollusionTemplate(
-        trade.give.from.name,
-        trade.give.to.name,
+    const plannerResult = this.collusionPlanner.evaluateOffer(
+        trade, guessAndRange,
     );
-    if (newTemplate === null) {
-        console.debug(
-            "Ignoring collusion offer: No template means not a colluding team",
-        );
-        return;
+    if (plannerResult === true) {
+        accept();
+    } else {
+        // Do not interfere with auto-decline
+        if (CollusionPlanner.takerHasEnough(trade, guessAndRange)) {
+            console.debug("State: Rejecting offer (can afford)");
+            accept(false);
+        } else {
+            console.debug("State: Ignoring offer (can not afford)");
+        }
     }
-    Collude.adjustForTaker(newTemplate, trade.give.to.name, guessAndRange);
-    const newMatch = Trade.tradeMatchesTemplate(newTemplate, trade);
-    if (!newMatch) {
-        console.debug(
-            "No match for collusion offer (wont accept):",
-            Trade.tradeCombined(trade).toSymbols(),
-            "trade ⚡ template", newTemplate.toSymbols(),
-        );
-        return;
-    }
-    accept();
 }
 
-State.implementor.collusionAcceptanceOffer = function ({ trade, accept }) {
-    // TODO: The collusion implementations should go into a collusion
-    //       organizer module.
-    if (this.collude === null) {
+State.implementor.collusionAcceptance = function ({ trade, accept }) {
+    if (!this.collusionPlanner.isStarted()) {
         return;
     }
-    if (trade.give.from.name !== this.us.name) {
-        console.debug("Ignoring acceptance: Not our trade");
-        return false;
+    const plannerResult = this.collusionPlanner.evaluateAccept(trade);
+    if (plannerResult === true) {
+        if (this.noMoreAcceptThisTurn === true) {
+            // This value is reset in the 'turn()' implementor. This ensures
+            // that we accept trades one by one. Accepting all at once is
+            // not intended (the host server ignores the rest). The remainign
+            // trades are re-opened after the trade is completed, because we
+            // re-enter the "main" phase.
+            console.debug("State: ❌ Skipping this acceptance!");
+            return;
+        }
+        accept();
+        this.noMoreAcceptThisTurn = true;
+    } else {
+        // If we manke sure to reject only once and only if all other players
+        // already answered we could run
+        //      accept(false);
+        // here. But currently we do not check this.
     }
-    console.assert(this.colludingPair !== 0,
-        // TODO: Keep this assert?
-        "Observer should only produces these observation after collusion started"
-    );
-    if (this.collude === null) {
-        console.debug("Ignoring acceptance: No collusion yet");
-        console.assert(false, "unreachable");
-        return false;
-    }
-    let newTemplate = this.collude.getCollusionTemplate(
-        trade.give.from.name,
-        trade.give.to.name,
-    );
-    if (newTemplate === null) {
-        debugger; // TEST: Does it work?
-        console.debug("Ignoring offer: No template means not a colluding team");
-        return;
-    }
-    const newMatches = Trade.tradeMatchesTemplate(newTemplate, trade);
-    if (!newMatches) {
-        console.debug(
-            "No match (wont finalize):",
-            Trade.tradeCombined(trade).toSymbols(),
-            "trade ⚡ template", newTemplate.toSymbols(),
-        );
-        return;
-    }
-    accept();
 }
 
 State.implementor.discard = function ({ player, resources }) {
@@ -236,7 +210,7 @@ State.implementor.discard = function ({ player, resources }) {
     this.multiverse.mwTransformSpawn(
         name,
         Multiverse.sliceNegate(slice),
-    )
+    );
 }
 
 State.implementor.got = function ({ player, resources }) {
@@ -248,15 +222,15 @@ State.implementor.got = function ({ player, resources }) {
         slice,
     );
 
-    if (this.collude !== null) {
-        this.collude.updateGotResources(
-            name,
-            Resources.fromList(resources),
-        );
-    }
+    const resourceObject = Resources.fromList(resources);
+    this.collusionPlanner.updateGotResources(name, resourceObject);
 }
 
 State.implementor.mono = function ({ player, resource, resources }) {
+    // Later we could additionally:
+    //  - use 'resources' to learn number of stolen cards
+    //  - use non-log-message frames to get stolen count per player
+    //  - use player-total counts to re-measure stolen count afterwards
     const thief = player.name;
     const stolenResource = resource;
     this.multiverse.transformMonopoly(
@@ -264,12 +238,11 @@ State.implementor.mono = function ({ player, resource, resources }) {
         Multiverse.getResourceIndex(stolenResource),
     );
     resources; // Ignore
-    // TODO: Use 'resources' to learn number of stolen cards
-    // TODO: Use socket source to get count per player
 }
 
 State.implementor.offer = function ({ offer, targets, isCounter }) {
     const name = offer.give.from.name;
+    // Offers may include unknown cards as request-for-counter
     const asNames = State.resourceListToNames(offer.give.resources);
     if (asNames.unknown != null && asNames.unknwon !== 0) {
         asNames.unknown = 0;
@@ -298,28 +271,46 @@ State.implementor.start = function ({ us, players, colours }) {
         startResources
     );
     const playerNames = players.map(p => p.name);
-    // this.playerNames = playerNames;
     this.track.init(playerNames);
 
-    console.assert(!this.render,
-        "Do not produce Render corpses by activating this multiple times");
-    if (!this.render) {
-        this.render = new Render(
-            this.multiverse,
-            this.track,
-            playerNames,
-            colours,
-            null, // reset callback
-            // TODO: Recovery mode
-            null, null, // Recovery callback
-            cocaco_config.ownIcons ? alternativeAssets : Colony.colonistAssets,
-        );
-        this.render.render();
+    console.assert(
+        !this.render,
+        "Do not produce Render corpses by activating this multiple times",
+    );
+    const usedAssets = cocaco_config.ownIcons ?
+        alternativeAssets : Colony.colonistAssets;
+
+    switch (cocaco_config.render.type) {
+        case "table":
+            this.render = new Render(
+                this.multiverse,
+                this.track,
+                playerNames,
+                colours,
+                // Later we could use state updates to auto-fill card counts for
+                // resource recovery.
+                null, // reset callback
+                null, null, // Recovery callback
+                usedAssets,
+            );
+            break;
+        case "cards":
+            this.render = new RenderCards(
+                this.multiverse,
+                this.track,
+                playerNames,
+                colours,
+            );
+            break;
+        default:
+            console.assert(false, "Invalid render type configured");
     }
+    this.render.render();
 
     this.us = us;
-    if (cocaco_config.autocollude === true) {
-        this.collude = new Collude(playerNames);
+    this.collusionPlanner = new CollusionPlanner(us.name, this.outputElement);
+    if (cocaco_config.collude.autocollude === true) {
+        this.collusionPlanner.start(playerNames);
     }
 }
 
@@ -376,34 +367,31 @@ State.implementor.trade = function ({ give, take }) {
         takeNames,
     );
 
-    if (this.collude !== null) {
-        let asResources = Resources.fromList(give.resources);
-        asResources.subtract(Resources.fromList(take.resources));
-        this.collude.updateTradeResources(
-            traderName,
-            otherName,
-            asResources,
-        );
-    }
+    let resourceObject = Resources.fromList(give.resources);
+    resourceObject.subtract(Resources.fromList(take.resources));
+    this.collusionPlanner.updateTradeResources(
+        traderName,
+        otherName,
+        resourceObject,
+    );
 }
 
 State.implementor.turn = function ({ player, phase }) {
     console.assert(phase === "main");
     console.assert(player.name === this.us.name);
-
-    if (this.collude === null) {
-        console.debug("Not colluding - nothing to do");
+    this.noMoreAcceptThisTurn = false;
+    if (!this.collusionPlanner.isStarted()) {
         return;
     }
-
-    this.collude.print();
-    console.debug("Requesting collusionDelay");
-    this.expectedSequence = this.resend.nextSequence();
-    // this.collusionDelay.request();
-    this.updateCollusion();
+    this.multiverse.mwUpdateStats();
+    const guessAndRange = this.multiverse.worldGuessAndRange;
+    let trades = this.collusionPlanner.evaluateTurn(guessAndRange);
+    trades.forEach(trade => {
+        this.sendTradeHelper(trade);
+    });
 }
 
-State.implementor.yop = function ({player, resources}) {
+State.implementor.yop = function ({ player, resources }) {
     const name = player.name;
     const asNames = State.resourceListToNames(resources);
     const slice = Multiverse.asSlice(asNames);
@@ -416,79 +404,6 @@ State.implementor.yop = function ({player, resources}) {
 // ╭───────────────────────────────────────────────────────────╮
 // │                                                           │
 // ╰───────────────────────────────────────────────────────────╯
-
-// TODO: Make this a method of the collusion object
-State.prototype.updateCollusion = function (valid = () => true) {
-    if (!valid()) {
-        // Because we delay the offer, it may no longer be our turn.
-        console.debug("Suppressing outdated collusion update");
-        return;
-    }
-    console.assert(this.collude !== null, "collude should be initialized");
-    console.debug("Time to make our turn!");
-    this.multiverse.mwUpdateStats();
-    const guessAndRange = this.multiverse.worldGuessAndRange;
-    const toList = res => res.map(
-        r => ColonistObserver.cardMapInverse[r],
-    );
-
-    const makeOfferTo = other => {
-        const newTemplate = this.collude.getCollusionTemplate(
-            this.us.name,
-            other,
-        );
-        Collude.adjustForGiver(newTemplate, this.us.name, guessAndRange);
-        Collude.adjustForTaker(newTemplate, other, guessAndRange);
-        const isValid = Collude.adjustForTradeValidity(newTemplate);
-        if (!isValid) {
-            console.debug("No collusion offer to", other);
-            return;
-        }
-        const give = new Resources(newTemplate);
-        const take = new Resources(newTemplate);
-        give.filter(x => x > 0);
-        take.filter(x => x < 0);
-        take.abs();
-        const giveList = give.toList();
-        const takeList = take.toList();
-        const trade = Observer.property.trade({
-            give: Observer.property.transfer({
-                from: this.us,
-                to: { name: other },
-                resources: giveList,
-            }),
-            take: Observer.property.transfer({
-                from: { name: other },
-                to: this.us,
-                resources: takeList,
-            }),
-        });
-        const str = Trade.tradeCombined(trade).toSymbols();
-        console.debug("Collusion offer to", other);
-        const offerList = toList(trade.give.resources);
-        const demandList = toList(trade.take.resources);
-        const message = {
-            action: 49,
-            payload: {
-                creator: this.us.index,
-                isBankTrade: false,
-                counterOfferInResponseToTradeId: null,
-                offeredResources: offerList,
-                wantedResources: demandList,
-            },
-            sequence: this.resend.nextSequence(),
-        };
-        console.debug("Sending collusion offer message for", other, p(message));
-        this.resend.sendMessage(message);
-    };
-    this.collude.players().forEach(player => {
-        // TODO: Should we rather offer only one player and wait until next
-        //       round for the other?
-        if (player !== this.us.name) {
-            makeOfferTo(player);
-        }
-    });
-}
 
 State.prototype.toggle = function (value = null) {
     if (this.render === null) {

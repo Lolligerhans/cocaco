@@ -1,10 +1,8 @@
 "use strict";
 
 // The user should only call ctor, render() and unrender()
-class Render
-{
-    constructor
-    (
+class Render {
+    constructor(
         // ManyWorlds object using names consistent with 'colours'
         ManyWorldsObject,
         TrackObject,
@@ -18,10 +16,17 @@ class Render
         recoverCardsCallback, // Goes in the card total cells
         recoverNamesCallback, // Goes in the corner cell
         iconAssets // {"road": '<img src=...>', ...}
-    )
-    {
+    ) {
         // Callbacks may be null
-        console.assert(![ManyWorldsObject, TrackObject, playerNames, colour_map, iconAssets].includes(null));
+        console.assert(
+            ![
+                ManyWorldsObject,
+                TrackObject,
+                playerNames,
+                colour_map,
+                iconAssets,
+            ].includes(null),
+        );
         this.ids =
         {
             resourceTable: "cocaco-tbl",
@@ -56,30 +61,25 @@ class Render
     /**
      * @param value  If 'null', toggle. If 'true'/'false', set.
      */
-    toggle(which, value = null)
-    {
-        if (typeof(which) === "number")
+    toggle(which, value = null) {
+        if (typeof (which) === "number")
             which = Object.keys(this.configHidden)[which];
         this.configHidden[which] = value === null
-                                 ? !this.configHidden[which]
-                                 : value;
+            ? !this.configHidden[which]
+            : value;
         console.log(`🖥Toggle ${which} ➜ ${this.configHidden[which] ? "hide" : "show"}`);
         this.mustRedraw = true;
         this.render();
     }
 
-    unrender()
-    {
-        try
-        {
-            Object.values(this.ids).forEach(id =>
-            {
+    unrender() {
+        try {
+            Object.values(this.ids).forEach(id => {
                 const e = document.getElementById(id);
                 if (e) e.remove();
             });
         }
-        catch(e)
-        {
+        catch (e) {
             // We don't really care if this fails at the moment, but it might help
             // identify bugs.
             console.warn("Exception in unrender():", e);
@@ -89,35 +89,30 @@ class Render
 
     // Update exisintg elements. Create elements if missing. If the element is
     // disabled by this.config, we do not touch, update or create it.
-    update()
-    {
+    update() {
         //console.debug("🖥 Updating display...");
 
         // Display resource plot
-        if (this.configHidden.bubbles === false)
-        {
+        if (this.configHidden.bubbles === false) {
             let plt = this.ensureResourcePlot();
             fillElementWithPlot(plt, this.manyWorlds, this.colour_map);
         }
 
         // Dispaly rolls histogram
-        if (this.configHidden.rolls === false)
-        {
+        if (this.configHidden.rolls === false) {
             let plt = this.ensureRollsPlot();
             this.track.updateRollsData();
             plotRollsAsHistogram(this.track, plt.id);
         }
 
         // Display table
-        if (this.configHidden.resourceTable === false)
-        {
+        if (this.configHidden.resourceTable === false) {
             let tbl = this.ensureResourceTable();
             this.fillResourceTable(tbl);
         }
 
         // Display rob table
-        if (this.configHidden.robs === false)
-        {
+        if (this.configHidden.robs === false) {
             let tbl = this.ensureRobTable();
             this.fillRobTable(tbl);
         }
@@ -125,10 +120,9 @@ class Render
         //console.debug("🖥 Updated display");
     }
 
-    render(renderIf = () => true)
-    {
-        if (!renderIf())
-        {
+    render(renderIf = () => true) {
+
+        if (!renderIf()) {
             //console.debug("🖥 Skip display render");
             return;
         }
@@ -136,8 +130,7 @@ class Render
         // TODO: Return stats object instead of direct access
         this.manyWorlds.mwUpdateStats();
 
-        if (this.mustRedraw === false)
-        {
+        if (this.mustRedraw === false) {
             //console.log("🖥 Delegating to update()");
             this.update();
             return;
@@ -173,8 +166,7 @@ class Render
         this.update();
     }
 
-    fillRobTable(robTable)
-    {
+    fillRobTable(robTable) {
         robTable = document.getElementById(this.ids.robTable);
 
         // Player name and total steal count header cells
@@ -185,14 +177,12 @@ class Render
 
         // Rows for player i robbing player j. And one last cell for rob total
         let tblBody = robTable.tBodies[0];
-        for (i = 0; i < this.playerNames.length; i++)
-        {
+        for (i = 0; i < this.playerNames.length; i++) {
             const thief = this.playerNames[i];
             let row = tblBody.rows[i];
             let playerRowCell = row.cells[0];
             playerRowCell.innerHTML = this.renderPlayerCell(thief, true); // true -> add rob counts
-            for (let j = 0; j < this.playerNames.length; ++j)
-            {
+            for (let j = 0; j < this.playerNames.length; ++j) {
                 //if (j === i) continue;
                 const victim = this.playerNames[j];
                 let robCount = this.track.robs[thief][victim];
@@ -200,8 +190,8 @@ class Render
                 const robAdvantage = robCount - this.track.robs[victim][thief];
                 const irrelevant = robCount === 0 && robAdvantage === 0;
                 const robColour = robAdvantage > 0 ? "#00a000"
-                                : robAdvantage < 0 ? "#a00000"
-                                :                    "#000000";
+                    : robAdvantage < 0 ? "#a00000"
+                        : "#000000";
                 const style = `style="color:${robColour}"`;
                 let cell = row.cells[j + 1];
                 cell.innerHTML = irrelevant ? "" : `<span ${style}>${robCount}</span>`;
@@ -219,8 +209,7 @@ class Render
         // Final row for lost totals and steal totals
         i = this.playerNames.length;
         let row = tblBody.rows[i];
-        for (let j = 0; j < this.playerNames.length; ++j)
-        {
+        for (let j = 0; j < this.playerNames.length; ++j) {
             const victim = this.playerNames[j];
             let lostCount = this.track.robsLost[victim];
             if (lostCount === undefined) { alertIf(45); lostCount = 0; }
@@ -233,8 +222,7 @@ class Render
     }
 
     // Generate new resource table element. Use with ensure
-    generateResourceTable()
-    {
+    generateResourceTable() {
         let tbl = document.createElement("table");
         // tbl.setAttribute("cellspacing", 0); // ?
         // tbl.setAttribute("cellpadding", 0);
@@ -254,14 +242,12 @@ class Render
         // icon.src = `${theBrowser.runtime.getURL("assets/coconut_32.png")}`;
         // playerHeaderCell.appendChild(icon);
         // playerHeaderCell.appendChild(text);
-        for (let i = 0; i < Multiverse.resources.length; i++)
-        {
+        for (let i = 0; i < Multiverse.resources.length; i++) {
             let resourceHeaderCell = headerRow.insertCell(i + 1);
             resourceHeaderCell.addEventListener("click", this.context.recoverCardsCallback, false);
             resourceHeaderCell.className = "cocaco-tbl-cell";
         }
-        for (const [i, name] of Object.keys(Multiverse.costs).entries())
-        {
+        for (const [i, name] of Object.keys(Multiverse.costs).entries()) {
             let headerCell = headerRow.insertCell(i + 1 + Multiverse.resources.length);
             headerCell.className = "cocaco-tbl-cell";
             headerCell.innerHTML = this.iconElements[name];
@@ -272,8 +258,7 @@ class Render
         }
 
         // TODO Make lambdas to data members?
-        const measureTotalCountFunction = (playerName) =>
-        {
+        const measureTotalCountFunction = (playerName) => {
             // Show the most likely value as default
             const defa = this.manyWorlds.worldGuessAndRange[playerName].cardSum[2];
             const guessStr = prompt(`${playerName}'s true card count:`, defa.toString());
@@ -283,21 +268,18 @@ class Render
             this.render();
         };
 
-        const guessCardCountFunction = (playerName, resourceIndex, defaultCount) =>
-        {
+        const guessCardCountFunction = (playerName, resourceIndex, defaultCount) => {
             const resourceName = Multiverse.getResourceName(resourceIndex);
             const icon = resourceIcons[resourceName];
             const guessStr = prompt(`How many ${icon} has ${playerName}?`, defaultCount.toString());
 
             // If guessStr starts with a digit, it has no operator
             const startsWithDigit = guessStr.match(/^\d+/);
-            if (startsWithDigit)
-            {
+            if (startsWithDigit) {
                 const guessCount = parseInt(guessStr, 10);
                 this.manyWorlds.mwWeightGuessExact(playerName, resourceIndex, guessCount);
             }
-            else
-            {
+            else {
                 const guessCount = parseInt(guessStr.slice(1), 10);
                 const operator = guessStr[0];
                 if (!Object.hasOwn(predicates, operator)) // Sanity check
@@ -314,8 +296,7 @@ class Render
 
             this.render(); // Show consequences of guess immediately
         };
-        const guessHasNoBuilding = (playerName, buildingName) =>
-        {
+        const guessHasNoBuilding = (playerName, buildingName) => {
             this.manyWorlds.mwWeightGuessNotavailable(playerName, Multiverse.costs[buildingName]);
             this.render();
         };
@@ -325,8 +306,7 @@ class Render
         //----------------------------------------------------------------------
 
         let tblBody = tbl.createTBody();
-        for (let i = 0; i < this.playerNames.length; i++)
-        {
+        for (let i = 0; i < this.playerNames.length; i++) {
             const player = this.playerNames[i];
             let row = tblBody.insertRow(i);
             row.className = "cocaco-tbl-row";
@@ -334,8 +314,7 @@ class Render
             playerRowCell.className = "cocaco-tbl-player-col-cell";   // Same as for rob table
             playerRowCell.addEventListener("click", measureTotalCountFunction.bind(null, player), false);
             // Resources
-            for (let j = 0; j < Multiverse.resources.length; j++)
-            {
+            for (let j = 0; j < Multiverse.resources.length; j++) {
                 const res = Multiverse.getResourceName(j);
                 let cell = row.insertCell(j + 1);
                 cell.className = "cocaco-tbl-cell";   // Same as for rob table
@@ -343,8 +322,7 @@ class Render
             }
             // Buildings
             let j = Multiverse.resources.length + 1;
-            let addBuildFunc = b =>
-            {
+            let addBuildFunc = b => {
                 let cell = row.insertCell(j);
                 cell.addEventListener("click", guessHasNoBuilding.bind(null, player, b), false);
                 cell.className = "cocaco-tbl-cell";
@@ -357,11 +335,9 @@ class Render
 
     /// Return resource table element. A newly created only if necessary. Does
     /// not fill element.
-    ensureResourceTable()
-    {
+    ensureResourceTable() {
         let tbl = document.getElementById(this.ids.resourceTable);
-        if (tbl === null)
-        {
+        if (tbl === null) {
             tbl = this.generateResourceTable();
             tbl.id = this.ids.resourceTable;
             document.body.appendChild(tbl);
@@ -369,11 +345,9 @@ class Render
         return tbl;
     }
 
-    ensureRollsPlot()
-    {
+    ensureRollsPlot() {
         let e = document.getElementById(this.ids.rollsPlot);
-        if (e === null)
-        {
+        if (e === null) {
             e = document.createElement("div");
             e.id = this.ids.rollsPlot;
             document.body.appendChild(e);
@@ -381,11 +355,9 @@ class Render
         return e;
     }
 
-    ensureResourcePlot()
-    {
+    ensureResourcePlot() {
         let e = document.getElementById(this.ids.bubblePlot);
-        if (e === null)
-        {
+        if (e === null) {
             e = document.createElement("div");
             e.id = this.ids.bubblePlot;
             //plt.class = "plot-window"; // ❔
@@ -394,11 +366,9 @@ class Render
         return e;
     }
 
-    ensureRobTable()
-    {
+    ensureRobTable() {
         let tbl = document.getElementById(this.ids.robTable);
-        if (tbl === null)
-        {
+        if (tbl === null) {
             tbl = this.generateRobTable();
             tbl.id = this.ids.robTable;
             document.body.appendChild(tbl);
@@ -406,15 +376,13 @@ class Render
         return tbl;
     }
 
-    fillResourceTable(tbl)
-    {
+    fillResourceTable(tbl) {
         // Header row - one column per resource, plus player column
         let header = tbl.tHead;
         let headerRow = header.rows[0];
         let playerHeaderCell = headerRow.cells[0];
         playerHeaderCell.textContent = `${this.manyWorlds.worldCount()} 🌎`;
-        for (let i = 0; i < Multiverse.resources.length; i++)
-        { // TODO use spans to separate number from icon
+        for (let i = 0; i < Multiverse.resources.length; i++) { // TODO use spans to separate number from icon
             let resourceType = Multiverse.getResourceName(i);
             let resourceHeaderCell = headerRow.cells[i + 1];
             const total = this.manyWorlds.mwTotals[resourceType];
@@ -424,14 +392,12 @@ class Render
 
         // One resource table row per player
         let tblBody = tbl.tBodies[0];
-        for (let i = 0; i < this.playerNames.length; i++)
-        {
+        for (let i = 0; i < this.playerNames.length; i++) {
             const player = this.playerNames[i];
             let row = tblBody.rows[i];
             let playerRowCell = row.cells[0];
             playerRowCell.innerHTML = this.renderPlayerCell(player);
-            for (let j = 0; j < Multiverse.resources.length; j++)
-            {
+            for (let j = 0; j < Multiverse.resources.length; j++) {
                 const res = Multiverse.getResourceName(j);
                 let cell = row.cells[j + 1];
                 const resCount = this.manyWorlds.worldGuessAndRange[player][res][2]; // Guess
@@ -440,21 +406,20 @@ class Render
                 const stealChance = this.manyWorlds.mwSteals[player][res];
                 const shadowColour = colourInterpolate(stealChance);
                 cell.innerHTML = this.manyWorlds.worldGuessAndRange[player][res][3] === 0
-                               ? "" // Display nothing if guaranteed 0 amount available
-                               : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
+                    ? "" // Display nothing if guaranteed 0 amount available
+                    : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
                 // Alternatively, background whole cell
                 //if (this.manyWorlds.worldGuessAndRange[player][res][3] !== 0)
                 //    cell.style.background = shadowColour;
             }
             // Copy the cell-adding for resource
             let j = Multiverse.resources.length + 1;
-            let addBuildFunc = b =>
-            {
+            let addBuildFunc = b => {
                 const chance = this.manyWorlds.mwBuildsProb[player][b];
                 let cell = row.cells[j];
                 cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
-                               : chance > 0.999 ? "<span class='table-number table-tick'>✔️ </span>"
-                               : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
+                    : chance > 0.999 ? "<span class='table-number table-tick'>✔️ </span>"
+                        : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
                 if (0.001 < chance)
                     cell.style.background = colourInterpolate(chance);
                 else
@@ -465,8 +430,7 @@ class Render
         }
     }
 
-    generateRobTable()
-    {
+    generateRobTable() {
         let robTable = document.createElement("table");
 
         // Player name and total steal count header cells
@@ -476,8 +440,7 @@ class Render
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.className = "cocaco-tbl-player-col-header";
         let i = 0;
-        for (i = 0; i < this.playerNames.length; i++)
-        {
+        for (i = 0; i < this.playerNames.length; i++) {
             let playerHeaderCell = headerRow.insertCell(i + 1);
             playerHeaderCell.className = "cocaco-tbl-cell";
             playerHeaderCell.innerHTML = `<div class="cocaco-tbl-player-col-cell-color" style="background-color:${this.colour_map[this.playerNames[i]]}">  </div>`; // Spaces to show the background colour only
@@ -488,14 +451,12 @@ class Render
 
         // Rows for player i robbing player j. And one last cell for rob total
         let tblBody = robTable.createTBody();
-        for (i = 0; i < this.playerNames.length; i++)
-        {
+        for (i = 0; i < this.playerNames.length; i++) {
             let row = tblBody.insertRow(i);
             row.className = "cocaco-tbl-row";
             let playerRowCell = row.insertCell(0);
             playerRowCell.className = "cocaco-rob-tbl-player-col-cell";   // Same as for resource table
-            for (let j = 0; j < this.playerNames.length; ++j)
-            {
+            for (let j = 0; j < this.playerNames.length; ++j) {
                 let cell = row.insertCell(j + 1);
                 cell.className = "cocaco-tbl-cell";   // Same as for resource table
             }
@@ -508,11 +469,10 @@ class Render
         // Final row for lost totals and steal totals
         i = this.playerNames.length;
         let row = tblBody.insertRow(i);
-        row.className="cocaco-tbl-total-row";
+        row.className = "cocaco-tbl-total-row";
         let totalRowCell = row.insertCell(0)
         totalRowCell.className = "cocaco-tbl-cell";
-        for (let j = 0; j < this.playerNames.length; ++j)
-        {
+        for (let j = 0; j < this.playerNames.length; ++j) {
             let cell = row.insertCell(j + 1);
             cell.className = "cocaco-tbl-cell";
         }
@@ -524,10 +484,8 @@ class Render
     }
 
     // TODO This is really two function. Split em.
-    renderPlayerCell(player, robsCount = false)
-    {
-        if (robsCount === false)
-        {
+    renderPlayerCell(player, robsCount = false) {
+        if (robsCount === false) {
             const gar = this.manyWorlds.worldGuessAndRange[player].cardSum;
             const definite = gar[0] === gar[3]; // min === max
             const value = gar[2]; // most likely
@@ -536,8 +494,7 @@ class Render
             const post = definite ? "" : ` (${Math.round(gar[1] * 100)}%) | ${gar[0]} - ${gar[3]}`;
             return `<span class="cocaco-tbl-player-name" style="color:${this.colour_map[player]}">${sumString} ${player}</span><span class="cocaco-tbl-unknown-stats">${post}</span>`;
         }
-        else
-        {
+        else {
             const diff = this.track.robsTaken[player] - this.track.robsLost[player];
             const diffStr = diff ? (diff < 0 ? "" : "+") + diff : "  ";
             //const justNumber = `${diffStr}`;
@@ -551,8 +508,7 @@ class Render
 }
 
 // The hook for bubbles. I guess we can keep it here.
-function fillElementWithPlot(element, trackerObject, colour_map)
-{
+function fillElementWithPlot(element, trackerObject, colour_map) {
     plotResourcesAsBubbles(element.id, trackerObject, colour_map);
 }
 

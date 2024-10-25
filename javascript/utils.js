@@ -42,10 +42,19 @@ function combineObject(object, update) {
         cloneObject,
         cloneUpdate,
     );
-    if (Object.values(cloneObject).includes(undefined)) {
-        debugger; // FIXME: Bug?
-    }
+    console.assert(!Object.values(cloneObject).includes(undefined));
     return cloneObject;
+}
+
+function mapObject(object, func) {
+    // Maps values of an Object like Array.map(). Assigns the resulting values
+    // to the values of 'object'. Probably slow.
+    // @param func: Function (value, key) => newValue
+    // @return The modified object.
+    Object.entries(object).forEach(([k, v]) => {
+        object[k] = func(v, k);
+    });
+    return object;
 }
 
 function updateObjectNoClone(object, update) {

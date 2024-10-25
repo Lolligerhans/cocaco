@@ -45,7 +45,7 @@
     position: absolute;
     border: none;
     padding: 0px;
-    z-index: 9998;
+    z-index: 9988;
     top: 202px;
 }
 
@@ -54,7 +54,7 @@
   position: absolute;
   border: none;
   padding: 0px;
-  z-index: 9998;
+  z-index: 9988;
   /*top: 550px; /* below resource plot */
   top: 202px; /* next to resource plot */
   left: 315px;
@@ -64,7 +64,7 @@
 {
     position: absolute;
     background-color: #ccc;
-    z-index: 9996;
+    z-index: 9986;
     top: 0;
     left: 0;
     border: solid 3px #555;
@@ -78,7 +78,7 @@
 {
     position: absolute;
     background-color: #ccc;
-    z-index: 9999;
+    z-index: 9989;
     top: 0px;
     right: 0px;
     box-sizing: border-box;

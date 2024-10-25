@@ -4,7 +4,7 @@
   "manifest_version": 3,
   "author": "Lolligerhans",
   "description": "Correctly correlated Catan card chance Counter",
-  "version": "4.0.1",
+  "version": "4.0.2-dev",
   "icons": {
     "32": "assets/coconut_32.png",
     "512": "assets/coconut_512.png"
@@ -15,9 +15,7 @@
     "wss://socket.svr.colonist.io/"
   ],
   "background": {
-    "scripts": [
-      "javascript/background.js"
-    ]
+    "page": "html/background-page.html"
   },
   "content_scripts": [
     {
@@ -26,7 +24,8 @@
         "https://twosheep.io/*"
       ],
       "css": [
-        "css/cocaco-styles.css"
+        "css/cocaco-styles.css",
+        "css/sidebar.css"
       ],
       "run_at": "document_idle",
       "js": [
@@ -37,10 +36,12 @@
         "javascript/log.js",
         "javascript/delay.js",
         "javascript/resources.js",
+        "javascript/reparse_options.js",
         "javascript/collude.js",
+        "javascript/collusion_planner.js",
         "javascript/frame_queue.js",
         "javascript/trigger.js",
-        "javascript/trade.js",
+        "javascript/colonist/trade.js",
         "javascript/observer.js",
         "javascript/multiverse.js",
         "javascript/reparse.js",
@@ -49,6 +50,7 @@
         "javascript/colonist/observer.js",
         "javascript/state.js",
         "javascript/track.js",
+        "javascript/render_cards.js",
         "javascript/render.js",
         "javascript/colony.js",
         "javascript/replay.js",
@@ -60,7 +62,7 @@
       ]
     },
     {
-    "world": "ISOLATED",
+      "world": "ISOLATED",
       "matches": [
         "https://colonist.io/*"
       ],
@@ -77,6 +79,7 @@
         "https://colonist.io/*"
       ],
       "js": [
+        "javascript/socket_main.js"
       ],
       "run_at": "document_start"
     }
@@ -91,6 +94,12 @@
         "https://colonist.io/*",
         "https://twosheep.io/*"
       ]
+    },
+    {
+      "resources": [
+        "html/*.html"
+      ],
+      "matches": ["https://colonist.io/*", "https://twosheep.io/*"]
     }
   ],
   "permissions": [

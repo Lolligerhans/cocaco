@@ -321,43 +321,72 @@ observation: {
 
 - cost: Use the specified resource instead of the default cost.
 
-##### `collude` observation
+##### `collusionStart` observation
 
-The player issues a collusion instruction. It is the observers responsibility to
-ensure that `players` includes the user. If the selected pair is already
-colluding, nothing happens.
+The player instructs the state to evenly trade resources between colluding
+players.
+
+`player` always refers to us. `players` are the other colluding players.
 
 ```JSON
 observation: {
   type: "collude",
   payload: {
+    player: <player>,
     players: <players>,
+  },
+}
+```
+
+##### `collusionStop` observation
+
+The player instructs the state to stop distributing resources. `palyer` always
+refers to us.
+
+```JSON
+observation: {
+  type: "collude",
+  payload: {
+    player: <player>,
   },
 }
 ```
 
 ##### `collusionAcceptance` observation
 
-Another player accepted a trade.
+Another player accepted one of our trades. `accept` is a callback function to
+finalise the offer. `player` is the accepting player, matching the "receiving"
+POV of the `trade`.
 
-<!-- TODO: Add details once we know the details -->
+If multiple players accept a trade, multiple such observation are emitted.
+
+The state should check whether the accepted trade is intended.
+
+```JSON
+collusionAcceptance: {
+  type: "collusionAcceptance",
+  payload: {
+    player: <player>,
+    trade: <trade>,
+    accept: <function>,
+  }
+}
+```
 
 ##### `collusionOffer` observation
 
-<!-- FIXME: This is no longer the collusion model. Rewrite once we know better
-how we want collusion to work exactly. -->
+Another player created a trade offer that we can react to. `accept` is
+a callback function to accept the offer.
 
-Another player created a collusion-abiding trade. `accept` is a function
-callback for the state to accept on the action. By calling `accept()`, the trade
-is accepted (attempted).
-
-The observation does not mean: A player offers to collude.
+This observation is for interaction only, *not* for tracking. We intend to emit
+this observation only the first time the trade appears on a frame. The duplicate
+detection may be wonky at the moment.
 
 ```JSON
 collusionOffer: {
   player: <player>,
   trade: <trade>,
-  decide: <function>
+  accept: <function>,
 }
 ```
 

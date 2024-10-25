@@ -9,7 +9,7 @@
 //  - Basic interactions:
 //      - On obtained resources, call updateGotResources()
 //      - On trades, call updateTradeResources()
-//      - To obtain a tempalte, call getCollusionTemplate()
+//      - To obtain a template, call getCollusionTemplate()
 //      - Use the adjustors to cut down the template for specific use cases
 //          - To make sure the giver and receiver have enough resources
 //              - adjustForGiver()
@@ -74,7 +74,7 @@ class Collude {
     #groupTotal = {};
     #balances = {};
     static #logger = new MessageLog(null);
-    static #maxPerPlayer = 5; // const
+    static #maxPerPlayer = cocaco_config.collude.maxOfferPerSide; // const
 
     constructor(players) {
         // @param players: Array of strings representing player names, or other
@@ -238,7 +238,7 @@ class Collude {
         this.#balances[playerFrom].subtract(resources);
         this.#balances[playerTo].add(resources);
         console.debug(
-            "Collude updateTradeResources():",
+            "Collude: update trade:",
             playerFrom, resources.toSymbols(), playerTo,
         );
         this.print(playerFrom);
@@ -265,7 +265,7 @@ class Collude {
         // Ensure that the taking player has enough resources to fulfil the
         // template. Else reduces the template to reflect the largest amount of
         // resources the taking player is certain to afford.
-        // @param template: the template to be modified
+        // @param template: The template to be modified
         // @param player: The player name (to index into guessAndRange)
         // @param guessAndRange: The guess and range object from Multiverse
         // @return Does not return anything. The template is modified in-place.

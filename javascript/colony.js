@@ -1370,13 +1370,14 @@ Colony.prototype.stealKnown = function(element)
     }
 
     let involvedPlayers = textContent
-        .replace(Colony.snippets.steal.detect, " ") // After this only the names are left
+        // After this only the names are left
+        .replace(Colony.snippets.steal.detect, " ")
         .split(" ");
     involvedPlayers = involvedPlayers.map(x => x.replace(/^[Yy]ou$/, this.playerUsername));
     if (!involvedPlayers.includes(this.playerUsername))
     {
         alertIf("Expected \"[Yy]ou\" for", this.playerUsername, "in known steal");
-        return;
+        return false;
     }
 
     // The " stole " message can mean many things. We use the turnState to

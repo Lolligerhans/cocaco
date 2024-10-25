@@ -4,6 +4,7 @@
 
 class ColonistObserver extends Observer {
 
+    // TODO The Source should do this!
     static cardMap = {
         0: "secret",
         1: "wood",
@@ -48,11 +49,12 @@ class ColonistObserver extends Observer {
     constructor(source, state) {
         super(state);
 
-        this.stateObject = state;
+        // State object taking in our observations
+        this.state = state;
         this.nextLogMessageIndex = 0;
         this.handledLogMessagesIndices = new Set();
         // Stateful components we use to interpret Source packets
-        this.state = {
+        this.storage = {
             // ── Written once ───────────────────────────────────────────
             playerIndex: null,
             playerUsername: null,
@@ -95,11 +97,7 @@ class ColonistObserver extends Observer {
             console.assert(packet.type === "gameState");
             this.observeGameState(packet.data);
         });
-        // this.source.onTrigger(null, data => {
-        //     console.log("ColonistObserver: Source trigger for:", JSON.stringify(data));
-        //     debugger;
-        //     return false;
-        // });
+
     }
 
     #isNewLogMessage(index) {
@@ -119,45 +117,45 @@ class ColonistObserver extends Observer {
     // ColonistSource emits.
 
     observePlayerUsername(sourceData) {
-        console.assert(!this.state.playerUsername);
-        this.state.playerUsername = sourceData;
+        console.assert(!this.storage.playerUsername);
+        this.storage.playerUsername = sourceData;
     }
 
     observePlayerUserStates(sourceData) {
-        console.assert(!this.state.playerUserStates);
-        if (this.state.playerUserStates) {
-            // console.debug(sourceData, this.state);
+        console.assert(!this.storage.playerUserStates);
+        if (this.storage.playerUserStates) {
+            // console.debug(sourceData, this.storage);
             // console.warn("ColonistObserver: Skipping duplicate playerUserStates");
             return;
         }
-        this.state.playerUserStates = sourceData.playerUserStates;
-        this.state.nameMap = {};
-        for (const p of this.state.playerUserStates) {
-            this.state.nameMap[p.selectedColor] = p.username;
+        this.storage.playerUserStates = sourceData.playerUserStates;
+        this.storage.nameMap = {};
+        for (const p of this.storage.playerUserStates) {
+            this.storage.nameMap[p.selectedColor] = p.username;
         }
-        this.state.nameMapInverse = invertObject(
-            this.state.nameMap,
+        this.storage.nameMapInverse = invertObject(
+            this.storage.nameMap,
             x => Number.parseInt(x),
         );
-        this.state.playerIndex = this.state.nameMapInverse[
-            this.state.playerUsername
+        this.storage.playerIndex = this.storage.nameMapInverse[
+            this.storage.playerUsername
         ];
-        this.state.colourMap = {};
-        for (const p of this.state.playerUserStates) {
-            this.state.colourMap[p.username]
+        this.storage.colourMap = {};
+        for (const p of this.storage.playerUserStates) {
+            this.storage.colourMap[p.username]
                 = ColonistObserver.getColour(p.selectedColor);
         }
 
-        let allNames = sourceData.playOrder.map(i => this.state.nameMap[i]);
-        rotateToLastPosition(allNames, this.state.playerUsername);
+        let allNames = sourceData.playOrder.map(i => this.storage.nameMap[i]);
+        rotateToLastPosition(allNames, this.storage.playerUsername);
 
         this.start({
             us: {
-                name: this.state.playerUsername,
-                index: this.state.playerIndex,
+                name: this.storage.playerUsername,
+                index: this.storage.playerIndex,
             },
             players: allNames,
-            colours: this.state.colourMap,
+            colours: this.storage.colourMap,
         });
     }
 
@@ -181,7 +179,6 @@ class ColonistObserver extends Observer {
     }
 
     observeChatMessage({ index, type, payload }) {
-        // TODO: Verify function
         index = Number.parseInt(index);
         index; // Ignore
         ColonistObserver.sourceObserver[type].call(this, payload);
@@ -202,16 +199,37 @@ class ColonistObserver extends Observer {
 //
 // Mostly they simply map indices to their corresponding string values.
 
-ColonistObserver.sourceObserver.roll = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
-    this.roll({
+ColonistObserver.sourceObserver.buyBuilding = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
+    const object = ColonistObserver.buildingMap[packetData.building.index];
+    this.buy({
         player: { name: name },
-        number: packetData.number,
+        object: object,
     });
 }
 
+
+ColonistObserver.sourceObserver.buyDev = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
+    this.buy({
+        player: { name: name },
+        object: "devcard",
+    });
+}
+
+
+ColonistObserver.sourceObserver.discard = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
+    const resources = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    this.discard({
+        player: { name: name },
+        resources: resources,
+    });
+}
+
+
 ColonistObserver.sourceObserver.got = function (packetData) {
-    const name = this.state.nameMap[packetData.player];
+    const name = this.storage.nameMap[packetData.player];
     const res = packetData.cards.map(card => ColonistObserver.cardMap[card]);
     this.got({
         player: { name: name },
@@ -219,8 +237,65 @@ ColonistObserver.sourceObserver.got = function (packetData) {
     });
 }
 
+
+ColonistObserver.sourceObserver.mono = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
+    const res = packetData.cards.map(x => ColonistObserver.cardMap[x]);
+    const resType = ColonistObserver.cardMap[packetData.card];
+    this.mono({
+        player: { name: name },
+        resource: resType,
+        resources: res,
+    });
+}
+
+
+ColonistObserver.sourceObserver.roll = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
+    this.roll({
+        player: { name: name },
+        number: packetData.number,
+    });
+}
+
+
+ColonistObserver.sourceObserver.stealAgainstThem = function (packetData) {
+    const victim = this.storage.nameMap[packetData.player.index];
+    const cards = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    console.assert(cards.length === 1, "Steal exactly one card");
+    this.steal({
+        thief: { name: this.storage.playerUsername },
+        victim: { name: victim },
+        resource: cards[0],
+    });
+}
+
+ColonistObserver.sourceObserver.stealAgainstUs = function (packetData) {
+    const thief = this.storage.nameMap[packetData.player.index];
+    const cards = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    console.assert(cards.length === 1, "Steal exactly one card");
+    this.steal({
+        thief: { name: thief },
+        victim: { name: this.storage.playerUsername },
+        resource: cards[0],
+    });
+}
+
+
+ColonistObserver.sourceObserver.stealRandom = function (packetData) {
+    const thief = this.storage.nameMap[packetData.player.index];
+    const victim = this.storage.nameMap[packetData.victim.index];
+    console.assert(packetData.cards.length === 1 && packetData.cards[0] === 0,
+        "Random steals should be unknown single cards");
+    this.steal({
+        thief: { name: thief },
+        victim: { name: victim },
+    });
+}
+
+
 ColonistObserver.sourceObserver.tradeBank = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
+    const name = this.storage.nameMap[packetData.player.index];
     const give = packetData.give.map(r => ColonistObserver.cardMap[r]);
     const take = packetData.take.map(r => ColonistObserver.cardMap[r]);
     this.trade({
@@ -237,42 +312,9 @@ ColonistObserver.sourceObserver.tradeBank = function (packetData) {
     });
 }
 
-ColonistObserver.sourceObserver.yop = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
-    const cards = packetData.cards.map(r => ColonistObserver.cardMap[r]);
-    this.yop({
-        player: { name: name },
-        resources: cards,
-    });
-}
-
-ColonistObserver.sourceObserver.mono = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
-    const res = packetData.cards.map(x => ColonistObserver.cardMap[x]);
-    const resType = ColonistObserver.cardMap[packetData.card];
-    this.mono({
-        player: { name: name },
-        resource: resType,
-        resources: res,
-    });
-}
-
-ColonistObserver.sourceObserver.tradeOffer = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
-    const res = packetData.cards.map(r => ColonistObserver.cardMap[r]);
-    const trade = {
-        give: {
-            from: { name: name },
-            resources: res,
-        },
-    };
-    this.offer({
-        offer: trade,
-    });
-}
 
 ColonistObserver.sourceObserver.tradeCounter = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
+    const name = this.storage.nameMap[packetData.player.index];
     const res = packetData.cards.map(r => ColonistObserver.cardMap[r]);
     const trade = {
         give: {
@@ -286,10 +328,26 @@ ColonistObserver.sourceObserver.tradeCounter = function (packetData) {
     });
 }
 
-ColonistObserver.sourceObserver.tradePlayer = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
+
+ColonistObserver.sourceObserver.tradeOffer = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
     const res = packetData.cards.map(r => ColonistObserver.cardMap[r]);
-    const name2 = this.state.nameMap[packetData.target_player.index];
+    const trade = {
+        give: {
+            from: { name: name },
+            resources: res,
+        },
+    };
+    this.offer({
+        offer: trade,
+    });
+}
+
+
+ColonistObserver.sourceObserver.tradePlayer = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
+    const res = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    const name2 = this.storage.nameMap[packetData.target_player.index];
     const res2 = packetData.target_cards.map(r => ColonistObserver.cardMap[r]);
     const trade = {
         give: {
@@ -306,64 +364,16 @@ ColonistObserver.sourceObserver.tradePlayer = function (packetData) {
     this.trade(trade);
 }
 
-ColonistObserver.sourceObserver.discard = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
-    const resources = packetData.cards.map(r => ColonistObserver.cardMap[r]);
-    this.discard({
-        player: { name: name },
-        resources: resources,
-    });
-}
 
-ColonistObserver.sourceObserver.buyDev = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
-    this.buy({
-        player: { name: name },
-        object: "devcard",
-    });
-}
-
-ColonistObserver.sourceObserver.buyBuilding = function (packetData) {
-    const name = this.state.nameMap[packetData.player.index];
-    const object = ColonistObserver.buildingMap[packetData.building.index];
-    this.buy({
-        player: { name: name },
-        object: object,
-    });
-}
-
-ColonistObserver.sourceObserver.stealRandom = function (packetData) {
-    const thief = this.state.nameMap[packetData.player.index];
-    const victim = this.state.nameMap[packetData.victim.index];
-    console.assert(packetData.cards.length === 1 && packetData.cards[0] === 0,
-        "Random steals should be unknown single cards");
-    this.steal({
-        thief: { name: thief },
-        victim: { name: victim },
-    });
-}
-
-ColonistObserver.sourceObserver.stealAgainstUs = function (packetData) {
-    const thief = this.state.nameMap[packetData.player.index];
+ColonistObserver.sourceObserver.yop = function (packetData) {
+    const name = this.storage.nameMap[packetData.player.index];
     const cards = packetData.cards.map(r => ColonistObserver.cardMap[r]);
-    console.assert(cards.length === 1, "Steal exactly one card");
-    this.steal({
-        thief: { name: thief },
-        victim: { name: this.state.playerUsername },
-        resource: cards[0],
+    this.yop({
+        player: { name: name },
+        resources: cards,
     });
 }
 
-ColonistObserver.sourceObserver.stealAgainstThem = function (packetData) {
-    const victim = this.state.nameMap[packetData.player.index];
-    const cards = packetData.cards.map(r => ColonistObserver.cardMap[r]);
-    console.assert(cards.length === 1, "Steal exactly one card");
-    this.steal({
-        thief: { name: this.state.playerUsername },
-        victim: { name: victim },
-        resource: cards[0],
-    });
-}
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Observe gameState packets                                 │
@@ -378,19 +388,19 @@ ColonistObserver.sourceObserver.currentState = function (
     const update = (k) => {
         // If the data is there we update
         if (packetData[k] !== undefined) {
-            this.state[k] = packetData[k];
+            this.storage[k] = packetData[k];
         }
     };
     update("currentTurnPlayerColor");
     update("turnState");
     update("actionState");
-    const playerName = this.state.nameMap[this.state.currentTurnPlayerColor];
-    if (playerName !== this.state.playerUsername) {
+    const playerName = this.storage.nameMap[this.storage.currentTurnPlayerColor];
+    if (playerName !== this.storage.playerUsername) {
         // Legitimate in principle. We currently care only about our turns.
         return;
     }
-    const turn = this.state.turnState;
-    const action = this.state.actionState;
+    const turn = this.storage.turnState;
+    const action = this.storage.actionState;
     // Currently we only care about one specific state+action combination. We
     // capture this as the 'phase' where "main" is the only meaningful value.
     const phase = (turn === "main" && action === "main") ? "main" : "";
@@ -403,7 +413,7 @@ ColonistObserver.sourceObserver.currentState = function (
         // ad-hoc test: see if trade IDs are re-used
         if (this.didResetTest !== true) {
             this.didResetTest = true;
-            this.state.trade.testNewTurn();
+            this.storage.trade.testNewTurn();
         }
     }
 
@@ -414,55 +424,59 @@ ColonistObserver.sourceObserver.currentState = function (
 }
 
 ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
-    // 'tradeState' tells us about the active trades. We use this to know when
-    // to send trade accept frames. Every first time a trade appears, generate
-    // a 'collusionOffer' observation.
-    if (packetData.activeOffers && packetData.activeOffers.Dy79) {
-        debugger; // FIXME: Bug
-    }
+    // 'tradeState' tells us about the active offers. We use this to know when
+    // to send offer accept and finalise frames. Every first time a trade
+    // appears, generate a 'collusionOffer' observation. When we find accepted
+    // trades by other players,
+
+    // if (packetData.activeOffers && packetData.activeOffers.Dy79) {
+    //     debugger; // FIXME: Bug
+    // }
     let newTrades;
     if (isUpdate) {
-        newTrades = this.state.trade.update(packetData);
+        newTrades = this.storage.trade.update(packetData);
     } else {
-        newTrades = this.state.trade.reset(packetData);
+        newTrades = this.storage.trade.reset(packetData);
     }
     console.debug(
         Object.keys(newTrades).length, "newTrades,",
         newTrades,
     );
 
+    // rawCreatorNmae() returns what is present in the packetData. creatorName()
+    // returns the player in who's POV the trade is (the player who's turn it
+    // is). They differ in counter-trades.
     const rawCreatorName = trade => {
-        return this.state.nameMap[trade.creator];
+        return this.storage.nameMap[trade.creator];
     };
     const creatorName = trade => {
-        const playerIndex = this.state.trade.creatorOfTrade(trade);
-        const ret = this.state.nameMap[playerIndex];
-        if (ret == null) {
-            debugger; // FIXME: Bug
-        }
+        // TODO: Alternatively, deduce from that player not having a response
+        //       entry.
+        const playerIndex = this.storage.trade.creatorOfTrade(trade);
+        const ret = this.storage.nameMap[playerIndex];
         return ret;
     };
 
     // ── Collusion acceptance (maybe finalize) ──────────────────
     const suggestFinalisation = ([id, trade], acceptingPlayer) => {
         const singletonKey = id + "_" + acceptingPlayer;
-        if (this.state.finalisedTrades.has(singletonKey)) {
+        if (this.storage.finalisedTrades.has(singletonKey)) {
             console.debug(
                 "Not finalising", singletonKey, "(finalised previously)",
             );
             return;
         }
-        this.state.finalisedTrades.add(singletonKey);
+        this.storage.finalisedTrades.add(singletonKey);
         console.debug("Finalising observation for ", singletonKey);
         let tradeProperty = {
             give: {
-                from: { name: this.state.playerUsername },
+                from: { name: this.storage.playerUsername },
                 to: { name: acceptingPlayer },
                 resources: null,
             },
             take: {
                 from: { name: acceptingPlayer },
-                to: { name: this.state.playerUsername },
+                to: { name: this.storage.playerUsername },
                 resources: null,
             },
         };
@@ -470,34 +484,46 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
             debugger; // FIXME: Bug
         }
         Trade.fillResourcesFromFrame(tradeProperty, trade);
-        const acceptingPlayerIndex = this.state.nameMapInverse[acceptingPlayer];
+        const acceptingPlayerIndex = this.storage.nameMapInverse[acceptingPlayer];
         const offer = {
             player: { name: acceptingPlayer },
             trade: tradeProperty,
-            accept: () => {
-                const tradeResponseFinalize = {
-                    action: 51,
-                    payload: {
-                        tradeId: id,
-                        playerToExecuteTradeWith: acceptingPlayerIndex,
-                    },
-                    sequence: this.stateObject.resend.nextSequence(),
+            accept: (doAccept = true) => {
+                let tradeResponseFinalise;
+                if (doAccept === true) {
+                    tradeResponseFinalise = {
+                        action: doAccept ? 51 : 55,
+                        payload: {
+                            tradeId: id,
+                            playerToExecuteTradeWith: acceptingPlayerIndex,
+                        },
+                        sequence: -1, // Auto selected
+                    }
+                } else {
+                    tradeResponseFinalise = {
+                        action: 50,
+                        payload: {
+                            id: id,
+                            response: 1,
+                        },
+                        sequence: -1, // Auto selected
+                    }
                 };
                 console.debug(
-                    "<finalize trade>", trade,
-                    "with", tradeResponseFinalize,
+                    "<finalize trade>", doAccept, trade,
+                    "with", acceptingPlayer,
                 );
-                this.stateObject.resend.sendMessage(
-                    tradeResponseFinalize,
+                this.state.resend.sendMessage(
+                    tradeResponseFinalise,
                 );
             },
         };
-        this.collusionAcceptanceOffer(offer);
+        this.collusionAcceptance(offer);
     }; // suggestFinalisation()
-    const acceptedTrades = this.state.trade.getByResponse(1);
+    const acceptedTrades = this.storage.trade.getByResponse(1);
     Object.entries(acceptedTrades).forEach(([tradeId, trade]) => {
         console.debug(`Evaluating tradeId=${tradeId} finalisation`);
-        if (creatorName(trade) !== this.state.playerUsername) {
+        if (creatorName(trade) !== this.storage.playerUsername) {
             console.debug("Not finalising: Not our trade");
             return;
         }
@@ -506,7 +532,7 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
         ).map(
             ([playerIndex, _response]) => playerIndex,
         ).map(
-            playerIndex => this.state.nameMap[playerIndex],
+            playerIndex => this.storage.nameMap[playerIndex],
         );
         for (const acceptingPlayer of acceptingPlayers) {
             suggestFinalisation([tradeId, trade], acceptingPlayer);
@@ -514,37 +540,15 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
     });
 
     // ── Observe their collusion offers (maybe accept trade) ────
-    if (Object.keys(newTrades).length === 0) {
-        console.debug("Nothin new to consider their collusion offers");
-        return;
-    }
     const offerCollusion = ([id, trade]) => {
-        const theCreator = creatorName(trade);
-        if (theCreator == null) {
-            debugger; // FIXME: Bug
-        }
-        if (theCreator == null) {
-            return; // Unknown creator
-        }
-        const theRawCreator = rawCreatorName(trade);
-        const us = this.state.playerUsername;
-        console.debug(theCreator, theRawCreator, us);
-        if (us === theCreator && us === theRawCreator) {
-            console.debug("Ignoring our existing collusion offer", id)
-            return;
-        }
-        if (us !== theCreator && us === theRawCreator) {
-            console.debug("Ignoring our counter trade for collusion offer", trade);
-            return;
-        }
         let tradeProperty = {
             give: {
                 from: { name: creatorName(trade) },
-                to: { name: this.state.playerUsername }, // Pretend it is for us
+                to: { name: this.storage.playerUsername }, // Pretend it is for us
                 resources: null,
             },
             take: {
-                from: { name: this.state.playerUsername },
+                from: { name: this.storage.playerUsername },
                 to: { name: creatorName(trade) },
                 resources: null,
             },
@@ -553,20 +557,20 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
         const offer = {
             player: { name: creatorName(trade) },
             trade: tradeProperty,
-            accept: () => {
+            accept: (doAccept = true) => {
                 const tradeResponseAccept = {
                     action: 50,
                     payload: {
                         id: id,
-                        response: 0,
+                        response: doAccept ? 0 : 1,
                     },
-                    sequence: this.stateObject.resend.nextSequence(),
+                    sequence: -1, // Auto selected
                 };
                 console.debug(
                     "<accept trade>", trade,
                     "with", tradeResponseAccept
                 );
-                this.stateObject.resend.sendMessage(
+                this.state.resend.sendMessage(
                     tradeResponseAccept,
                 );
             },
@@ -577,29 +581,72 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
         );
         this.collusionOffer(offer);
     };
-    Object.entries(newTrades).forEach(offerCollusion);
+    let foundNewOffer = false;
+    Object.entries(newTrades).forEach(([id, trade]) => {
+        const tradeCreator = creatorName(trade);
+        if (tradeCreator == null) {
+            // This can happen when we start in the middle of a game and the
+            // Trade module did not record a name. Should work in the subsequent
+            // turn.
+            console.warn("Unknown trade creator");
+            console.info("Normal when starting in the middle of a game");
+            return;
+        }
+        const rawTradeCreator = rawCreatorName(trade);
+        const us = this.storage.playerUsername;
+        console.debug(tradeCreator, rawTradeCreator, us);
+        if (us === tradeCreator && us === rawTradeCreator) {
+            console.debug("Ignoring our existing collusion offer", id)
+            return;
+        }
+        if (us !== tradeCreator && us === rawTradeCreator) {
+            console.debug("Ignoring our counter trade for collusion offer", trade);
+            return;
+        }
+        foundNewOffer = true;
+        offerCollusion([id, trade]);
+    });
+    if (!foundNewOffer) {
+        console.debug("Nothin new to consider their collusion offers");
+    }
 }
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Observe chat message packets                              │
 // ╰───────────────────────────────────────────────────────────╯
 
-ColonistObserver.sourceObserver.collude = function (packetData) {
-    const player = this.state.nameMap[packetData.player];
-    console.assert(this.state.playerUsername !== null);
-    if (player !== this.state.playerUsername) {
+ColonistObserver.sourceObserver.collusionStart = function (packetData) {
+    const player = this.storage.nameMap[packetData.player];
+    console.assert(this.storage.playerUsername !== null);
+    if (player !== this.storage.playerUsername) {
         // Once our own messages can activate collusion
         console.debug("Only we may start a collusion");
-        debugger; // TODO: verify this case once
+        debugger; // TEST: verify this case once
         return;
     }
-    const other = packetData.other;
-    if (!Object.hasOwn(this.state.colourMap, other)) {
-        // Source must not verify that the word is a player name, so do here
-        console.debug("Cannot collude with non-player:", other);
+    const others = packetData.others;
+    const hasNonPlayerName = others.some(
+        name => !Object.hasOwn(this.storage.nameMapInverse, name,)
+    );
+    if (hasNonPlayerName) {
+        console.warn("Cannot collude with non-player(s) in", p(others));
         return;
     }
-    this.collude({
-        players: [player, other],
+    if (others.length === 0) {
+        console.warn("Missing collusion group");
+        return;
+    }
+    console.debug("ColonistObserver: Start colluding with", others);
+    this.collusionStart({
+        player: { name: player },
+        players: others,
     });
 };
+
+ColonistObserver.sourceObserver.collusionStop = function (packetData) {
+    const player = this.storage.nameMap[packetData.player];
+    console.assert(player === this.storage.playerUsername);
+    this.collusionStop({
+        player: { name: player },
+    })
+}

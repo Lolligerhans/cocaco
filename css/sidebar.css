@@ -1,0 +1,87 @@
+/*
+ * ╭───────────────────────────────────────────────────────────╮
+ * │ Sidebar general                                           │
+ * ╰───────────────────────────────────────────────────────────╯
+*/
+
+.cocaco{
+
+  white-space-collapse: discard;
+
+&html {
+  background: #ccc;
+}
+
+&#cocaco-sidebar {
+  background: #fff8;
+  z-index: 9990;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+&.playerName {
+  font-weight: bold;
+  color: red;
+  font-size: x-large;
+  text-shadow: -1px 1px black,-1px 1px 2px white;
+}
+
+/*
+ * ╭───────────────────────────────────────────────────────────╮
+ * │ Resource lists                                            │
+ * ╰───────────────────────────────────────────────────────────╯
+*/
+
+&.resources {
+  box-sizing: border-box;
+}
+
+&.resourceCards{
+  box-sizing: border-box;
+  display: flex;
+  height: 2cm;
+  max-width: 100%;
+  overflow: clip;
+  width: fit-content;
+}
+
+&.resourceCards *{
+    border-radius: 5%;
+}
+
+/* <img> */
+&.card * {
+  height: 100%;
+  pointer-events: none;
+}
+
+&img:hover{
+  filter: grayscale(0); /* Otherwise z-index does nothing */
+  outline: red dotted 5px;
+  z-index: 9991;
+}
+
+&.card {
+  height: 100%;
+  outline-offset: -2mm;
+  outline: 2mm solid #c00;
+  width: max-content;
+}
+
+&.cardFirst{
+  /* outline: 3px dashed white; */
+  /* outline-offset: -3px; */
+}
+
+&.cardNotFirst{
+  color: green;
+  margin-left: -1cm;
+  position: relative;
+}
+
+&.cardUnused{
+  display: none;
+}
+
+}

@@ -115,9 +115,9 @@ function resourcesAsUtf8(resources) {
     return s.trim();
 }
 
-const alternativeAssets =
-{
-    // More at 408f1c219dc04fb8746541fed624e6d4026aaaac
+const alternativeAssets = {
+    // Missing assets for non-base game modes.
+    // Alternatives at 408f1c219dc04fb8746541fed624e6d4026aaaac
     wood:       `<img alt="wood" src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="cocaco-tbl-resource-icon"/>`,
     brick:      `<img alt="brick" src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="cocaco-tbl-resource-icon"/>`,
     sheep:      `<img alt="sheep" src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="cocaco-tbl-resource-icon"/>`,
@@ -244,15 +244,6 @@ function executeWithRetries(tasks, retryTime = 3000)
 function removeEntry(arr, index){
     arr[index] = arr[arr.length - 1];
     arr.pop();
-}
-
-// Maps values of an Object like Array.map(). Assigns the resulting values to
-// the values of @param object. Probably slow.
-// @param func: Function (value, key) => newValue
-function mapObject(object, func) {
-    Object.entries(object).forEach(([k, v]) => {
-        object[k] = func(v, k);
-    });
 }
 
 function clamp(x, minimum, maximum) {
@@ -567,13 +558,12 @@ function handle(event = null) {
     }
 
     incoming.occupy();
-    console.assert(!incoming.isEmpty(), "The new event should available");
     let ret;
     while(!incoming.isEmpty()) {
         const event = incoming.take();
         ret = dispatch(event);
     }
-    incoming.free();
+    incoming.leave();
     return ret;
 }
 
@@ -584,7 +574,7 @@ function post_handle() {
         return;
     }
     outgoing.occupy();
-    while(!outgoing.isEmpty()) {
+    while (!outgoing.isEmpty()) {
         const event = outgoing.take();
         console.debug("[!] Outgoing event injection:", event);
         switch (event.direction) {
@@ -592,15 +582,15 @@ function post_handle() {
                 console.assert(false, "Not implemented");
                 break;
             case "send":
+                event.reparseOptions.adjustSequence(event.frame);
                 const encodedFrame = cocaco_encode_send(event.frame);
                 if (cocaco_config.replay === true) {
                     console.warn("Dropping outgoing frame during replay");
                     break;
                 }
-                // WebSocket_MAIN.send(encodedFrame, event.reparse);
                 WebSocket_MAIN.wrappedJSObject.send(
                     cloneInto(encodedFrame, window),
-                    event.reparse,
+                    event.reparseOptions,
                 );
                 break;
             default:
@@ -609,16 +599,15 @@ function post_handle() {
         }
         console.debug("[!] Outgoing event done:", event);
     }
-    outgoing.free();
+    outgoing.leave();
 }
 
-// Call this after any action that may inject 'Resend' frames. This ensures that
-// the sending happens in the next event cycle. This is important to keep
-// sequence numbers in order. At the same time, we delay sending after the
-// current event cycle so the current sequence number remains valid.
-// When the sequence number changes by another native frame (before this takes
-// effect) we will have to add a different mechanism for ensuring correctness.
 function post_MAIN() {
+    // Queue handling of the outgoing events in the next event cycle. It should
+    // be called whenever new events are added to the outgoing queue. Together
+    // with the outgoing frame queue, this ensures that inected frames are kept
+    // out of the current event loop. Calling WebSocket.send() in a nested call
+    // would trip up the host.
     setTimeout(post_handle, 0);
 }
 
@@ -636,7 +625,7 @@ function receive_MAIN(
         if (cocaco_config.logReceive) {
             receivedMessages.push({ frame: frame, dataLength: encodedFrame.byteLength });
             let type = frame.data.type ?? -1;
-            console.debug("🛜 ←", receivedMessages.length, "|",
+            console.debug("🛜 📥", receivedMessages.length, "|",
                 type, "(", encodedFrame.byteLength, ")", frame);
             if (receivedMessages.length % 10 === 0) {
                 console.debug("(receivedMessages):", receivedMessages);
@@ -661,21 +650,24 @@ function send_MAIN(encodedFrame, reparse) {
                 frame: frame,
                 length: encodedFrame.byteLength,
             });
-            let sequence;
+            let sequence = "seq=🗙";
             if (frame.message && frame.message.sequence) {
                 sequence = `seq=${frame.message.sequence}`;
-            } else {
-                sequence = "seq=?";
             }
-            let visibility = " ";
+            let action = "action=🗙";
+            if (frame.message && frame.message.action) {
+                action = "action=" +
+                    (ColonistSource.actionMap[frame.message.action] ?? "?");
+            }
+            let visibility = "";
             if (reparse.native === false) {
-                visibility = reparse.doReparse ? " 🔔" : " 🔕";
+                visibility = reparse.doReparse ? "🔔" : "🔕";
             }
             console.debug(
-                "🛜 →", sentMessages.length, `| [${visibility}`, sequence, "] |",
-                frame.v0, frame.v1,
-                "(", encodedFrame.byteLength, ")", frame.message,
-                frame, encodedFrame
+                "🛜 📤", sentMessages.length, `${visibility} |`,
+                sequence, action, "|",
+                frame.v0, frame.v1, `(${encodedFrame.byteLength}B)`,
+                frame.message, frame, encodedFrame,
             );
             // console.debug("raw:", JSON.stringify(frame));
             if (sentMessages.length % 10 === 0) {

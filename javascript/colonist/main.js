@@ -235,11 +235,15 @@ class Colonist {
     }
 
     setupState() {
-        this.state = new State(this.logElement, this.resender);
+        this.state = new State(
+            this.logElement,
+            this.resender,
+            this.chatElement,
+        );
         this.source = new ColonistSource();
         this.observer = new ColonistObserver(this.source, this.state);
 
-        // HACK: Supply playerUsername manually
+        // HACK: Supply playerUsername manually instead of reparsing
         this.source.setPlayerUsername(this.playerUsername);
 
         return true;

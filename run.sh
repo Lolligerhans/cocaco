@@ -54,6 +54,23 @@ command_default()
   default_delegate "$@";
 }
 
+command_serve() {
+  # Recurse once setting --now to use the exit-logging of the runscript when
+  # stopping to serve, but also run in the background to return immediately.
+  set_args "--now" "$@";
+  eval "$get_args";
+
+  if [[ "$now" == "false" ]]; then
+    # subcommand serve --now &
+    echon "file://${HOME}/github/cocaco/html/sidebar.html";
+    return;
+  fi
+
+  if ! 2>/dev/null python3 -m http.server -d html/sidebar.html; then
+    echoe "Failed to start server. Already serving?";
+  fi
+}
+
 command_game()
 {
   declare most_recent;

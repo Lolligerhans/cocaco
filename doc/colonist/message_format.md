@@ -1,5 +1,3 @@
-<!-- markdownlint-disable line-length # TODO: Remove eventually -->
-
 <!-- markdownlint-disable link-fragments # Auto table triggers this -->
 
 # Message format
@@ -216,6 +214,11 @@ implementation (rather than the UI or log elements).
 Second id=130 message? Sends a game object.
 Karma, player settings, dice settings, bot speed, private, ....
 
+#### 45 End game state
+
+Contains the end of game statistics. It is comparatively large (150kB) because
+it contains the replay data.
+
 #### 48 User update
 
 Updates the "us" player as (logged in or temporary) user.
@@ -283,9 +286,9 @@ set to true for the affected players.
 | 3 | Place one initial road |
 | 4 | Decide on trade offers ❔ Select edge to build road ❔ |
 | 6 | Decide on intersection to build settlement at |
-| 7 | Decide on settlement to ugrade to city |
+| 7 | Decide on settlement to upgrade to city |
 | 24 | Select time to move robber to (after rolling 7) |
-| 27 | Select opponent to rob (after movign robber onto them) |
+| 27 | Select opponent to rob (after moving robber onto them) |
 | 28 | Select cards to discard |
 
 #### cards
@@ -758,8 +761,16 @@ message: {
 
 #### action 50: Trade response
 
-Including our own trades. Multiple trade offer `id`s can exist at the same time.
-`id`s are unique 4-letter strings.
+Sent to respond to trade offers, including our own trades. Multiple trade offer
+`id`s can exist at the same time. `id`s are unique 4-letter strings.
+
+When the host receives an offer for a trade we can not afford, a rejection is
+scheduled immediately. I assume the immediately created response is sent within
+the same event cycle (?). This is relevant if we schedule a frame with fixed
+sequence number to be sent in the next event cycle.
+
+If we send an *additional* decline message, the auto-decline is reverted. We can
+then counter-offer in the host GUI.
 
 | `response` | description |
 |-:|:-|
@@ -786,7 +797,7 @@ a [trade offer](#action-49-trade-offer) in-between.
   "message": {
     "action": 50,
     "payload": {
-      "id": "bs64",
+      "id": "Helo",
       "response": 1
     },
     "sequence": 14
@@ -803,7 +814,7 @@ agreement to a trade and leads to immediate realization of the trade.
 message: {
   "action": 51,
   "payload": {
-    "tradeId": "LhHb",
+    "tradeId": "Helo",
     "playerToExecuteTradeWith": 4
   },
   "sequence": 23
@@ -824,6 +835,19 @@ Payload is the player (colour) index of the embargoed player.
     "payload": 2,
     "sequence": 15
   }
+}
+```
+
+#### action 65
+
+❔ Send after the game ends to load the stats
+<!-- TODO: verify -->
+
+```JSON
+message: {
+  "action": 65,
+  "payload": true,
+  "sequence": 100
 }
 ```
 

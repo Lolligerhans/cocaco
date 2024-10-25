@@ -6,21 +6,36 @@ if (typeof cocaco_config === "undefined") {
 
 cocaco_config = {
 
-    // ── Features ───────────────────────────────────────────────
-    autocollude: false,
-    pipeline: "Colony", // "Colonist", "Colony"
-    // Print even more stuff in the rolls plot
-    extraRollProbabilities: false,
-    // Delay for updates in "Colony" pipeline
-    timeout: 1000,
-    // Write in/out to files
-    dump: { receive: false, send: false },
-    // Enable the log element toggle
-    enableToggle: true,
     // Ad-hoc tsest
     test: false,
     tradeTest: false,
     resendTest: false,
+
+    // ── Features ───────────────────────────────────────────────
+    // Balance resource income within a group of players by auto-trading.
+    // - Challenge: Set autocollude=true in a game with bots, and no manual
+    //              trading.
+    collude: {
+        // Start the game balancing with everyone. For bots mostly.
+        autocollude: false,
+        // Trade at most this many resoruces per side. Makes the trades more bot
+        // friendly.
+        maxOfferPerSide: 1,
+        // Chat triggers
+        phrases: { start: "hi", stop: "gg" },
+    },
+    pipeline: "Colonist", // "Colonist", "Colony"
+    render: {
+        type: "cards", // "table", "cards"
+    },
+    // Print even more stuff in the rolls plot
+    extraRollProbabilities: false,
+    // Delay for UI updates
+    timeout: 1000,
+    // Write in/out to files
+    dump: { receive: true, send: true },
+    // Enable the log element toggle
+    enableToggle: true,
 
     // ── Style ──────────────────────────────────────────────────
     // Do not fetch Colonist assets. For replay/offline/testing.
@@ -48,6 +63,7 @@ cocaco_config = {
         collude: true,
         colony: false,
         main: true,
+        trade: true,
     },
 
     // ── Debug ──────────────────────────────────────────────────

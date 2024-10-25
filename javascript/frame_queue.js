@@ -29,7 +29,7 @@ class FrameQueue {
         this.queue.length = 0;
     }
 
-    free() {
+    leave() {
         // These asserts are not technically required, but this is intended use.
         console.assert(this.isOccupied(), "Frame queue is not occupied");
         console.assert(this.position === this.queue.length);

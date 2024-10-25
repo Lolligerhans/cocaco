@@ -1,7 +1,23 @@
 "use strict";
 
 class Resend {
+
+    // When true, all resenders will quit on next invocation. This prevents
+    // infinite refresh loops when the sequence number in automatically sent
+    // frames is broken.
+    aborted = false;
+    // The sequence number the next host frame should have. After we injected
+    // messages the host sequence number will match this, but the post-send
+    // verification will expecte a higher value.
     sequence = null;
+    // The serverId each 3-1 frame includes
+    serverId = null;
+    // Number of frames injected by Resend.
+    injectionOffset = 0; // #injected_frames - #intercepted_frames
+
+    // Because Resend interferes with the global host sequence number we track
+    // the number of instances. Only a single instance is intended.
+    static instanceCount = 0;
 
     set(sequence) {
         console.error("Setting sequence to:", v);
@@ -12,19 +28,34 @@ class Resend {
     // NOTE: Because we require some information from reparsers, the Resender
     //       should be generated before registering other reparsers. This allows
     //       the resender to learn something from a frame and a different
-    //       reparser use that knowledge immediately after.
-    //       For example, the reparser can use resender with correct sequence
-    //       number after reparsing a "send" frame.
-    //       Also, the sequence number correction must be first to hide frames
-    //       from other reparsers.
+    //       reparser use that knowledge immediately after. For example, the
+    //       reparser can use resender with correct sequence number after
+    //       reparsing a "send" frame. Also, the sequence number correction must
+    //       be first to hide frames from other reparsers.
     constructor() {
         console.assert(socketsReady === false);
+        console.assert(
+            Resend.instanceCount === 0,
+            "Multiple instances interfere with their sequence numbers",
+        );
 
-        this.aborted = false;
+        console.debug("Resend: constructing instance", Resend.instanceCount++);
 
-        // Track and validate contents (see message_format.md)
-        this.str = null;
-        this.injectionOffset = 0; // #injected_frames - #intercepted_frames
+        this.defaultAdjustSequence = (frame) => {
+            console.assert(frame.message.sequence,
+                "We expect all frames to have sequencec numbers");
+            console.assert(
+                this.sequence !== null,
+                "Must have seen the first real sequence nuber first",
+            );
+            const chosenSequence = this.expectedSequence();
+            console.debug(
+                "Resend: Choosing sequence", chosenSequence,
+                "(was", frame.message.sequence, ")"
+            );
+            frame.message.sequence = chosenSequence;
+            ++this.injectionOffset;
+        }
 
         // If we do not register Resend as the first reparsers we may be unable
         // to send messages immediately when reparsing them (because resend my
@@ -71,15 +102,9 @@ class Resend {
     }
 
     expectedSequence() {
-        // @return The sequence number the next reparsed outgoing frame is
-        //         expected to have.
+        // @return The sequence number the next outgoing frame should have.
+        //         Including our injected frames.
         return this.sequence + this.injectionOffset;
-    }
-
-    nextSequence() {
-        // @return The sequence number users should set in their message objects
-        //         when sending.
-        return this.expectedSequence();
     }
 
     #register() {
@@ -88,22 +113,40 @@ class Resend {
         }
     }
 
-    sendFrame(frame, reparse = { native: false, doReparse: false }) {
+    regularSequence() {
+        // @return The sequence number the next outgoing 3-1 host frame should
+        //         have. Excluding our injected frames.
+        return this.sequence;
+    }
+
+    sendFrame(
+        frame,
+        reparseOptions = new ReparseOptions(),
+    ) {
+        // Currently users should use sendMessage because we expect only 3-1
+        // frames.
+        console.assert(reparseOptions.adjustSequence === null);
+        if (reparseOptions.adjustSequence === null) {
+            reparseOptions.adjustSequence = this.defaultAdjustSequence;
+        }
         console.debug("resend.js: sendFrame(): Adding outgoing frame");
-        outgoing.add({ direction: "send", frame: frame, reparse: reparse });
-        ++this.injectionOffset;
+        outgoing.add({
+            direction: "send",
+            frame: frame,
+            reparseOptions: reparseOptions,
+        });
         post_MAIN();
     }
 
-    sendMessage(message, reparse = undefined) {
-        if (this.str === null) {
+    sendMessage(message, reparseOptions = undefined) {
+        if (this.serverId === null) {
             console.error("Must observe 'str' once before sending messages");
             return;
         }
         console.debug("Constructing new 3-1 frame for message =", message);
         this.sendFrame(
-            { v0: 3, v1: 1, str: this.str, message: message },
-            reparse,
+            { v0: 3, v1: 1, str: this.serverId, message: message },
+            reparseOptions,
         );
     }
 
@@ -116,9 +159,9 @@ class Resend {
 
         console.debug("Test message: wrong sequence number (13)");
         const message = {
-            payload: true,
+            payload: "Hello there",
             sequence: 13,
-            action: 2,
+            action: 0,
         };
 
         console.debug("☺ Sending test message:", message);
@@ -139,25 +182,25 @@ Resend.prototype.registerSequenceCorrector = function () {
         message => message,
         (message, frame, reparse) => {
             if (reparse.native === false) {
-                // TODO: Can we sequence injections s.t. the corrector works
-                //       on them?
                 return { isDone: false };
             }
             if (this.injectionOffset === 0) {
                 return { isDone: false };
             }
             if (message.action === 68) {
-                // Sequene injection should prevent this from happening in
-                // normal use. If this happens regularly, something is wrong.
-                console.error("resend.js: Resetting with host");
-                this.str = message.payload;
+                // Sequene injection should prevent this from happening. If this
+                // happens regularly, something is wrong.
+                this.serverId = message.payload;
                 this.sequence = message.sequence;
                 this.injectionOffset = 0;
+                console.error("resend.js: 🔁 Resetting sequence", this.sequence);
                 return { isDone: false };
             }
-            const newSequence = message.sequence + this.injectionOffset;
+            console.assert(message.sequence === this.regularSequence());
+            const newSequence = this.expectedSequence();
             console.debug(
-                `resend.js: Correcting ${message.sequence}→${newSequence}`
+                "resend.js: Correcting sequence",
+                `${message.sequence} 🔀 ${newSequence}`,
             );
             message.sequence = deepCopy(newSequence);
             return { isDone: false, frame: frame };
@@ -166,11 +209,11 @@ Resend.prototype.registerSequenceCorrector = function () {
 };
 
 Resend.prototype.registerSequenceCounter = function () {
-    const callback = (sequence, _frame, reparse) => {
+    const callback = (sequence, _frame, reparseOptions) => {
         if (this.abort()) {
             return { isDone: true };
         }
-        if (reparse.native === false) {
+        if (reparseOptions.native === false) {
             return { isDone: false };
         }
         if (this.sequence === null) {
@@ -237,17 +280,17 @@ Resend.prototype.registerServerId = function () {
             if (this.abort()) {
                 return { isDone: true };
             }
-            if (this.str === null) {
-                this.str = str;
+            if (this.serverId === null) {
+                this.serverId = str;
                 console.log("resend.js: saving str =", str);
                 return { isDone: false };
             }
-            const isConsistent = this.str === str;
+            const isConsistent = this.serverId === str;
             if (isConsistent) {
                 return { isDone: false };
             }
             console.error("Resend inconsistent str:",
-                str, "!==", this.str);
+                str, "!==", this.serverId);
             this.abort(true);
             return { isDone: true };
         },
@@ -318,7 +361,7 @@ Resend.prototype.registerTest = function () {
                     tradeId: message.payload.id,
                     playerToExecuteTradeWith: 1,
                 },
-                sequence: this.nextSequence(),
+                sequence: -1, // Auto selected
             };
             console.debug("The accept message:", p(forceMessage));
             this.sendMessage(forceMessage);

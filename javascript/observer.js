@@ -1,8 +1,8 @@
 // Common interface used by Observers
 
-// This is an "abstract" base class. Observers should derive from 'Observer' and
-// call the standard observation methods. Derived Observers should not activate
-// the "observation" trigger directly.
+// Observer is an abstract base class. Observers should derive from 'Observer'
+// and call the standard observation methods. Derived Observers should not
+// activate the "observation" trigger directly.
 //
 // Using the interface defined here ensures that Observer implementations
 // generate only the common set of obsevations that the State understands.
@@ -17,7 +17,7 @@ class Observer extends Trigger {
     static phases = ["main", ""];
 
     // The State module/class set a callback to be notified on observations
-    constructor(theState) { // TODO: Rename to just state and rename this.state
+    constructor(theState) {
         super();
         this.state = theState;
         const triggerName = "observation";
@@ -49,26 +49,37 @@ class Observer extends Trigger {
                 object: Observer.property.buyable(object),
             },
         };
-        if (cost) {
+        if (cost !== null) {
             observation.payload.cost = Observer.property.resources(cost);
         }
         this.#observe(observation);
     }
 
-    collude({ players }) {
+    collusionStart({ player, players }) {
         let observation = {
-            type: "collude",
+            type: "collusionStart",
             payload: {
+                player: Observer.property.player(player),
                 players: Observer.property.players(players),
             },
         };
         this.#observe(observation);
     }
 
-    collusionAcceptanceOffer({player, trade, accept}) {
+    collusionStop({ player }) {
+        let observation = {
+            type: "collusionStop",
+            payload: {
+                player: player,
+            },
+        };
+        this.#observe(observation);
+    }
+
+    collusionAcceptance({ player, trade, accept }) {
         console.assert(typeof accept === "function");
         let observation = {
-            type: "collusionAcceptanceOffer",
+            type: "collusionAcceptance",
             payload: {
                 player: Observer.property.player(player),
                 trade: Observer.property.trade(trade),
@@ -78,7 +89,7 @@ class Observer extends Trigger {
         this.#observe(observation);
     };
 
-    collusionOffer({player, trade, accept}) {
+    collusionOffer({ player, trade, accept }) {
         console.assert(typeof accept === "function");
         let observation = {
             type: "collusionOffer",
@@ -135,9 +146,6 @@ class Observer extends Trigger {
                 isCounter: isCounter,
             },
         };
-        // if (observation.payload.offer.give.to == null) {
-        //     debugger; // FIXME: Bug
-        // }
         this.#observe(observation);
     }
 
@@ -189,7 +197,6 @@ class Observer extends Trigger {
     }
 
     trade({ give, take }) {
-        // TODO: Allow monodirectional trades?
         console.assert(give && take);
         const observation = {
             type: "trade",
@@ -212,7 +219,7 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
-    yop({player, resources}) {
+    yop({ player, resources }) {
         const observation = {
             type: "yop",
             payload: {
@@ -294,7 +301,6 @@ Observer.property.trade = function ({ give = null, take = null }) {
         give: Observer.property.transfer(give ?? {}),
         take: Observer.property.transfer(take ?? {}),
     };
-    // TODO: assert give and take do not contain the same resource type (?)
     return trade;
 }
 
