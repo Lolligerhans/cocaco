@@ -43,22 +43,44 @@
 //        context.
 //      - Constructs the 'trade' objects in Observer property format.
 
+/**
+ * Provides resources balancing between colluding players
+ */
 class CollusionPlanner {
 
+    /**
+     * Computes collusion templates.
+     * @type {Collude}
+     */
     #collude = null;
+
+    /**
+     * Our name
+     * @type {string}
+     */
     #playerName;
+
+
+    /**
+     * @type {MessageLog}
+     */
     #logger;
 
+    /**
+     * @param {string} playerName Our name
+     * @param {HTMLElement} outputElement Dom element to log into
+     */
     constructor(playerName, outputElement) {
-        // @param playerName: Our name.
         this.#playerName = playerName;
         this.#logger = new MessageLog(outputElement);
         console.debug("CollusionPlanner: Created for", playerName);
     }
 
+    /**
+     * @param trade Trade as observer property 'trade'
+     * @return {boolean} true if we should accept, else false
+     */
     evaluateAccept(trade) {
-        // @param trade: Trade as observer property 'trade'
-        // @return true if we should accept, else false
         if (!this.isStarted()) {
             return false;
         }
@@ -89,10 +111,12 @@ class CollusionPlanner {
         return matchesTemplate;
     }
 
+    /**
+     * @param trade Trade as observer property 'trade'
+     * @param guessAndRange Multiverse guess and range object
+     * @return {boolean} true if we should accept, else false
+     */
     evaluateOffer(trade, guessAndRange) {
-        // @param trade: Trade as observer property 'trade'
-        // @param guessAndRange: Multiverse guess and range object
-        // @return true if we should accept, else false
         if (!this.isStarted()) {
             return false;
         }
@@ -141,11 +165,13 @@ class CollusionPlanner {
         return trades.filter(trade => trade !== null);
     }
 
+    /**
+     * Generate the trade we should offer to another player
+     * @param {string} otherName Name of player to generate trades for
+     * @param guessAndRange Multiverse guess and range object
+     * @return Suggested trade as Observer property 'trade' or 'null'.
+     */
     #generateOurTrade(otherName, guessAndRange) {
-        // Generate the trade we should offer to another player
-        // @param otherName: Name of player to generate trades for
-        // @param guessAndRange: Multiverse guess and range object
-        // @return Suggested trade as Observer property 'trade' or 'null'.
         // console.debug("CollusionPlanner: Generating for", otherName);
         let template = this.#collude.getCollusionTemplate(
             this.#playerName, otherName,
@@ -162,18 +188,16 @@ class CollusionPlanner {
         give.filter(x => x > 0);
         take.filter(x => x < 0);
         take.abs();
-        const giveList = give.toList();
-        const takeList = take.toList();
         const trade = Observer.property.trade({
             give: Observer.property.transfer({
                 from: { name: this.#playerName },
                 to: { name: otherName },
-                resources: giveList,
+                resources: give,
             }),
             take: Observer.property.transfer({
                 from: { name: otherName },
                 to: { name: this.#playerName },
-                resources: takeList,
+                resources: take,
             }),
         });
         console.debug("CollusionPlanner: Valid offer for", otherName);
@@ -223,11 +247,12 @@ class CollusionPlanner {
         }
     }
 
+    /**
+     * Check if the taker has sufficient resources for the trade
+     * @param trade Trade as Observer property 'trade'. Will not be modified.
+     * @return {boolean}
+     */
     static takerHasEnough(trade, guessAndRange) {
-        // Check if the taker has sufficient resources for the trade.
-        // @param trade: Trade as Observer property 'trade'. Will not be
-        //               modified.
-        // @return true/false
         const original = Resources.fromObserverTrade(trade);
         let adjusted = new Resources(original);
         Collude.adjustForTaker(adjusted, trade.give.to.name, guessAndRange);

@@ -3,12 +3,12 @@
 // Class representing any set of resource counts with whole nummbers (including
 // negative). Watch out, many operations are in-place.
 
-// There is currently the competing Observer property 'resources'. Long term we
-// should probably replace that format with this 'Resoruces' class.
-
 // Currently 'Resources' class has its own array of resource names. Long term it
 // should either adopt a global one or become the global one.
 
+/**
+ * A set of resources.
+ */
 class Resources {
 
     abs() {
@@ -79,22 +79,29 @@ class Resources {
         mapObject(this, v => predicate(v) ? v : 0);
     }
 
+    /**
+     * Factory to convert from list of names. Allowed names are all of
+     * 'Resources.resourceNames'. Some contexts may disallow special resources;
+     * check with 'hasSpecial()'.
+     * @param {string[]} nameList Array of resource names
+     * @return {Resources} New object initialized by nameList
+     */
     static fromList(nameList) {
-        // Factory to convert from Observer property 'resources'.
-        // @param nameList: Array of resource names ["wood", ... , "unknown"]
         let ret = new Resources();
         nameList.forEach(r => ++ret[r]);
         return ret;
     }
 
+    /**
+     * Construct combined resource exchange from trade
+     * @param trade Observer property 'trade'.
+     * @return {Resources} Ttrade difference "offer - demand"
+     */
     static fromObserverTrade(trade) {
-        // Construct 'Resources' object from Observer propert 'trade'. The
-        // result is equivalent to the difference offer - demand.
-        // @param trade: Observer property 'trade'.
-        let offer = Resources.fromList(trade.give.resources);
-        const demand = Resources.fromList(trade.take.resources);
-        offer.subtract(demand);
-        return offer;
+        let result = new Resources(trade.give.resources);
+        const demand = trade.take.resources;
+        result.subtract(demand);
+        return result;
     }
 
     halve() {
@@ -102,8 +109,9 @@ class Resources {
     }
 
     hasSpecial() {
-        // Test whether the resource object has some of the special "unknown"
-        // resources.
+        // Test whether the resource object has some of the special resources.
+        // Currentla only "unknown" is special, but this may change in the
+        // future.
         // @return true or false
         const ret = this.unknown !== 0;
         return ret;

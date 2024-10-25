@@ -20,6 +20,24 @@ class ColonistObserver extends Observer {
         i => Number.parseInt(i),
     );
 
+    static cardsToResources(cards) {
+        const nameList = cards.map(r => ColonistObserver.cardMap[r]);
+        const resources = Resources.fromList(nameList);
+        return resources;
+    }
+
+    /**
+     * Convert resources to the Colonist frame format: A list of indices
+     * according to the cardMap.
+     * @param {Resources} resources
+     * @return {Number[]} Resources in frame format
+     */
+    static resourcesToCards(resources) {
+        const nameList = resources.toList();
+        const ret = nameList.map(name => ColonistObserver.cardMapInverse[name]);
+        return ret;
+    }
+
     static buildingMap = {
         0: "road",
         2: "settlement",
@@ -41,6 +59,21 @@ class ColonistObserver extends Observer {
             console.warn("ColonistObserver: Unknown colour index", colourIndex);
             return "black";
         }
+    }
+
+    /**
+     * Fill 'resources' parts of the Observer 'trade' property by converting
+     * values from 'frameTrade'.
+     * @param trade Observer trade property 'trade', where all traders are
+     *              already present. The 'resources' are added by this function.
+     * @param frameTrade Trade in frame format. Currently same as Source format.
+     *                   See: doc/colonist/message_format.md#activeOffers.
+     */
+    static fillResourcesFromFrame(trade, frameTrade) {
+        const offer = ColonistObserver.cardsToResources(frameTrade.offeredResources);
+        const demand = ColonistObserver.cardsToResources(frameTrade.wantedResources);
+        trade.give.resources = offer;
+        trade.take.resources = demand;
     }
 
     // Handler for each kind of source packet
@@ -220,7 +253,7 @@ ColonistObserver.sourceObserver.buyDev = function (packetData) {
 
 ColonistObserver.sourceObserver.discard = function (packetData) {
     const name = this.storage.nameMap[packetData.player.index];
-    const resources = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    const resources = ColonistObserver.cardsToResources(packetData.cards);
     this.discard({
         player: { name: name },
         resources: resources,
@@ -230,22 +263,22 @@ ColonistObserver.sourceObserver.discard = function (packetData) {
 
 ColonistObserver.sourceObserver.got = function (packetData) {
     const name = this.storage.nameMap[packetData.player];
-    const res = packetData.cards.map(card => ColonistObserver.cardMap[card]);
+    const resources = ColonistObserver.cardsToResources(packetData.cards);
     this.got({
         player: { name: name },
-        resources: res,
+        resources: resources,
     });
 }
 
 
 ColonistObserver.sourceObserver.mono = function (packetData) {
     const name = this.storage.nameMap[packetData.player.index];
-    const res = packetData.cards.map(x => ColonistObserver.cardMap[x]);
+    const resources = ColonistObserver.cardsToResources(packetData.cards);
     const resType = ColonistObserver.cardMap[packetData.card];
     this.mono({
         player: { name: name },
         resource: resType,
-        resources: res,
+        resources: resources,
     });
 }
 
@@ -296,8 +329,8 @@ ColonistObserver.sourceObserver.stealRandom = function (packetData) {
 
 ColonistObserver.sourceObserver.tradeBank = function (packetData) {
     const name = this.storage.nameMap[packetData.player.index];
-    const give = packetData.give.map(r => ColonistObserver.cardMap[r]);
-    const take = packetData.take.map(r => ColonistObserver.cardMap[r]);
+    const give = ColonistObserver.cardsToResources(packetData.give);
+    const take = ColonistObserver.cardsToResources(packetData.take);
     this.trade({
         give: {
             from: { name: name },
@@ -316,10 +349,11 @@ ColonistObserver.sourceObserver.tradeBank = function (packetData) {
 ColonistObserver.sourceObserver.tradeCounter = function (packetData) {
     const name = this.storage.nameMap[packetData.player.index];
     const res = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    const resources = ColonistObserver.cardsToResources(packetData.cards);
     const trade = {
         give: {
             from: { name: name },
-            resources: res,
+            resources: resources,
         },
         isCounter: true,
     };
@@ -331,11 +365,11 @@ ColonistObserver.sourceObserver.tradeCounter = function (packetData) {
 
 ColonistObserver.sourceObserver.tradeOffer = function (packetData) {
     const name = this.storage.nameMap[packetData.player.index];
-    const res = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    const resources = ColonistObserver.cardsToResources(packetData.cards);
     const trade = {
         give: {
             from: { name: name },
-            resources: res,
+            resources: resources,
         },
     };
     this.offer({
@@ -345,20 +379,20 @@ ColonistObserver.sourceObserver.tradeOffer = function (packetData) {
 
 
 ColonistObserver.sourceObserver.tradePlayer = function (packetData) {
-    const name = this.storage.nameMap[packetData.player.index];
-    const res = packetData.cards.map(r => ColonistObserver.cardMap[r]);
-    const name2 = this.storage.nameMap[packetData.target_player.index];
-    const res2 = packetData.target_cards.map(r => ColonistObserver.cardMap[r]);
+    const nameFrom = this.storage.nameMap[packetData.player.index];
+    const resourcesFrom = ColonistObserver.cardsToResources(packetData.cards);
+    const nameTo = this.storage.nameMap[packetData.target_player.index];
+    const resourcesTo = ColonistObserver.cardsToResources(packetData.target_cards);
     const trade = {
         give: {
-            from: { name: name },
-            to: { name: name2 },
-            resources: res,
+            from: { name: nameFrom },
+            to: { name: nameTo },
+            resources: resourcesFrom,
         },
         take: {
-            from: { name: name2 },
-            to: { name: name },
-            resources: res2,
+            from: { name: nameTo },
+            to: { name: nameFrom },
+            resources: resourcesTo,
         },
     };
     this.trade(trade);
@@ -367,10 +401,10 @@ ColonistObserver.sourceObserver.tradePlayer = function (packetData) {
 
 ColonistObserver.sourceObserver.yop = function (packetData) {
     const name = this.storage.nameMap[packetData.player.index];
-    const cards = packetData.cards.map(r => ColonistObserver.cardMap[r]);
+    const resources = ColonistObserver.cardsToResources(packetData.cards);
     this.yop({
         player: { name: name },
-        resources: cards,
+        resources: resources,
     });
 }
 
@@ -483,7 +517,7 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
         if (acceptingPlayer == null) {
             debugger; // FIXME: Bug
         }
-        Trade.fillResourcesFromFrame(tradeProperty, trade);
+        ColonistObserver.fillResourcesFromFrame(tradeProperty, trade);
         const acceptingPlayerIndex = this.storage.nameMapInverse[acceptingPlayer];
         const offer = {
             player: { name: acceptingPlayer },
@@ -553,7 +587,7 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
                 resources: null,
             },
         };
-        Trade.fillResourcesFromFrame(tradeProperty, trade);
+        ColonistObserver.fillResourcesFromFrame(tradeProperty, trade);
         const offer = {
             player: { name: creatorName(trade) },
             trade: tradeProperty,

@@ -58,7 +58,7 @@ class RenderCards {
         this.#playerNames = playerNames;
         this.#colour_map = colour_map;
         this.#assets = RenderCards.assets;
-        if (assetMap !== null) {
+        if (cocaco_config.ownIcons === false && assetMap !== null) {
             mapObject(this.#assets, assetMap);
             console.debug("Assets:", this.#assets);
         }

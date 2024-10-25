@@ -69,16 +69,39 @@
 //        greedy. It represents the resources P_0 should trade to P_1, with
 //        negative entries where P_0 should obtain resources from P_1.
 
+/**
+ * Tracks the resoures owed to each other between a group of colluding players.
+ */
 class Collude {
 
+    /**
+     * Sum of resources earned by the colluding group
+     * @type {Resources}
+     */
     #groupTotal = {};
+
+    /**
+     * Sum of resources earned by each individual member of the group
+     * @type {Object.<string,Resources>}
+     */
     #balances = {};
+
+    /**
+     * @type {MessageLog}
+     */
     static #logger = new MessageLog(null);
+
+    /**
+     * Maximum amount of resources templates sohuld have for each player
+     * @type {Number}
+     */
     static #maxPerPlayer = cocaco_config.collude.maxOfferPerSide; // const
 
+    /**
+     * @param {string[]} players
+     * Player names (or other identifier) for the group members.
+     */
     constructor(players) {
-        // @param players: Array of strings representing player names, or other
-        //                 identifier.
         this.#groupTotal = new Resources();
         players.forEach(p => this.#balances[p] = new Resources());
         console.assert(this.#playerCount() === players.length); // No duplicates
@@ -115,15 +138,17 @@ class Collude {
         return `{ ${template.toSymbols()} }`;
     }
 
+    /**
+     * Construct the collusion template between the given players.
+     * @param {string} playerFrom String identifying the player, as passed to
+     *                            the constructor.
+     * @param {string} playerTo String identifying the player, as passed to the
+     *                          constructor.
+     * @return {Resources} Collusion template from playerFrom to playerTo, if
+     *                     both players are colluding. 'null' if the players are
+     *                     not both colluding.
+     */
     getCollusionTemplate(playerFrom, playerTo) {
-        // Construct the collusion template between the given players.
-        // @param playerFrom: String identifying the player, as passed to the
-        //                    constructor.
-        // @param playerTo: String identifying the player, as passed to the
-        //                  constructor.
-        // @return Collusion template from playerFrom to playerTo as 'Resources'
-        //         object, if both players are colluding. 'null' if the players
-        //         are not both colluding.
         if (!this.#hasColluders(playerFrom, playerTo)) {
             console.debug(
                 playerFrom,
@@ -204,13 +229,13 @@ class Collude {
         return target;
     }
 
+    /**
+     * Updates the collusion state after a participant has obtained new
+     * resources in a way that should be distributed amongst the group.
+     * @param {string} player The player getting resources
+     * @param {Resources} resources The obtained resources
+     */
     updateGotResources(player, resources) {
-        // Updates the collusion state after a participant has obtained new
-        // resources in a way that should be distributed amongst the group.
-        // @param player: String identifying the player, as passed to the
-        //                constructor on construction.
-        // @param resources: 'Resources' object containing the obtained
-        //                   resources.
         if (!this.#hasColluders(player)) {
             return;
         }
@@ -221,15 +246,17 @@ class Collude {
         this.print(player);
     }
 
+    /**
+     * Updates the state after a trade within the colluding group. The passed
+     * trades count towards lowering or increasing the collusion balance of the
+     * involved players, but not the total group balance.
+     * @param {string} playerFrom The player giving positive entries of
+     *                            'resources', receiving the negative.
+     * @param {string} playerTo The player receiving positive entries of
+     *                          resources, giving the negative.
+     * @param {Resources} resources Traded resources
+     */
     updateTradeResources(playerFrom, playerTo, resources) {
-        // Updates the state after a trade within the colluding group. The
-        // passed trades count towards lowering or increasing the collusion
-        // balance of the involved players, but not the total group balance.
-        // @param playerFrom: String identifying the player giving positive
-        //                    entries of resources, receiving the negative.
-        // @param playerTo: String identifying the player receiving positive
-        //                  entries of resources, giving the negative.
-        // @param resources: 'Resources' object containing the traded resources.
         if (!this.#hasColluders(playerFrom, playerTo)) {
             return;
         }

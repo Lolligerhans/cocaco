@@ -11,7 +11,6 @@
 
 class Observer extends Trigger {
 
-    static allResources = ["wood", "brick", "sheep", "wheat", "ore", "unknown"];
     static buyables = ["road", "settlement", "city", "devcard"];
     static property = {};
     static phases = ["main", ""];
@@ -50,7 +49,8 @@ class Observer extends Trigger {
             },
         };
         if (cost !== null) {
-            observation.payload.cost = Observer.property.resources(cost);
+            console.assert(cast instanceof Resources)
+            observation.payload.cost = cost;
         }
         this.#observe(observation);
     }
@@ -103,11 +103,12 @@ class Observer extends Trigger {
     }
 
     discard({ player, resources, limit = 7 }) {
+        console.assert(resources instanceof Resources);
         let observation = {
             type: "discard",
             payload: {
                 player: Observer.property.player(player),
-                resources: Observer.property.resources(resources),
+                resources: resources,
                 limit: limit,
             },
         };
@@ -115,23 +116,25 @@ class Observer extends Trigger {
     }
 
     got({ player, resources }) {
+        console.assert(resources instanceof Resources);
         let observation = {
             type: "got",
             payload: {
                 player: Observer.property.player(player),
-                resources: Observer.property.resources(resources),
+                resources: resources,
             },
         };
         this.#observe(observation);
     }
 
     mono({ player, resource, resources }) {
+        console.assert(resources instanceof Resources);
         let observation = {
             type: "mono",
             payload: {
                 player: Observer.property.player(player),
                 resource: Observer.property.resource(resource),
-                resources: Observer.property.resources(resources),
+                resources: resources,
             },
         };
         this.#observe(observation);
@@ -220,11 +223,12 @@ class Observer extends Trigger {
     }
 
     yop({ player, resources }) {
+        console.assert(resources instanceof Resources);
         const observation = {
             type: "yop",
             payload: {
                 player: Observer.property.player(player),
-                resources: Observer.property.resources(resources),
+                resources: resources,
             },
         };
         this.#observe(observation);
@@ -274,22 +278,20 @@ Observer.property.trader = function (arg) {
 }
 
 Observer.property.resource = function (arg) {
-    console.assert(Observer.allResources.includes(arg));
+    console.assert(Resources.resourceNames.includes(arg));
     return arg;
 }
 
-Observer.property.resources = function (args) {
-    if (!args) {
-        return null;
-    }
-    return args.map(x => Observer.property.resource(x));
-}
-
-Observer.property.transfer = function ({ from = null, to = null, resources = [] }) {
+Observer.property.transfer = function ({
+    from = null,
+    to = null,
+    resources = new Resources(),
+}) {
+    console.assert(resources instanceof Resources);
     const transfer = {
         from: Observer.property.trader(from),
         to: Observer.property.trader(to),
-        resources: Observer.property.resources(resources),
+        resources: resources,
     }
     // Sanity check: transfer between different players (wllow both null)
     console.assert(transfer.from !== transfer.to || transfer.from === null);

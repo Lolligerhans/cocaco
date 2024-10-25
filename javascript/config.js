@@ -17,7 +17,7 @@ cocaco_config = {
     //              trading.
     collude: {
         // Start the game balancing with everyone. For bots mostly.
-        autocollude: false,
+        autocollude: true,
         // Trade at most this many resoruces per side. Makes the trades more bot
         // friendly.
         maxOfferPerSide: 1,
@@ -71,7 +71,7 @@ cocaco_config = {
     echo: false,
     mute: false,
     // Replay predefined set of frames
-    replay: false,
+    replay: true,
     // Milliseconds between replayed frames
     replayInterval: 50,
     logObservations: true,

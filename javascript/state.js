@@ -33,19 +33,10 @@ class State extends Trigger {
 
     // TODO Always set costs in the observer?
     static costs = {
-        "city": ["wheat", "wheat", "ore", "ore", "ore"],
-        "devcard": ["sheep", "wheat", "ore"],
-        "road": ["wood", "brick"],
-        "settlement": ["wood", "brick", "sheep", "wheat"],
-    };
-
-    static resourceListToNames(nameList) {
-        // TODO: Replace with Resources.fromList
-        let result = {};
-        for (const name of nameList) {
-            result[name] = (result[name] ?? 0) + 1;
-        }
-        return result;
+        "city": Resources.fromList(["wheat", "wheat", "ore", "ore", "ore"]),
+        "devcard": Resources.fromList(["sheep", "wheat", "ore"]),
+        "road": Resources.fromList(["wood", "brick"]),
+        "settlement": Resources.fromList(["wood", "brick", "sheep", "wheat"]),
     };
 
     constructor(toggleElement, resend, outputElement) {
@@ -84,12 +75,8 @@ class State extends Trigger {
 
     sendTradeHelper = function (trade) {
         console.assert(trade.give.from.name === this.us.name);
-        const toFrameIndexList = res => res.map(
-            // Convert from Observer property 'resources' to frame format
-            r => ColonistObserver.cardMapInverse[r],
-        );
-        const offerList = toFrameIndexList(trade.give.resources);
-        const demandList = toFrameIndexList(trade.take.resources);
+        const offerList = ColonistObserver.resourcesToCards(trade.give.resources);
+        const demandList = ColonistObserver.resourcesToCards(trade.take.resources);
         const message = {
             action: 49,
             payload: {
@@ -133,9 +120,8 @@ class State extends Trigger {
 
 State.implementor.buy = function ({ player, object, cost }) {
     const name = player.name;
-    const resourceList = cost ?? State.costs[object];
-    const asNames = State.resourceListToNames(resourceList);
-    const slice = Multiverse.asSlice(asNames);
+    const resources = cost ?? State.costs[object];
+    const slice = Multiverse.asSlice(resources);
     this.multiverse.mwTransformSpawn(
         name,
         Multiverse.sliceNegate(slice),
@@ -203,8 +189,7 @@ State.implementor.collusionAcceptance = function ({ trade, accept }) {
 
 State.implementor.discard = function ({ player, resources }) {
     const name = player.name;
-    const asNames = State.resourceListToNames(resources);
-    const slice = Multiverse.asSlice(asNames);
+    const slice = Multiverse.asSlice(resources);
     const sliceTotal = Multiverse.sliceTotal(slice);
     this.multiverse.mwCollapseTotal(name, n => n >> 1 === sliceTotal);
     this.multiverse.mwTransformSpawn(
@@ -215,15 +200,13 @@ State.implementor.discard = function ({ player, resources }) {
 
 State.implementor.got = function ({ player, resources }) {
     const name = player.name;
-    const asNames = State.resourceListToNames(resources);
-    const slice = Multiverse.asSlice(asNames);
+    const slice = Multiverse.asSlice(resources);
     this.multiverse.mwTransformSpawn(
         name,
         slice,
     );
 
-    const resourceObject = Resources.fromList(resources);
-    this.collusionPlanner.updateGotResources(name, resourceObject);
+    this.collusionPlanner.updateGotResources(name, resources);
 }
 
 State.implementor.mono = function ({ player, resource, resources }) {
@@ -243,11 +226,11 @@ State.implementor.mono = function ({ player, resource, resources }) {
 State.implementor.offer = function ({ offer, targets, isCounter }) {
     const name = offer.give.from.name;
     // Offers may include unknown cards as request-for-counter
-    const asNames = State.resourceListToNames(offer.give.resources);
-    if (asNames.unknown != null && asNames.unknwon !== 0) {
-        asNames.unknown = 0;
+    const resources = offer.give.resources;
+    if (resources.unknown != null && resources.unknwon !== 0) {
+        resources.unknown = 0;
     }
-    const slice = Multiverse.asSlice(asNames);
+    const slice = Multiverse.asSlice(resources);
     this.multiverse.mwCollapseMin(
         name,
         slice,
@@ -318,7 +301,7 @@ State.implementor.steal = function ({ thief, victim, resource }) {
     this.track.addRob(thief.name, victim.name);
 
     // Unknown steal
-    if (!resource) {
+    if (resource == null) {
         this.multiverse.branchSteal(
             victim.name,
             thief.name,
@@ -344,10 +327,10 @@ State.implementor.trade = function ({ give, take }) {
     console.assert((give.from === take.to) || take.from.name === give.to.name);
 
     const traderName = give.from.name;
-    const giveNames = State.resourceListToNames(give.resources);
-    const takeNames = State.resourceListToNames(take.resources);
-    const giveSlice = Multiverse.asSlice(giveNames);
-    const takeSlice = Multiverse.asSlice(takeNames);
+    const giveResources = give.resources;
+    const takeResources = take.resources;
+    const giveSlice = Multiverse.asSlice(giveResources);
+    const takeSlice = Multiverse.asSlice(takeResources);
 
     // ── Trade with the bank ────────────────────────────────
     if (give.to === "bank") {
@@ -363,16 +346,16 @@ State.implementor.trade = function ({ give, take }) {
     this.multiverse.transformTradeByName(
         traderName,
         otherName,
-        giveNames,
-        takeNames,
+        giveResources,
+        takeResources,
     );
 
-    let resourceObject = Resources.fromList(give.resources);
-    resourceObject.subtract(Resources.fromList(take.resources));
+    let combinedResources = new Resources(giveResources);
+    combinedResources.subtract(takeResources);
     this.collusionPlanner.updateTradeResources(
         traderName,
         otherName,
-        resourceObject,
+        combinedResources,
     );
 }
 
@@ -393,8 +376,7 @@ State.implementor.turn = function ({ player, phase }) {
 
 State.implementor.yop = function ({ player, resources }) {
     const name = player.name;
-    const asNames = State.resourceListToNames(resources);
-    const slice = Multiverse.asSlice(asNames);
+    const slice = Multiverse.asSlice(resources);
     this.multiverse.mwTransformSpawn(
         name,
         slice,

@@ -71,25 +71,6 @@ class Trade {
         return ret;
     }
 
-    static fillResourcesFromFrame(trade, frameTrade) {
-        // Fill 'resources' parts of the Observer 'trade' property by converting
-        // values from 'frameTrade'.
-        // @param trade: Observer property 'trade', where all traders are
-        //               already present. The 'resources' are added by this
-        //               function.
-        // @param frameTrade: Trade in frame format. Currently same as Source
-        //                    format. See:
-        //                    doc/colonist/message_format.md#activeOffers.
-        const offer = frameTrade.offeredResources.map(r => {
-            return ColonistObserver.cardMap[r];
-        });
-        const demand = frameTrade.wantedResources.map(
-            r => ColonistObserver.cardMap[r]
-        );
-        trade.give.resources = offer;
-        trade.take.resources = demand;
-    }
-
     getByResponse(response = 1) {
         // Return all states currently active and responded to by any player
         // with the given response.
@@ -163,32 +144,20 @@ class Trade {
         return hasFirst && hasSecond;
     }
 
-    static tradeCombined(trade) {
-        // @param trade: Trade in Source packet format
-        // @return Total resources traded away in the 'trade.give'-er point of
-        //         view, with received resources as negative values. Returned as
-        //         'Resources' object.
-        let give = Resources.fromList(trade.give.resources);
-        let take = Resources.fromList(trade.take.resources);
-        give.subtract(take);
-        return give;
-    }
-
+    /**
+     * A trade matches the template if all transferred resources are in the
+     * template range. The template range consists of any number between
+     * 0 and the number present in the template for the same resource.
+     *
+     * We use the pending collusion deficit as template to incoming trade
+     * offers. If the offer matches, the trade is accepted as colluding.
+     *
+     * @param {Resources} template Trade template. No special resources allowed.
+     * @param trade Trade as observer 'trade' property
+     * @return {boolean}
+     */
     static tradeMatchesTemplate(template, trade) {
-        // A trade matches the template if all transferred resources are in the
-        // template range. The template range consists of any number between
-        // 0 and the number present in the template for the same resource.
-        //
-        // We use the pending collusion deficit as template to incoming trade
-        // offers. If the offer matches, the trade is accepted as colluding.
-        //
-        // Trades with unknown resources are disallowed.
-        //
-        // @param template: Template in form of a 'Resource' object with
-        //                  negative resource counts for the demand
-        //                  ('trade.take').
-        // @param trade: Trade as observer 'trade' property
-        const tradeCombined = Trade.tradeCombined(trade);
+        const tradeCombined = Resources.fromObserverTrade(trade);
         console.assert(tradeCombined.hasSpecial() === false);
         const intervalContainsValue = (interval, x) => {
             return interval[0] <= x && x <= interval[1];
