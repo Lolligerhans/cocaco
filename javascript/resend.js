@@ -6,6 +6,9 @@ class Resend {
     // infinite refresh loops when the sequence number in automatically sent
     // frames is broken.
     aborted = false;
+
+    logger = new MessageLog();
+
     // The sequence number the next host frame should have. After we injected
     // messages the host sequence number will match this, but the post-send
     // verification will expecte a higher value.
@@ -28,18 +31,25 @@ class Resend {
     // NOTE: Because we require some information from reparsers, the Resender
     //       should be generated before registering other reparsers. This allows
     //       the resender to learn something from a frame and a different
-    //       reparser use that knowledge immediately after. For example, the
-    //       reparser can use resender with correct sequence number after
-    //       reparsing a "send" frame. Also, the sequence number correction must
-    //       be first to hide frames from other reparsers.
+    //       reparser use that knowledge immediately after. Also, the sequence
+    //       number correction must be first to hide frames from other
+    //       reparsers.
     constructor() {
+        this.logger.enabled = cocaco_config.log.resend;
+        console.assert(
+            Reparse.reparserCount() === 0,
+            "Resend should be constructed before registering other reparsers",
+        );
         console.assert(socketsReady === false);
         console.assert(
             Resend.instanceCount === 0,
             "Multiple instances interfere with their sequence numbers",
         );
 
-        console.debug("Resend: constructing instance", Resend.instanceCount++);
+        this.logger.log(
+            null,
+            `Resend: constructing instance ${Resend.instanceCount++}`,
+        );
 
         this.defaultAdjustSequence = (frame) => {
             console.assert(frame.message.sequence,
@@ -49,9 +59,10 @@ class Resend {
                 "Must have seen the first real sequence nuber first",
             );
             const chosenSequence = this.expectedSequence();
-            console.debug(
-                "Resend: Choosing sequence", chosenSequence,
-                "(was", frame.message.sequence, ")"
+            this.logger.log(
+                null,
+                `Resend: Choosing sequence ${chosenSequence}` +
+                ` (was ${frame.message.sequence})`
             );
             frame.message.sequence = chosenSequence;
             ++this.injectionOffset;
@@ -86,9 +97,9 @@ class Resend {
             );
         };
         const printCorrect = () => {
-            console.debug(
-                "Resend sequence OK:", sequence,
-                `(frame) === (expected)`, this.expectedSequence(),
+            this.logger.log(null,
+                `Resend sequence OK: ${sequence}` +
+                `(frame) === (expected) ${this.expectedSequence()}`,
             );
         };
         if (correct) {
@@ -129,7 +140,7 @@ class Resend {
         if (reparseOptions.adjustSequence === null) {
             reparseOptions.adjustSequence = this.defaultAdjustSequence;
         }
-        console.debug("resend.js: sendFrame(): Adding outgoing frame");
+        // console.debug("resend.js: sendFrame(): Adding outgoing frame");
         outgoing.add({
             direction: "send",
             frame: frame,
@@ -143,32 +154,14 @@ class Resend {
             console.error("Must observe 'str' once before sending messages");
             return;
         }
-        console.debug("Constructing new 3-1 frame for message =", message);
+        // console.debug("Constructing new 3-1 frame for message =", message);
         this.sendFrame(
             { v0: 3, v1: 1, str: this.serverId, message: message },
             reparseOptions,
         );
     }
 
-    test(serverId) {
-        if (!cocaco_config.test) {
-            console.debug("Testig disabled!");
-            return;
-        }
-        console.assert(serverId !== null);
-
-        console.debug("Test message: wrong sequence number (13)");
-        const message = {
-            payload: "Hello there",
-            sequence: 13,
-            action: 0,
-        };
-
-        console.debug("☺ Sending test message:", message);
-        console.debug("☺ Sending to serverId:", serverId);
-        this.sendFrame(
-            { v0: 3, v1: 1, str: serverId, message: message }
-        );
+    test() {
     }
 
 };
@@ -198,8 +191,8 @@ Resend.prototype.registerSequenceCorrector = function () {
             }
             console.assert(message.sequence === this.regularSequence());
             const newSequence = this.expectedSequence();
-            console.debug(
-                "resend.js: Correcting sequence",
+            this.logger.log(null,
+                `resend.js: Correcting sequence ` +
                 `${message.sequence} 🔀 ${newSequence}`,
             );
             message.sequence = deepCopy(newSequence);
@@ -218,9 +211,9 @@ Resend.prototype.registerSequenceCounter = function () {
         }
         if (this.sequence === null) {
             this.sequence = sequence + 1;
-            console.debug(
-                "Resend: Starting expected sequence",
-                this.expectedSequence(),
+            this.logger.log(null,
+                `Resend: Starting expected sequence:` +
+                `${this.expectedSequence()}`,
             );
             return { isDone: false };
         }
@@ -241,33 +234,33 @@ Resend.prototype.registerSequenceCounter = function () {
     );
 };
 
-Resend.prototype.registerChatMuter = function () {
-    Reparse.register(
-        "send",
-        "Resend-ChatMuter",
-        Reparse.applySend.byType({ v0: 3, v1: 1, action: 0 }),
-        Reparse.entryPointsSend.payload,
-        payload => payload.action,
-        (_action, frame, reparse) => {
-            if (cocaco_config.mute === false) {
-                return { isDone: true };
-            }
-            if (reparse.native === false) {
-                // Would mess up sequence number
-                return { isDone: false };
-            }
-            // Mute randomly so we can echo test at the same time
-            if (Math.random() > 0.5) {
-                console.debug("resend.js: Not muting chat message");
-                return { isDone: false };
-            }
-            console.debug("resend.js: Muting chat message",
-                frame.message.action);
-            --this.injectionOffset;
-            return { isDone: false, frame: null };
-        },
-    );
-};
+// Resend.prototype.registerChatMuter = function () {
+//     Reparse.register(
+//         "send",
+//         "Resend-ChatMuter",
+//         Reparse.applySend.byType({ v0: 3, v1: 1, action: 0 }),
+//         Reparse.entryPointsSend.payload,
+//         payload => payload.action,
+//         (_action, frame, reparse) => {
+//             if (cocaco_config.mute === false) {
+//                 return { isDone: true };
+//             }
+//             if (reparse.native === false) {
+//                 // Would mess up sequence number
+//                 return { isDone: false };
+//             }
+//             // Mute randomly so we can echo test at the same time
+//             if (Math.random() > 0.5) {
+//                 console.debug("resend.js: Not muting chat message");
+//                 return { isDone: false };
+//             }
+//             console.debug("resend.js: Muting chat message",
+//                 frame.message.action);
+//             --this.injectionOffset;
+//             return { isDone: false, frame: null };
+//         },
+//     );
+// };
 
 Resend.prototype.registerServerId = function () {
     Reparse.register(
@@ -282,7 +275,9 @@ Resend.prototype.registerServerId = function () {
             }
             if (this.serverId === null) {
                 this.serverId = str;
-                console.log("resend.js: saving str =", str);
+                this.logger.log(null,
+                    `Resend: Server ID set to: ${str}`,
+                );
                 return { isDone: false };
             }
             const isConsistent = this.serverId === str;
@@ -297,84 +292,70 @@ Resend.prototype.registerServerId = function () {
     );
 };
 
-Resend.prototype.registerChatEcho = function () {
-    Reparse.register(
-        "send",
-        "Resend-ChatEcho",
-        Reparse.applySend.inGame(),
-        Reparse.entryPointsSend.message,
-        message => message,
-        (message, frame, reparse) => {
-            if (cocaco_config.echo === false) {
-                return { isDone: true };
-            }
-            if (this.abort()) {
-                return { isDone: true };
-            }
-            if (reparse.native === false) {
-                console.debug("😄 Skipping injected message:", message);
-                return { isDone: false, frame: frame };
-            }
-            if (message.action == null) {
-                return { isDone: false };
-            }
-            if (message.action !== 0) {
-                return { isDone: false };
-            }
+// Resend.prototype.registerChatEcho = function () {
+//     Reparse.register(
+//         "send",
+//         "Resend-ChatEcho",
+//         Reparse.applySend.inGame(),
+//         Reparse.entryPointsSend.message,
+//         message => message,
+//         (message, frame, reparse) => {
+//             if (cocaco_config.echo === false) {
+//                 return { isDone: true };
+//             }
+//             if (this.abort()) {
+//                 return { isDone: true };
+//             }
+//             if (reparse.native === false) {
+//                 console.debug("😄 Skipping injected message:", message);
+//                 return { isDone: false, frame: frame };
+//             }
+//             if (message.action == null) {
+//                 return { isDone: false };
+//             }
+//             if (message.action !== 0) {
+//                 return { isDone: false };
+//             }
+//
+//             const copy = deepCopy(frame);
+//             copy.message.payload += "+";
+//             copy.message.sequence += 1;
+//             this.sendFrame(copy, { native: false, doReparse: true });
+//
+//             const copy2 = deepCopy(frame);
+//             copy2.message.payload += "(+)";
+//             copy2.message.sequence += 2;
+//             this.sendFrame(copy2, { native: false, doReparse: false });
+//
+//             message.payload += "_";
+//             console.debug("Modifying chat to:", message.sequence, "=", message);
+//             // this.sendMessage(message);
+//             return { isDone: false, frame: frame };
+//         },
+//     );
+// };
 
-            const copy = deepCopy(frame);
-            copy.message.payload += "+";
-            copy.message.sequence += 1;
-            this.sendFrame(copy, { native: false, doReparse: true });
-
-            const copy2 = deepCopy(frame);
-            copy2.message.payload += "(+)";
-            copy2.message.sequence += 2;
-            this.sendFrame(copy2, { native: false, doReparse: false });
-
-            message.payload += "_";
-            console.debug("Modifying chat to:", message.sequence, "=", message);
-            // this.sendMessage(message);
-            return { isDone: false, frame: frame };
-        },
-    );
-};
-
-Resend.prototype.registerTest = function () {
-    Reparse.register(
-        "send",
-        "Resend-test",
-        Reparse.applySend.isAction(50),
-        Reparse.entryPointsSend.message,
-        message => message,
-        (message, _frame, _reparse) => {
-            if (cocaco_config.resendTest === false) {
-                return { isDone: true };
-            }
-            if (message.payload.response !== 0) {
-                return { isDone: false };
-            }
-            console.warn("Accepting for the opponent");
-            const forceMessage = {
-                action: 51,
-                payload: {
-                    tradeId: message.payload.id,
-                    playerToExecuteTradeWith: 1,
-                },
-                sequence: -1, // Auto selected
-            };
-            console.debug("The accept message:", p(forceMessage));
-            this.sendMessage(forceMessage);
-            return { isDone: false };
-        },
-    );
-};
+// Resend.prototype.registerTest = function () {
+//     Reparse.register(
+//         "send",
+//         "Resend-test",
+//         Reparse.applySend.isAction(50),
+//         Reparse.entryPointsSend.message,
+//         message => message,
+//         (_message, _frame, _reparse) => {
+//             if (cocaco_config.resendTest === false) {
+//                 return { isDone: true };
+//             }
+//             return { isDone: false };
+//         },
+//     );
+// };
 
 Resend.registerFunctions = [
     Resend.prototype.registerSequenceCorrector,
     Resend.prototype.registerSequenceCounter,
-    Resend.prototype.registerChatMuter,
+    // Resend.prototype.registerChatMuter,
     Resend.prototype.registerServerId,
-    Resend.prototype.registerChatEcho,
-    Resend.prototype.registerTest,
+    // Resend.prototype.registerChatEcho,
+    // Resend.prototype.registerTest,
 ];

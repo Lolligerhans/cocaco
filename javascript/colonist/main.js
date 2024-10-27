@@ -228,9 +228,6 @@ class Colonist {
         // Debugging
         this.replay = null;
 
-        // Tests
-        this.serverId = null;
-
         return true;
     }
 
@@ -265,16 +262,16 @@ class Colonist {
     }
 
     startResender() {
-        // NOTE: Important to create the resender first
+        // Create the resender first
         this.resender = new Resend();
-        // TODO: This block is for testing only
+
         {
+            // TEST: This block is for testing only
             if (cocaco_config.replay === false) {
                 // May not have a log element in replay mode
                 const runTest = () => {
                     console.debug("main.js: Starting test");
-                    console.assert(this.serverId !== null);
-                    this.resender.test(this.serverId);
+                    this.resender.test();
                 };
 
                 this.logElement.addEventListener("click", runTest, false);
@@ -282,21 +279,8 @@ class Colonist {
             } else if (cocaco_config.test === true) {
                 console.warn("Cannot run test during replay (no click element");
             }
-
-            Reparse.register(
-                "receive",
-                "Colonist-TestSetServerId",
-                Reparse.applyDoers.byKind({ type: [1], id: ["130"] }),
-                Reparse.entryPoints.serverId,
-                serverId => serverId,
-                (serverId, frame) => {
-                    this.serverId = serverId;
-                    console.debug("☺ Set serverId:", serverId, frame);
-                    this.logger.log(null, "serverId=" + serverId);
-                    return { isDone: true };
-                },
-            );
         }
+
         return true;
     }
 

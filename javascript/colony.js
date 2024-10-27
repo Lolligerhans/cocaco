@@ -596,14 +596,28 @@ Colony.prototype.renderDummy = function Colony_prototype_renderDummy()
     this.multiverse.initWorlds({"Detecting":{}, "Player":{}, "Names":{}});
     this.trackerCollection = new Track();
     this.trackerCollection.init(dummyPlayers);
-    this.renderObject = new Render
-    (
-        this.multiverse, this.trackerCollection, dummyPlayers, dummyColours,
-        null,
-        null,
-        null,
-        cocaco_config.ownIcons ? alternativeAssets : Colony.colonistAssets
-    );
+    const usedAssets = cocaco_config.ownIcons ?
+            alternativeAssets : Colony.colonistAssets;
+    switch (cocaco_config.render.type) {
+        case "table":
+            this.renderObject = new Render
+                (
+                    this.multiverse, this.trackerCollection,
+                    dummyPlayers, dummyColours,
+                    null, null, null, // Callbacks
+                    usedAssets,
+                );
+        case "cards":
+            this.renderObject = new RenderCards(
+                this.multiverse,
+                this.track,
+                dummyPlayers,
+                dummyColours,
+            );
+            break;
+        default:
+            console.assert(false, "Invalid render type configured");
+    }
     this.renderObject.unrender(); // Removes DOM leftovers after restart
     // this.toggleTable(true); // Use hidden === true
     this.renderObject.render(); // Always trigger initial update/render
@@ -720,18 +734,33 @@ Colony.prototype.initialiseTracker = function Colony_prototype_initialiseTracker
     // prevent multi binds.
 
     const recoverFunctions = doRecover
-        ? [ this.boundRecoverCards, this.boundRecoverNames ]
-        : [ null, null ];
+        ? [this.boundRecoverCards, this.boundRecoverNames]
+        : [null, null];
 
     this.renderObject.unrender(); // Remove table to force redraw over update
-    this.renderObject = new Render
-    (
-        this.multiverse, this.trackerCollection,
-        this.players, this.playerColours,
-        null,
-        ...recoverFunctions,
-        cocaco_config.ownIcons ? Colony.alternativeAssets : Colony.colonistAssets
-    );
+    const usedAssets = cocaco_config.ownIcons ?
+        alternativeAssets : Colony.colonistAssets;
+    switch (cocaco_config.render.type) {
+        case "table":
+            this.renderObject = new Render
+                (
+                    this.multiverse, this.trackerCollection,
+                    this.players, this.playerColours,
+                    null,
+                    ...recoverFunctions,
+                    usedAssets,
+                );
+        case "cards":
+            this.renderObject = new RenderCards(
+                this.multiverse,
+                this.track,
+                this.players,
+                this.playerColours,
+            );
+            break;
+        default:
+            console.assert(false, "Invalid render type configured");
+    }
 
     this.renderObject.render();
     return true;

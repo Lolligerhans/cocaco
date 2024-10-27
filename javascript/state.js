@@ -60,7 +60,7 @@ class State extends Trigger {
     }
 
     #observe(observation) {
-        if (cocaco_config.logObservations) {
+        if (cocaco_config.log.observations) {
             this.#allObservations.push(observation);
             console.debug("👀", this.#allObservations.length,
                 observation.type, observation,

@@ -150,6 +150,10 @@ class Reparse {
 
     static reparsers = { send: [], receive: [] };
 
+    static reparserCount() {
+        return Reparse.reparsers.send.length + Reparse.reparsers.receive.length;
+    }
+
     // TODO:Accept a config object with defaults instead of forcing so many
     //      arguments in order.
     static register(direction, ...args) {

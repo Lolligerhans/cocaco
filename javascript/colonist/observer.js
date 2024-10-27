@@ -484,10 +484,10 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
     } else {
         newTrades = this.newStorage.trade.reset(packetData);
     }
-    console.debug(
-        Object.keys(newTrades).length, "newTrades,",
-        newTrades,
-    );
+    // console.debug(
+    //     Object.keys(newTrades).length, "newTrades,",
+    //     newTrades,
+    // );
 
     /**
      * @return {Player} The player who is given as "creator" in the trade soruce
@@ -592,9 +592,13 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
     }; // suggestFinalisation()
     const acceptedTrades = this.newStorage.trade.getByResponse(1);
     Object.entries(acceptedTrades).forEach(([tradeId, trade]) => {
-        console.debug(`Evaluating tradeId=${tradeId} finalisation`);
-        if (!creatorPlayer(trade).equals(this.newStorage.us)) {
-            console.debug("Not finalising: Not our trade");
+        // console.debug(`Evaluating tradeId=${tradeId} finalisation`);
+        const creator = creatorPlayer(trade);
+        if (creator === null) {
+            return; // Error
+        }
+        if (!creator.equals(this.newStorage.us)) {
+            // console.debug("Not finalising: Not our trade");
             return;
         }
         const acceptingPlayers = Object.entries(trade.playerResponses).filter(
@@ -652,10 +656,10 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
                 );
             },
         };
-        console.debug(
-            "Generating collusion offer observation for new trade",
-            trade,
-        );
+        // console.debug(
+        //     "Generating collusion offer observation for new trade",
+        //     trade,
+        // );
         this.collusionOffer(offer);
     };
     let foundNewOffer = false;
@@ -683,17 +687,19 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
             this.newStorage.us.equals(rawTradeCreator) &&
             !this.newStorage.us.equals(tradeCreator);
         if (tradeIsOurCounterOffer) {
-            console.debug(
-                "Ignoring our counter for collusionOffer observations",
-                trade,
-            );
+            // console.debug(
+            //     "Ignoring our counter for collusionOffer observations",
+            //     trade,
+            // );
             return;
         }
         foundNewOffer = true;
         offerCollusion([id, trade]);
     });
     if (!foundNewOffer) {
-        console.debug("Nothin new to consider for collusionOffer observations");
+        // console.debug(
+        //     "No new offers to consider for collusionOffer observations",
+        // );
     }
 }
 
@@ -720,7 +726,7 @@ ColonistObserver.sourceObserver.collusionStart = function (packetData) {
         console.warn("Cannot collude with non-player(s) in", p(others));
         return;
     }
-    console.debug("ColonistObserver: Start colluding with", others);
+    // console.log("ColonistObserver: Start colluding with", others);
     this.collusionStart({
         player: player,
         players: others,

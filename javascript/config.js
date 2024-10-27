@@ -33,7 +33,7 @@ cocaco_config = {
     // Delay for UI updates
     timeout: 1000,
     // Write in/out to files
-    dump: { receive: true, send: true },
+    dump: { receive: false, send: false },
     // Enable the log element toggle
     enableToggle: true,
 
@@ -63,7 +63,13 @@ cocaco_config = {
         collude: true,
         colony: false,
         main: true,
-        trade: true,
+        trade: false,
+        observations: false,
+        resend: false,
+
+        // Log unprocessed frames
+        receive: false,
+        send: false,
     },
 
     // ── Debug ──────────────────────────────────────────────────
@@ -74,9 +80,6 @@ cocaco_config = {
     replay: false,
     // Milliseconds between replayed frames
     replayInterval: 50,
-    logObservations: true,
-    logReceive: true,
-    logSend: true,
     largeLog: false,
     doDebug: false,
     runManyWorldsTest: false,

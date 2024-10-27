@@ -23,7 +23,7 @@ class RenderCards {
 
     #cloneSidebar() {
         const sidebar = RenderCards.templates.sidebar.cloneNode(true);
-        console.debug("Returning sidebar:", sidebar);
+        // console.debug("Returning sidebar:", sidebar);
         return sidebar;
     }
 
@@ -34,10 +34,10 @@ class RenderCards {
         nameEntry.style.color = playerColor;
         entry.querySelectorAll("img").forEach(node => {
             const newSrc = this.#assets[node.alt];
-            console.debug("Replacing", node.src, "with", newSrc);
+            // console.debug("Replacing", node.src, "with", newSrc);
             node.src = newSrc;
         });
-        console.debug("Returning entry:", entry);
+        // console.debug("Returning entry:", entry);
         return entry;
     }
 
@@ -60,7 +60,7 @@ class RenderCards {
         this.#assets = RenderCards.assets;
         if (cocaco_config.ownIcons === false && assetMap !== null) {
             mapObject(this.#assets, assetMap);
-            console.debug("Assets:", this.#assets);
+            // console.debug("Assets:", this.#assets);
         }
     }
 
@@ -103,6 +103,17 @@ class RenderCards {
         debugger;
     }
 
+    /**
+     * Remove the display DOM element
+     */
+    unrender() {
+        if (!this.#sidebar) {
+            return;
+        }
+        this.#sidebar.remove();
+        this.#sidebar = null;
+    }
+
     #updateEntry(entry, guessAndRange, distribution) {
         let resourceCards = entry.childNodes[1].childNodes;
         const cardCount = resourceCards.length;
@@ -130,7 +141,7 @@ class RenderCards {
             if (chance === null)
                 card.style["outline-color"] = "#0000";
             else
-                card.style["outline-color"] = colourInterpolate(chance);
+                card.style["outline-color"] = colourInterpolate2(chance);
         };
         RenderCards.resourceTypes.forEach((resourceType, resourceIndex) => {
             i = 0;

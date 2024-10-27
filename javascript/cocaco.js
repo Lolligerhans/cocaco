@@ -143,6 +143,20 @@ function colourInterpolate(zeroToOne)
     return `rgb(${(255+r)/2}, ${(255+g)/2}, 128)`;
 }
 
+/**
+ * Interpolate red-yellow-green with better colours than 'colourInterpolate'
+ * @param {Number} zeroToOne A number from 0 to 1
+ * @return {string} Colour string "rgb(...)"
+ */
+function colourInterpolate2(zeroToOne) {
+    if (zeroToOne < 0.5) {
+        return `rgb(255, ${255 * (zeroToOne * 2)}, 0)`;
+    }
+    else {
+        return `rgb(${255 - 128 * (zeroToOne * 2 - 1)}, 255, 0)`;
+    }
+}
+
 // fac(20) < 2^64 < fac(21)
 let facArray = [];
 function fac(x)
@@ -622,7 +636,7 @@ function receive_MAIN(
     let ret;
     try {
         const frame = cocaco_decode_receive(new Uint8Array(encodedFrame));
-        if (cocaco_config.logReceive) {
+        if (cocaco_config.log.receive) {
             receivedMessages.push({ frame: frame, dataLength: encodedFrame.byteLength });
             let type = frame.data.type ?? -1;
             console.debug("🛜 📥", receivedMessages.length, "|",
@@ -644,7 +658,7 @@ function send_MAIN(encodedFrame, reparse) {
     let ret;
     try {
         const frame = cocaco_decode_send(new Uint8Array(encodedFrame));
-        if (cocaco_config.logSend) {
+        if (cocaco_config.log.send) {
             sentMessages.push({
                 encoded: encodedFrame,
                 frame: frame,
