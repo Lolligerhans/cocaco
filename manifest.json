@@ -33,6 +33,7 @@
         "plotly/plotly-2.25.2.min.js",
         "javascript/config.js",
         "javascript/utils.js",
+        "javascript/player.js",
         "javascript/log.js",
         "javascript/delay.js",
         "javascript/resources.js",

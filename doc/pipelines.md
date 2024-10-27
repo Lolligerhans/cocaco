@@ -106,31 +106,17 @@ should be the place to hide these changes from the later pipeline steps.
 
 ## Observer
 
-A Observer module is responsible for finally converting Source packets from
-their specific per-Data format and meaning, to a standardized set of
-observation.
+An Observer module is responsible for converting Source packets from their
+specific per-Data format and meaning, to a common set of observation.
 
 Observations typically correspond to atomic in-game events as human players
 would experience them, like robbing a player or getting cards.
 
-Observers should not introduce additional splitting of in-game events into
-multiple sub-events (e.g., split robbing into robber movement + card transfer).
-Observers may not splice sub-events from within Source packets if the intended
-semantics can be faithfully modeled by the available observations.
-
-Observation types should not target a specific input pipeline. Rather, they
-should be constructed in a generic way applicable to all forms of input.
-
-Observations may have special or unexpected form or semantics in order to
-accommodate technical requirements/limitations of an input pipeline.
-Implementing the necessary logic in the Observer (and the thereby enabled use of
-standard observations) must be preferred when reasonable.
-
 ### Observations
 
-Standard observations specify structure and semantics. Passing observations to
-the State module results in immediate application of the corresponding semantic
-changes to the represented game state.
+Observations specify structure and semantics. Passing observations to the State
+module results in application of the corresponding semantic changes to the
+represented game state.
 
 ```JSON
 observation: {
@@ -340,7 +326,7 @@ observation: {
 
 ##### `collusionStop` observation
 
-The player instructs the state to stop distributing resources. `palyer` always
+The player instructs the state to stop distributing resources. `player` always
 refers to us.
 
 ```JSON

@@ -137,6 +137,15 @@ class Resources {
         return min;
     }
 
+    /**
+     * Modify 'this' in-place by applying an element-wise operation with
+     * a second Resources object.
+     * @param {Resources} resources A resources object
+     * @param {function(Number,Number):Number} operator
+     * Binary operation operator(this.x, other.x) to generate the element-wise
+     * combination with the 'other' resources.
+     * @return {void}
+     */
     merge(resources, operator) {
         Resources.resourceNames.forEach(r => {
             this[r] = operator(this[r] ?? 0, resources[r] ?? 0);
@@ -210,7 +219,7 @@ class Resources {
         return ret;
     }
 
-};
+}
 
 // Initialize
 Resources.resourceNames.forEach(r => Resources.emptyResources[r] = 0);

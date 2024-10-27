@@ -10,11 +10,12 @@
 //      - On obtained resources, call updateGotResources()
 //      - On trades, call updateTradeResources()
 //      - To obtain a template, call getCollusionTemplate()
-//      - Use the adjustors to cut down the template for specific use cases
-//          - To make sure the giver and receiver have enough resources
+//      - Use the "adjust" functions to cut down the template for specific use
+//        cases.
+//          - To make sure the giver and receiver have enough resources:
 //              - adjustForGiver()
 //              - adjustForTaker()
-//          - To make sure the give-take combination is allowed as a trade
+//          - To make sure the give-take combination is allowed as a trade:
 //              - adjustForTradeValidity()
 
 // ── Intended use ───────────────────────────────────────────
@@ -50,6 +51,7 @@
 
 // ── Implementation ─────────────────────────────────────────
 //  - Construct 1 group of N colluding players
+//  - Use Player.name to identify players
 //  - We keep track of resource balances separately:
 //      - For the group total B
 //      - For each player individually: B_i
@@ -70,7 +72,7 @@
 //        negative entries where P_0 should obtain resources from P_1.
 
 /**
- * Tracks the resoures owed to each other between a group of colluding players.
+ * Tracks the resources owed to each other between a group of colluding players.
  */
 class Collude {
 
@@ -87,51 +89,69 @@ class Collude {
     #balances = {};
 
     /**
+     * This array is used to provide the 'Player' objects to the
+     * CollusionPlanner. We do not actually use it for anything specific;
+     * 'Collude' bases its data on the 'name' properties of the players.
+     * @type {Player[]}
+     */
+    #players = null;
+
+    /**
      * @type {MessageLog}
      */
     static #logger = new MessageLog(null);
 
     /**
-     * Maximum amount of resources templates sohuld have for each player
+     * Maximum amount of resources templates should have for each player
      * @type {Number}
      */
     static #maxPerPlayer = cocaco_config.collude.maxOfferPerSide; // const
 
     /**
-     * @param {string[]} players
-     * Player names (or other identifier) for the group members.
+     * @param {Player[]} players The group of colluding players. Should include
+     *                           the player representing the user.
      */
     constructor(players) {
+        this.#players = players;
         this.#groupTotal = new Resources();
-        players.forEach(p => this.#balances[p] = new Resources());
+        // Later maybe use index instead of name. For now we use name to be
+        // simpler to debug.
+        players.forEach(p => this.#balances[p.name] = new Resources());
         console.assert(this.#playerCount() === players.length); // No duplicates
 
         Collude.#logger.log(
             null,
-            `Colluding group: ${this.players()}`,
+            `Colluding group: ${this.playerNames()}`,
         );
         this.print();
     }
 
-    #delta(player) {
-        let delta = new Resources(this.#balances[player]);
+    /**
+     * @param {string} playerName
+     */
+    #delta(playerName) {
+        let delta = new Resources(this.#balances[playerName]);
         let target = this.#target();
         delta.subtract(target);
         return delta;
     }
 
+    /**
+     * @param {Resources} delta
+     * @return {string} A human readable string representing the delta
+     */
     static formatDelta(delta = null) {
-        // @param delta: 'Resources' object representing a player delta
-        // @return A human readable string representing the delta
         if (delta === null) {
             return "[ <delta> ]";
         }
         return `[ ${delta.toSymbols()} ]`;
     }
 
+    /**
+     * @param {Resources} template
+     * @return {string} A human readable string representing the template
+     */
     static formatTemplate(template = null) {
-        // @param template: Trade template as 'Resources' object
-        // @return A human readable string representing the template
         if (template === null) {
             return "{ <template> }";
         }
@@ -140,25 +160,25 @@ class Collude {
 
     /**
      * Construct the collusion template between the given players.
-     * @param {string} playerFrom String identifying the player, as passed to
+     * @param {Player} playerFrom String identifying the player, as passed to
      *                            the constructor.
-     * @param {string} playerTo String identifying the player, as passed to the
+     * @param {Player} playerTo String identifying the player, as passed to the
      *                          constructor.
      * @return {Resources} Collusion template from playerFrom to playerTo, if
      *                     both players are colluding. 'null' if the players are
      *                     not both colluding.
      */
     getCollusionTemplate(playerFrom, playerTo) {
-        if (!this.#hasColluders(playerFrom, playerTo)) {
+        if (!this.#hasColluders(playerFrom.name, playerTo.name)) {
             console.debug(
-                playerFrom,
+                playerFrom.name,
                 Collude.formatTemplate(),
-                playerTo,
+                playerTo.name,
             );
             return null;
         }
-        let template = this.#delta(playerFrom);
-        let deltaTo = this.#delta(playerTo);
+        let template = this.#delta(playerFrom.name);
+        let deltaTo = this.#delta(playerTo.name);
         template.merge(deltaTo, (d0, d1) => {
             if (d0 < 0 && 0 < d1) {
                 return Math.max(d0, -d1);
@@ -169,31 +189,47 @@ class Collude {
             return 0;
         });
         console.debug(
-            playerFrom,
+            playerFrom.name,
             Collude.formatTemplate(template),
-            playerTo,
+            playerTo.name,
         );
         return template;
     }
 
+    /**
+     * @param {...string} names 1 or more player names to test
+     * @return {boolean} true if all names belong to colluder(s), else false
+     */
     #hasColluders(...names) {
         const ret = names.every(name => Object.hasOwn(this.#balances, name));
         return ret;
     }
 
+    /**
+     * @return {Number}
+     */
     #playerCount() {
-        return this.players().length;
+        return this.playerNames().length;
     }
 
-    players() {
-        // @return Array of names of the colluding players
+    /**
+     * @return {string[]} Names of the colluding players
+     */
+    playerNames() {
         return Object.keys(this.#balances);
     }
 
+    /**
+     * @return {Player[]} The colluding players
+     */
+    players() {
+        return this.#players;
+    }
+
+    /**
+     * @param {string} playerName
+     */
     print(playerName = null) {
-        // Print collusion state of one or all players.
-        // @param playerName: String identifying the player to be printed the
-        //                    delta of. If 'null', print for all players
         if (playerName !== null) {
             console.assert(Object.hasOwn(this.#balances, playerName));
             console.debug(
@@ -203,7 +239,7 @@ class Collude {
         }
         else {
             console.debug(`𝚺 =`, p(this.#groupTotal));
-            this.players().forEach(p => this.print(p));
+            this.playerNames().forEach(p => this.print(p));
         }
     }
 
@@ -223,6 +259,10 @@ class Collude {
         }
     }
 
+    /**
+     * @return {Resources} Target resource count of every player. The target is
+     *                     the same for every player.
+     */
     #target() {
         let target = new Resources(this.#groupTotal);
         target.divide(this.#playerCount());
@@ -232,94 +272,102 @@ class Collude {
     /**
      * Updates the collusion state after a participant has obtained new
      * resources in a way that should be distributed amongst the group.
-     * @param {string} player The player getting resources
+     * @param {Player} player The player getting resources
      * @param {Resources} resources The obtained resources
      */
     updateGotResources(player, resources) {
-        if (!this.#hasColluders(player)) {
+        const playerName = player.name;
+        if (!this.#hasColluders(playerName)) {
             return;
         }
         console.assert(resources.countNegative() === 0);
         this.#groupTotal.add(resources);
-        this.#balances[player].add(resources);
-        console.debug("⨁", player, resources.toSymbols());
-        this.print(player);
+        this.#balances[playerName].add(resources);
+        console.debug("⨁", playerName, resources.toSymbols());
+        this.print(playerName);
     }
 
     /**
      * Updates the state after a trade within the colluding group. The passed
      * trades count towards lowering or increasing the collusion balance of the
      * involved players, but not the total group balance.
-     * @param {string} playerFrom The player giving positive entries of
+     * @param {Player} playerFrom The player giving positive entries of
      *                            'resources', receiving the negative.
-     * @param {string} playerTo The player receiving positive entries of
+     * @param {Player} playerTo The player receiving positive entries of
      *                          resources, giving the negative.
      * @param {Resources} resources Traded resources
      */
     updateTradeResources(playerFrom, playerTo, resources) {
-        if (!this.#hasColluders(playerFrom, playerTo)) {
+        const playerNameFrom = playerFrom.name;
+        const playerNameTo = playerTo.name;
+        if (!this.#hasColluders(playerNameFrom, playerNameTo)) {
             return;
         }
         console.assert(resources.countPositive() > 0);
         console.assert(resources.countNegative() > 0);
-        this.#balances[playerFrom].subtract(resources);
-        this.#balances[playerTo].add(resources);
+        this.#balances[playerNameFrom].subtract(resources);
+        this.#balances[playerNameTo].add(resources);
         console.debug(
             "Collude: update trade:",
-            playerFrom, resources.toSymbols(), playerTo,
+            playerNameFrom, resources.toSymbols(), playerNameTo,
         );
-        this.print(playerFrom);
-        this.print(playerTo);
+        this.print(playerNameFrom.name);
+        this.print(playerNameTo.name);
     }
 
+    /**
+     * Ensures that the giving player has enough resources to fulfil the
+     * template. Else reduces the template to reflect the largest amount of
+     * resources the giving player is certain to afford.
+     * @param {Resources} template The template to be modified
+     * @param {Player} playerFrom The giving player
+     * @param guessAndRange The guess and range object from Multiverse
+     * @return {void} Does not return anything. The template is modified
+     *                in-place.
+     */
     static adjustForGiver(template, playerFrom, guessAndRange) {
-        // Ensures that the giving player has enough resources to fulfil the
-        // template. Else reduces the template to reflect the largest amount of
-        // resources the giving player is certain to afford.
-        // @param template: the template to be modified
-        // @param player: The player name (to index into guessAndRange)
-        // @param guessAndRange: The guess and range object from Multiverse
-        // @return Does not return anything. The template is modified in-place.
         let minFrom = new Resources();
-        mapObject(minFrom, (_v, k) => guessAndRange[playerFrom][k][0]);
+        mapObject(minFrom, (_v, k) => guessAndRange[playerFrom.name][k][0]);
         const atMostGive = (x, m) => Math.min(x, m);
         // The negative entries are not changed because the minimum available
         // resources are 0 or more.
         template.merge(minFrom, atMostGive);
     }
 
+    /**
+     * Ensure that the taking player has enough resources to fulfil the
+     * template. Else reduces the template to reflect the largest amount of
+     * resources the taking player is certain to afford.
+     * @param {Resources} template The template to be modified
+     * @param {Player} playerTo The taking player
+     * @param guessAndRange The guess and range object from Multiverse
+     * @return {void} Does not return anything. The template is modified
+     *                in-place.
+     */
     static adjustForTaker(template, playerTo, guessAndRange) {
-        // Ensure that the taking player has enough resources to fulfil the
-        // template. Else reduces the template to reflect the largest amount of
-        // resources the taking player is certain to afford.
-        // @param template: The template to be modified
-        // @param player: The player name (to index into guessAndRange)
-        // @param guessAndRange: The guess and range object from Multiverse
-        // @return Does not return anything. The template is modified in-place.
         let minTo = new Resources();
-        mapObject(minTo, (_v, k) => guessAndRange[playerTo][k][0]);
+        mapObject(minTo, (_v, k) => guessAndRange[playerTo.name][k][0]);
         const atMostTake = (x, m) => Math.max(x, -m);
         template.merge(minTo, atMostTake);
     }
 
+    /**
+     * Ensures that:
+     *  - The template contains resources in both directions, i.e., both
+     *    positive and negative values.
+     *  - At most 5 resources are traded in each direction. The host may reject
+     *    the trade otherwise.
+     * May modify the template to fulfil the resource maximum.
+     * Hints:
+     *  - This function should be used after accounting for the players'
+     *    available resources.
+     *  - This function should not be used in the verification of trade offers.
+     *    Use the unadjusted template to validate trades.
+     * @param {Resources} template Collusion template. Modified in-place.
+     * @return {boolean} true if the modified template is valid, false the
+     *                   template is invalid.
+     */
     static adjustForTradeValidity(template) {
-        // Ensures that:
-        //  - The template contains resources in both directions, i.e., both
-        //    positive and negative values.
-        //  - At most 5 resources are traded in each direction. The host may
-        //    reject the trade otherwise.
-        // May modify the template to fulfil the resource maximum.
-        // Hints:
-        //  - This function should be used after accounting for the players'
-        //    available resources.
-        //  - This function should not be used in the verification of trade
-        //    offers. Use the unadjusted template to validate trades.
-        // @param template: Collusion template as 'Resources' object. To be
-        //                  edited in-place.
-        // @return 'true' if the modified template is valid. 'false' the
-        //         template is invalid.
-        // TODO: Move this function to where the accounting for available
-        //       resources happens.
         const positiveCount = template.countPositive();
         const negativeCount = template.countNegative();
         if (positiveCount === 0 || negativeCount === 0) {

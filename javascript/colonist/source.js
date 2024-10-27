@@ -328,8 +328,8 @@ ColonistSource.logInterpreters.buyBuilding = function (logMessage) {
 ColonistSource.logInterpreters.stealRandom = function (logMessage) {
     console.assert(logMessage.specificRecipients);
     const payload = {
-        player: { index: logMessage.text.playerColorThief },
-        victim: { index: logMessage.text.playerColorVictim },
+        playerId: logMessage.text.playerColorThief,
+        victimId: logMessage.text.playerColorVictim,
         cards: logMessage.text.cardBacks,
     };
     console.assert(payload.cards.length === 1, "We can only steal 1 card");

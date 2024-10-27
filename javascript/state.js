@@ -130,12 +130,12 @@ State.implementor.buy = function ({ player, object, cost }) {
 
 State.implementor.collusionStart = function ({ player, players }) {
     console.debug("New Collusion:", p(players));
-    const allPlayerNames = [player, ...players].map(p => p.name);
-    this.collusionPlanner.start(allPlayerNames);
+    const colludingPlayersNames = [player, ...players];
+    this.collusionPlanner.start(colludingPlayersNames);
 }
 
 State.implementor.collusionStop = function ({ player }) {
-    console.assert(player.name === this.us.name, "Cannot stop collusion of others");
+    console.assert(player.equals(this.us), "Cannot stop collusion of others");
     this.collusionPlanner.stop();
 }
 
@@ -246,15 +246,15 @@ State.implementor.roll = function ({ player, number }) {
     }
 }
 
-State.implementor.start = function ({ us, players, colours }) {
+State.implementor.start = function ({ us, players }) {
     let startResources = {};
-    let startEmpty = player => startResources[player.name] = {};
-    players.forEach(startEmpty);
+    let startEmpty = playerName => startResources[playerName] = {};
+    players.allNames().forEach(startEmpty);
     this.multiverse.initWorlds(
         startResources
     );
-    const playerNames = players.map(p => p.name);
-    this.track.init(playerNames);
+    const allPlayerNames = players.allNames();
+    this.track.init(allPlayerNames);
 
     console.assert(
         !this.render,
@@ -262,14 +262,15 @@ State.implementor.start = function ({ us, players, colours }) {
     );
     const usedAssets = cocaco_config.ownIcons ?
         alternativeAssets : Colony.colonistAssets;
-
+    const nameToColour = {};
+    players.all().forEach(p => nameToColour[p.name] = p.colour);
     switch (cocaco_config.render.type) {
         case "table":
             this.render = new Render(
                 this.multiverse,
                 this.track,
-                playerNames,
-                colours,
+                allPlayerNames,
+                nameToColour,
                 // Later we could use state updates to auto-fill card counts for
                 // resource recovery.
                 null, // reset callback
@@ -281,8 +282,8 @@ State.implementor.start = function ({ us, players, colours }) {
             this.render = new RenderCards(
                 this.multiverse,
                 this.track,
-                playerNames,
-                colours,
+                allPlayerNames,
+                nameToColour,
             );
             break;
         default:
@@ -291,9 +292,9 @@ State.implementor.start = function ({ us, players, colours }) {
     this.render.render();
 
     this.us = us;
-    this.collusionPlanner = new CollusionPlanner(us.name, this.outputElement);
+    this.collusionPlanner = new CollusionPlanner(us, this.outputElement);
     if (cocaco_config.collude.autocollude === true) {
-        this.collusionPlanner.start(playerNames);
+        this.collusionPlanner.start(players.all());
     }
 }
 
@@ -317,8 +318,8 @@ State.implementor.steal = function ({ thief, victim, resource }) {
     this.multiverse.mwTransformExchange(
         victim.name,
         thief.name,
-        Multiverse.asSlice({ [resource]: 1 })
-    )
+        Multiverse.asSlice({ [resource]: 1 }),
+    );
 }
 
 State.implementor.trade = function ({ give, take }) {
@@ -353,15 +354,15 @@ State.implementor.trade = function ({ give, take }) {
     let combinedResources = new Resources(giveResources);
     combinedResources.subtract(takeResources);
     this.collusionPlanner.updateTradeResources(
-        traderName,
-        otherName,
+        give.from,
+        give.to,
         combinedResources,
     );
 }
 
 State.implementor.turn = function ({ player, phase }) {
     console.assert(phase === "main");
-    console.assert(player.name === this.us.name);
+    console.assert(player.equals(this.us));
     this.noMoreAcceptThisTurn = false;
     if (!this.collusionPlanner.isStarted()) {
         return;

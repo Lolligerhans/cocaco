@@ -158,7 +158,7 @@ class Delay {
     }
 
     // Called whenever the delay time ends
-    #update(id) {
+    #update() {
         // console.debug("delay.js: update()-ing at end of interval", id);
         // Since this update was reached, the interval has not beed aborted
         this.timeout = -1;

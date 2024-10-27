@@ -55,11 +55,10 @@ class CollusionPlanner {
     #collude = null;
 
     /**
-     * Our name
-     * @type {string}
+     * The object corresponding to the user
+     * @type {Player}
      */
-    #playerName;
-
+    #us;
 
     /**
      * @type {MessageLog}
@@ -67,13 +66,13 @@ class CollusionPlanner {
     #logger;
 
     /**
-     * @param {string} playerName Our name
+     * @param {Player} us The object corresponding to the user
      * @param {HTMLElement} outputElement Dom element to log into
      */
-    constructor(playerName, outputElement) {
-        this.#playerName = playerName;
+    constructor(us, outputElement) {
+        this.#us = us;
         this.#logger = new MessageLog(outputElement);
-        console.debug("CollusionPlanner: Created for", playerName);
+        console.debug("CollusionPlanner: Created for", us.name);
     }
 
     /**
@@ -86,7 +85,7 @@ class CollusionPlanner {
         }
         console.assert(trade.give.from !== null);
         console.assert(trade.give.to !== null);
-        if (trade.give.from.name !== this.#playerName) {
+        if (!this.#us.equals(trade.give.from)) {
             console.debug("CollusionPlanner: Accept ignored (not our offer)");
             return false;
         }
@@ -95,7 +94,7 @@ class CollusionPlanner {
             trade.give.to.name, "acceptance",
         );
         let newTemplate = this.#collude.getCollusionTemplate(
-            trade.give.from.name,
+            trade.give.from,
             trade.give.to.name,
         );
         if (newTemplate === null) {
@@ -122,7 +121,7 @@ class CollusionPlanner {
         }
         console.assert(trade.give.from !== null);
         console.assert(trade.give.to !== null);
-        if (trade.give.from.name === this.#playerName) {
+        if (!trade.give.from.equals(this.#us)) {
             console.debug("CollusionPlanner: Offer ignored (ours)");
             return false;
         }
@@ -131,15 +130,15 @@ class CollusionPlanner {
             trade.give.from.name, "offer",
         );
         let newTemplate = this.#collude.getCollusionTemplate(
-            trade.give.from.name,
-            trade.give.to.name,
+            trade.give.from,
+            trade.give.to,
         );
         if (newTemplate === null) {
             console.debug("CollusionPlanner: Offer ignored (not colluder)");
             return false;
         }
         // Assume existing trades are valid for giver
-        Collude.adjustForTaker(newTemplate, trade.give.to.name, guessAndRange);
+        Collude.adjustForTaker(newTemplate, trade.give.to, guessAndRange);
         const matchesTemplate = Trade.tradeMatchesTemplate(newTemplate, trade);
         console.debug(
             "CollusionPlanner: Should",
@@ -148,36 +147,40 @@ class CollusionPlanner {
         return matchesTemplate;
     }
 
+    /**
+     * Generate the trades we should make
+     * @param guessAndRange Multiverse guess and range object
+     * @return {[*]} Array of Objserver properties 'trades'
+     */
     evaluateTurn(guessAndRange) {
-        // Generate the trades we should make
-        // @param Multiverse guessAndRange
-        // @return Array of trades
         if (!this.isStarted()) {
             return [];
         }
         let trades = [];
-        for (const name of this.#collude.players()) {
-            if (name === this.#playerName) {
+        for (const player of this.#collude.players()) {
+            if (player.equals(this.#us.name)) {
                 continue;
             }
-            trades.push(this.#generateOurTrade(name, guessAndRange));
+            trades.push(this.#generateOurTrade(player, guessAndRange));
         }
         return trades.filter(trade => trade !== null);
     }
 
     /**
      * Generate the trade we should offer to another player
-     * @param {string} otherName Name of player to generate trades for
+     * @param {Player} otherPlayer Other player to generate trades for
      * @param guessAndRange Multiverse guess and range object
-     * @return Suggested trade as Observer property 'trade' or 'null'.
+     * @return {*|null} Suggested trade as Observer property 'trade', or 'null'
+     *                  if not suggesting a trade.
      */
-    #generateOurTrade(otherName, guessAndRange) {
-        // console.debug("CollusionPlanner: Generating for", otherName);
+    #generateOurTrade(otherPlayer, guessAndRange) {
+        // console.debug("CollusionPlanner: Generating for", otherPlayer.name);
         let template = this.#collude.getCollusionTemplate(
-            this.#playerName, otherName,
+            this.#us, otherPlayer,
         );
-        Collude.adjustForGiver(template, this.#playerName, guessAndRange);
-        Collude.adjustForTaker(template, otherName, guessAndRange);
+        console.assert(template !== null, "If not colluding do not call this");
+        Collude.adjustForGiver(template, this.#us, guessAndRange);
+        Collude.adjustForTaker(template, otherPlayer, guessAndRange);
         const isValid = Collude.adjustForTradeValidity(template);
         if (!isValid) {
             // console.debug("CollusionPlanner: No offer (no valid trade)");
@@ -190,17 +193,17 @@ class CollusionPlanner {
         take.abs();
         const trade = Observer.property.trade({
             give: Observer.property.transfer({
-                from: { name: this.#playerName },
-                to: { name: otherName },
+                from: this.#us,
+                to: otherPlayer,
                 resources: give,
             }),
             take: Observer.property.transfer({
-                from: { name: otherName },
-                to: { name: this.#playerName },
+                from: otherPlayer,
+                to: this.#us,
                 resources: take,
             }),
         });
-        console.debug("CollusionPlanner: Valid offer for", otherName);
+        console.debug("CollusionPlanner: Valid offer for", otherPlayer.name);
         return trade;
     }
 
@@ -208,31 +211,41 @@ class CollusionPlanner {
         return this.#collude !== null;
     }
 
+    /**
+     * Begin colluding as the provided group.
+     * @param {Player[]} players Collusion participants. Must include the 'us'
+     *                           player used during construction.
+     */
     start(players) {
         // Resets all state and start colluding.
         console.assert(players.length >= 2);
-        console.assert(players.includes(this.#playerName));
+        console.assert(players.some(p => p.equals(this.#us)));
         console.debug("CollusionPlanner: Starting new group", p(players));
-        this.#logger.log(null, `Colluding: ${players}`);
+        this.#logger.log(null, `Colluding: ${players.map(p => p.name)}`);
         if (this.#collude !== null) {
             console.debug(
                 "CollusionPlanner: Overwriting existing collusion group",
-                p(this.#collude.players()),
+                p(this.#collude.playerNames()),
             );
         }
         this.#collude = new Collude(players);
     }
 
+    /**
+     * Clear collusion state and stop colluding
+     */
     stop() {
-        // Resets all collusion state and stop colluding immediately.
         this.#logger.log(null, "Stop colluding")
         console.debug(
             "CollusionPlanner: Stopping.",
-            p(this.#collude.players),
+            p(this.#collude.playerNames()),
         );
         this.#collude = null;
     }
 
+    /**
+     * Delegates to Collude.updateGotResources
+     */
     updateGotResources(...args) {
         if (this.#collude !== null) {
             console.debug("CollusionPlanner: Got resources", args[1].toSymbols());
@@ -240,6 +253,9 @@ class CollusionPlanner {
         }
     }
 
+    /**
+     * Delegates to Collude.updateTradeResources
+     */
     updateTradeResources(...args) {
         if (this.#collude !== null) {
             console.debug("CollusionPlanner: Trade resources", args[2].toSymbols());
@@ -250,12 +266,13 @@ class CollusionPlanner {
     /**
      * Check if the taker has sufficient resources for the trade
      * @param trade Trade as Observer property 'trade'. Will not be modified.
+     * @param {*} guessAndRange Multiverse guess and range object
      * @return {boolean}
      */
     static takerHasEnough(trade, guessAndRange) {
         const original = Resources.fromObserverTrade(trade);
         let adjusted = new Resources(original);
-        Collude.adjustForTaker(adjusted, trade.give.to.name, guessAndRange);
+        Collude.adjustForTaker(adjusted, trade.give.to, guessAndRange);
         const takerHasEnough = original.equals(adjusted);
         return takerHasEnough;
     }

@@ -164,17 +164,17 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
-    start({ us, players, colours }) {
-        console.assert(players.length === 4,
+    start({ us, players }) {
+        console.assert(players.size() === 4,
             "Can remove this check when more players are intended");
-        console.assert(players.includes(us.name),
+        console.assert(players.name(us.name) !== null,
             "We should participate in the game");
+        console.assert(players instanceof Players);
         let observation = {
             type: "start",
             payload: {
                 us: Observer.property.player(us),
-                players: Observer.property.players(players),
-                colours: Observer.property.colours(players, colours),
+                players: players,
             }
         };
         this.#observe(observation);
@@ -243,27 +243,14 @@ class Observer extends Trigger {
 // NOTE: These builders make it convenient to construct valid standard
 //       properties. They are not meant to verify them thoroughly.
 
-Observer.property.player = function ({ name = null, index = null }) {
-    if (!name && !index) {
-        return null;
-    }
-    return { name: name, index: index };
+Observer.property.player = function (player) {
+    console.assert(player instanceof Player);
+    return player;
 }
 
-Observer.property.players = function (args) {
-    return args.map(x => Observer.property.player({ name: x }));
-}
-
-Observer.property.colours = function (players, colours = null) {
-    let res = {};
-    for (const p of players) {
-        if (colours && Object.hasOwn(colours, p)) {
-            res[p] = colours[p];
-        } else {
-            res[p] = "#000000";
-        }
-    }
-    return res;
+Observer.property.players = function (players) {
+    console.assert(players.every(x => x instanceof Player));
+    return players;
 }
 
 Observer.property.trader = function (arg) {
