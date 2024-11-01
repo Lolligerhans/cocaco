@@ -1,25 +1,19 @@
-// Extension entry point.
-//
-// - Config
-// - Globals
-// - Helpers
-//
-// Dispatches into host specific main.
-
 "use strict";
+
+// Extension entry point. Dispatches into host specific main.
 
 const theBrowser = typeof chrome !== "undefined" ? chrome : browser;
 const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
 
-const bgIcon = document.createElement("img");
-bgIcon.src = theBrowser.runtime.getURL("assets/coconut_512.png");
-bgIcon.id = "background-icon";
+const backgroundIcon = document.createElement("img");
+backgroundIcon.src = theBrowser.runtime.getURL("assets/coconut_512.png");
+backgroundIcon.id = "background-icon";
 setInterval(() => {
     let e = document.body;
     if (e)
-        document.body.prepend(bgIcon);
+        document.body.prepend(backgroundIcon);
 }, 3000);
 
 
@@ -30,125 +24,31 @@ e = document.querySelector(".betaTag")
 if (e !== null)
     e.textContent = "🥥 Cocaco " + version_string;
 
-// The text symbols are for outputting only ;)
-// TODO Not sure if we have to keep resources separately. Check if we can merge
-//      with resourcesAsUtf8 below.
-const resourceIcons =
-{
-    wood: "🪵",
-    brick: "🧱",
-    sheep: "🐑",
-    wheat: "🌾",
-    ore: "🪨",
-    cloth: "🧶",
-    coin: "🪙",
-    paper: "📜",
-    unknown: "🂠",
-};
-// TODO rename to "utf"
-const utf8Symbols =
-{
-    "2": "②",
-    "3": "③",
-    "4": "④",
-    "5": "⑤",
-    "6": "⑥",
-    "7": "⑦",
-    "8": "⑧",
-    "9": "⑨",
-    "10": "⑩",
-    "11": "⑪",
-    "12": "⑫",
-    "settlement": "🛖",
-    "city": "🏢",
-    "road": "🛣", // Lane symbols: ⛙ ⛜
-    "devcard": "🃏",
-    "ship": "⛵",
-    progress: "🃟",
-    cityWall: "⛩️",
-    discard: "🗑",
-    trade: "↔️",
-    build: "👷",
-    buy: "🛒",
-    activate: "🔘",
-    free: "🆓",
-    bank: "🏦",
-    monopoly: "📈",
-    discount: "％",
-    diplomat: "🤝",
-    known: "👀",
-    steal: "🥷",
-    merchant: "™️",
-    wedding: "💒",
-    spy: "🕵",
-    robber: "🥖", // French club
-    pirate: "☠️",
-    roadBuilder: "🚧",
-    deserter: "🏜",
-    knight: "♞",
-    smith: "🔥",
-    upgrade: "🆙",
-    aqueduct: "💧",
-    crane: "🏗",
-    harbor: "⚓",
-    move: "🧳",
-    win: "🎉",
-    vp: "⭐",
-    yop: "🎁",
-};
-
-// @param resources: { wood: 3, wheat: 2, ... }
-function resourcesAsUtf8(resources) {
-    let s = "";
-    for (const entry of Object.entries(resources)) {
-        if (entry[1] === 0) {
-            continue;
-        }
-        const icons = resourceIcons[entry[0]].repeat(Math.abs(entry[1]));
-        if (entry[1] < 0) {
-            s += "(" + icons + ")";
-        } else {
-            s += icons;
-        }
-        s += " ";
-    }
-    return s.trim();
-}
-
 const alternativeAssets = {
     // Missing assets for non-base game modes.
     // Alternatives at 408f1c219dc04fb8746541fed624e6d4026aaaac
-    wood:       `<img alt="wood" src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    brick:      `<img alt="brick" src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    sheep:      `<img alt="sheep" src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    wheat:      `<img alt="wheat" src="${theBrowser.runtime.getURL("assets/wheat2.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    ore:        `<img alt="ore" src="${theBrowser.runtime.getURL("assets/ore27.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    cloth:      `<img alt="cloth" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
-    coin:       `<img alt="coin" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
-    paper:      `<img alt="paper" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
-    unknown:    `<img alt="unknown" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
-    ship:       `<img alt="ship" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
-    road:       `<img alt="road" src="${theBrowser.runtime.getURL("assets/street10.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    wood: `<img alt="wood" src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    brick: `<img alt="brick" src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    sheep: `<img alt="sheep" src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    wheat: `<img alt="wheat" src="${theBrowser.runtime.getURL("assets/wheat2.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    ore: `<img alt="ore" src="${theBrowser.runtime.getURL("assets/ore27.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    cloth: `<img alt="cloth" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    coin: `<img alt="coin" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    paper: `<img alt="paper" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    unknown: `<img alt="unknown" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    ship: `<img alt="ship" src="${theBrowser.runtime.getURL("assets/coconut_32.png")}" class="cocaco-tbl-resource-icon"/>`,
+    road: `<img alt="road" src="${theBrowser.runtime.getURL("assets/street10.jpg")}" class="cocaco-tbl-resource-icon"/>`,
     settlement: `<img alt="settlement" src="${theBrowser.runtime.getURL("assets/settle7.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    devcard:    `<img alt="devcard" src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="cocaco-tbl-resource-icon"/>`,
-    city:       `<img alt="city" src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="cocaco-tbl-resource-icon"/>`
+    devcard: `<img alt="devcard" src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="cocaco-tbl-resource-icon"/>`,
+    city: `<img alt="city" src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="cocaco-tbl-resource-icon"/>`
 };
 
-// Interpolate red-green over yellow
-// @param {number} zeroToOne: within [0, 1]
-function colourInterpolate(zeroToOne)
-{
-    const r = Math.ceil(255 * Math.cos(Math.PI * zeroToOne / 2));
-    const g = Math.ceil(255 * Math.sin(Math.PI * zeroToOne / 2));
-    return `rgb(${(255+r)/2}, ${(255+g)/2}, 128)`;
-}
-
 /**
- * Interpolate red-yellow-green with better colours than 'colourInterpolate'
+ * Interpolate red-yellow-green
  * @param {Number} zeroToOne A number from 0 to 1
  * @return {string} Colour string "rgb(...)"
  */
-function colourInterpolate2(zeroToOne) {
+function colourInterpolate(zeroToOne) {
     if (zeroToOne < 0.5) {
         return `rgb(255, ${255 * (zeroToOne * 2)}, 0)`;
     }
@@ -157,79 +57,107 @@ function colourInterpolate2(zeroToOne) {
     }
 }
 
-// fac(20) < 2^64 < fac(21)
-let facArray = [];
-function fac(x)
-{
+let facTorialArray = [];
+function factorial(x) {
+    // We just hope that we do not overflow
     if (x < 2) return 1;
-    if (facArray[x] > 0) return facArray[x];    // (undefined > 0) === false
-    return facArray[x] = x * fac(x - 1);
+    if (facTorialArray[x] > 0) return facTorialArray[x];    // (undefined > 0) === false
+    return facTorialArray[x] = x * factorial(x - 1);
 }
 
-function choose(n, k)
-{
-    return fac(n) / (fac(k) * fac(n-k));
+/**
+ * Compute n-choose-k
+ * @param {Number} n
+ * @param {Number} k
+ */
+function choose(n, k) {
+    return factorial(n) / (factorial(k) * factorial(n - k));
 }
 
-function klDivergence(p, q)
-// Compute KL-Divergence between expected and actual rolls
-{
-  const kl = p
-    .map((x, i) => x === 0 ? 0 : (x * Math.log(x / q[i])))
-    .reduce((a, b) => a + b, 0);
-  return kl;
+/**
+ * For computing KL-Divergence between expected and actual rolls
+ * @param {number[]} p
+ * Categorical distribution represented by array of probabilities
+ * @param {number[]} q
+ * Categorical distribution represented by array of probabilities
+ */
+function klDivergence(p, q) {
+    const kl = p
+        .map((x, i) => x === 0 ? 0 : (x * Math.log(x / q[i])))
+        .reduce((a, b) => a + b, 0);
+    return kl;
 }
 
-// Probability to roll each number. Starting with nubmer 2 at index 0.
-const trueProbability = [1,2,3,4,5,6,5,4,3,2,1].map(x => x / 36);
+/**
+ * Probability to roll each number. Starting with number 2 at index 0.
+ * @type {number[]}
+ */
+const trueProbability = [1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1].map(x => x / 36);
 
-// Replacement for setInterval, but time interval starts after completion of the
-// 'repeat' function (not independently in time). To continue program flow,
-// a callback 'then' is supplied that is invoked once, after 'repeat' returns
-// true for the first time (indicating that the task is done). Unlike
-// setInterval, there is no wait time at the start.
-//
-// We use this to do wait for tasks that require that the user updates the
-// document in some way.
-//
-// Example waiting for 5 dashes each time:
-//
-//                   ✖       ✖                 ✖        ✔
-//   ------|<========>-----<=>-----<===========>-----<==>|<===>
-//
-//         ↑          |---|   |---|             |---|     ↑
-//      first         wait    wait              wait     then
-//
-const isDone = { yes: true, no: false };
-function setDoInterval(repeat, time, then = null)
-{
-    if ( repeat() )
-    {
+/**
+ * Replacement for setInterval, but the time interval starts after completion of
+ * the 'repeat' function (not independently in time). To continue program flow,
+ * a callback 'then' is invoked once, after 'repeat' returns true for the first
+ * time (indicating that the task is done). Unlike setInterval, there is no wait
+ * time at the start.
+ *
+ * We can use this to wait for tasks that require the website to update before
+ * being able to complete.
+ *
+ * Example waiting for 5 dashes each time:
+ *
+ *                   ✖       ✖                 ✖        ✔
+ *   ------|<========>-----<=>-----<===========>-----<==>|<===>
+ *
+ *         ↑          |---|   |---|             |---|     ↑
+ *      first         wait    wait              wait     then
+ *
+ * @param {function():bool} repeat
+ * Function to call repeatedly, until it returns true
+ * @param {Number} time Timeout duration in milliseconds
+ * @param {function():void} then
+ * Function to be called to continue after 'repeat' completes by returning true
+ */
+function setDoInterval(repeat, time, then = null) {
+    if (repeat()) {
         //console.debug("◦ ending setDoInterval of", repeat.name);
-        // Quit if successfull
-        if (then !== null)
-            then(); // We could consider passing the final, truthy output of
-                    // repeat() as argument to then().
+        // Quit if successful
+        if (then !== null) {
+            // We could consider passing the final, truthy output of
+            // repeat() as argument to then().
+            then();
+        }
         return;
     }
     //console.debug("⏱ waiting before continuing setDoInterval of", repeat.name);
-    setTimeout
-    (
-        setDoInterval, time, // func, timer
-        repeat, time, then // args
+    setTimeout(
+        setDoInterval, time, // Callback, time
+        repeat, time, then // Arguments to be used for callback
     );
 }
 
-// Runs each job in order. Each job is repeated after an interval until
-// returning true. Uses setDoInterval to run jobs immediately one after anohter.
-// tasks = [ <...jobs> ]
-// job = { funct: function, done: false, name: "My Name"}
-// Properties "done" and "name" are optional.
-// PERF: Iterates n^2 for n jobs
-function executeWithRetries(tasks, retryTime = 3000)
-{
-    for (let i = 0; i < tasks.length; ++i)
-    {
+
+/**
+ * @typedef {Object} Task
+ * @property {function():boolean} funct Function to be run for the task
+ * @property {string} [name] Name of the task
+ * @property {boolean} [done] Flag indicating completion of the task
+ */
+
+/**
+ * Runs each job in order. Each job is repeated after an interval until
+ * returning true. Uses setDoInterval to run jobs immediately one after another.
+ *
+ * This function is used to define the high level program flow for some
+ * pipelines.
+ *
+ * PERF: Iterates n^2 for n jobs
+ *
+ * @param {Task[]} tasks Task to be completed in order
+ * @param {number} [retryTime=3000] Time between retries in milliseconds
+ */
+function executeWithRetries(tasks, retryTime = 3000) {
+    for (let i = 0; i < tasks.length; ++i) {
         let task = tasks[i];
         if (!Object.hasOwn(task, "done")) {
             task.done = false;
@@ -255,25 +183,19 @@ function executeWithRetries(tasks, retryTime = 3000)
     console.log("🧭 ( ✅ ) executeWithRetries completed");
 }
 
-function removeEntry(arr, index){
-    arr[index] = arr[arr.length - 1];
-    arr.pop();
-}
-
 function clamp(x, minimum, maximum) {
+    // TODO: Use this to replace the duplicate clampProb
     const ret = Math.min(Math.max(x, minimum), maximum);
     return ret;
 }
 
-function resize(element, w = 1000, h = 800)
-{
+function resize(element, w = 1000, h = 800) {
     console.log("resizing", element, w, h);
     element.style.width = `${w}px`;
     element.style.height = `${h}px`;
 }
 const enlarge = (e) => resize(e);
-const setHidden = (flag, ...rest) =>
-{
+const setHidden = (flag, ...rest) => {
     if (flag === true)
         hide(...rest);
     else
@@ -286,21 +208,18 @@ const unhide = (...rest) => rest.forEach(e => {
     if (e) e.classList.remove("hidden")
 });
 
-function log(...args)
-{
+function log(...args) {
     console.log(...args);
 }
-function logs(...args)
-{
-    log(...args.map( x => JSON.stringify(x) ));
+function logs(...args) {
+    log(...args.map(x => JSON.stringify(x)));
 }
-function log2(...args)
-{
+function log2(...args) {
     log(...args);
     logs(...args);
 }
 
-// HACK: NOt sure if this works but good enough to sanity check in testing
+// HACK: Not sure if this works but good enough to sanity check in testing
 function badEquals(x, y) {
     if (!x || !y) {
         return x === y;
@@ -326,6 +245,14 @@ function badEquals(x, y) {
     return JSON.stringify(x) === JSON.stringify(y);
 }
 
+/**
+ * Test if obj.property is (one of) the provided value(s). The values in
+ * question are compared by 'Array.includes()'.
+ * @param {Object} obj
+ * @param {string} property Name of the property to check
+ * @param {* | *[]} values
+ * If not an Array, an array with only one element is constructed from 'value'
+ */
 function hasOneOf(obj, property, values) {
     if (!Object.hasOwn(obj, property)) {
         return false;
@@ -338,6 +265,7 @@ function hasOneOf(obj, property, values) {
     return ret;
 }
 
+// TODO: Do we still use these anywhere?
 const wood = "wood";
 const ore = "ore";
 const wheat = "wheat";
@@ -345,8 +273,13 @@ const brick = "brick";
 const sheep = "sheep";
 const resourceTypes = [wood, brick, sheep, wheat, ore];
 
-function rotateToLastPosition(array, value)
-{
+/**
+ * Rotates 'array' in-place such that the first value equal to 'value' is in
+ * last position.
+ * @param {*[]} array The array to rotate
+ * @param {*} value Value to rotate to last position
+ */
+function rotateToLastPosition(array, value) {
     const pos = array.indexOf(value);
     if (pos < 0) {
         // Expected when spectating
@@ -364,25 +297,30 @@ function rotateToLastPosition(array, value)
     return array;
 }
 
-function deepCopy(object)
-{
-    // TODO Is there a good canonical method? We use this in some inner loops.
+/**
+ * Naive deep copy by JSON serialize-deserialise.
+ *
+ * TODO: Check if our use case is better served with structuredClone.
+ */
+function deepCopy(object) {
     return JSON.parse(JSON.stringify(object));
 }
 
-function alertIf(message)
-{
+/**
+ * Helper function to fail loudly
+ */
+function alertIf(message) {
     console.error("alert(", message, ")");
-    if (cocaco_config.doDebug)
-    {
+    if (cocaco_config.doDebug) {
         alert(message);
         debugger;
     }
 }
 
-
-const predicates =
-{
+/**
+ * Predefined predicates to be used for resource-guessing
+ */
+const predicates = {
     "<":
     {
         "f": (x) => { return (y) => y < x; },
@@ -397,22 +335,21 @@ const predicates =
     {
         "f": (x) => { return (y) => y != x; },
         "name": (x) => `!= ${x}`,
-    }
-}
+    },
+};
 
-function verifyPlayers(players_array, p1 = null, p2 = null)
-{
-    if (p1 === null && p2 === null)
-    {
+/**
+ * Helper. This does not really live happily here. Probably should move.
+ */
+function verifyPlayers(players_array, p1 = null, p2 = null) {
+    if (p1 === null && p2 === null) {
         console.error(`${verifyPlayers.name}: Must specify at least one player`);
         debugger;
         return false;
     }
-    for (const p of [p1, p2])
-    {
+    for (const p of [p1, p2]) {
         if (p === null) continue;
-        if (!players_array.includes(p))
-        {
+        if (!players_array.includes(p)) {
             console.error(`${verifyPlayers.name}: {Unknown player: ${p}, valid players: ${players_array}`);
             return false;
         }
@@ -420,14 +357,17 @@ function verifyPlayers(players_array, p1 = null, p2 = null)
     return true;
 }
 
+/**
+ * Used to convert the message log message from HTML collection to array. Not
+ * sure how inefficient this procedure really is.
+ */
 function collectionToArray(collection) {
     // FIXME consider [...dings] or array.from
     return Array.prototype.slice.call(collection);
 }
 
-
-function allTests()
-{
+function allTests() {
+    // This test was never good but I think by now it is broken, too.
     console.warn("skipping old test");
     //worldTest();
     //console.info("● [🌎] ManyWorlds old test done (starts debugger when failing)");
@@ -439,23 +379,23 @@ function allTests()
     return
 }
 
-function main()
-{
-    if (cocaco_config.runManyWorldsTest === true)
-    {
+/**
+ * Dispatch to the appropriate pipeline entry point depending on configuration
+ * and host website.
+ */
+function main() {
+    if (cocaco_config.runManyWorldsTest === true) {
         allTests();
         return
     }
 
-    if (cocaco_config.replay)
-    {
+    if (cocaco_config.replay) {
         console.log("🥥 Running replay");
         new Colonist().start();
         return;
     }
 
-    if (window.location.hostname === "colonist.io")
-    {
+    if (window.location.hostname === "colonist.io") {
         if (cocaco_config.pipeline === "Colonist") {
             console.log("🥥 Running Colonist on colonist.io");
 
@@ -469,14 +409,14 @@ function main()
             colony.restartTracker();
         }
     }
-    else if (window.location.hostname === "twosheep.io")
-    {
+    else if (window.location.hostname === "twosheep.io") {
+        // Twosheep broke long ago and we never bothered to bring it back. Could
+        // be resurrected relatively easily.
         console.log("🥥 Running twosheep on twosheep.io");
         console.assert(window.location.hostname === "twosheep.io");
         twosheep.restartTracker();
     }
-    else
-    {
+    else {
         console.assert(false, "Should only run on a Catan website");
     }
 }
@@ -490,7 +430,7 @@ function main()
 let handledCount = 0;
 let ackTime = Date.now();
 
-let portToBackground = theBrowser.runtime.connect( { name: "dump-port" });
+let portToBackground = theBrowser.runtime.connect({ name: "dump-port" });
 // console.debug("cocaco.js: Connected:", portToBackground);
 portToBackground.onDisconnect.addListener(() => {
     console.log("cocaco.js: Disconnected from background script");
@@ -534,7 +474,7 @@ function dumpEvent(event) {
 function dispatch(event) {
     dumpEvent(event);
     if (event.reparse.doReparse === false) {
-        console.log("cocaco.js: dispatch(): Skip reparsing opaque event");
+        // console.log("cocaco.js: dispatch(): Skip reparsing opaque event");
         return undefined;
     }
     try {
@@ -545,10 +485,24 @@ function dispatch(event) {
         );
         return ret;
     } catch (e) {
-        console.error("Error reparsing", event.direction, "frame:", event.frame, e);
+        // This is generally not meant to fire. Reparse has its own level of
+        // try-catch that disables throwing reparsers.
+        console.error(
+            "Error reparsing", event.direction, "frame:", event.frame, e,
+        );
     }
 }
 
+/**
+ * Flag indicating that whatever pipeline has to be set up is ready. Incoming
+ * frames are buffered until this flag is set.
+ * NOTE: This can have consequences to modules assuming that frames are always
+ *       processed near-immediately (as all our modules do). Currently that is
+ *       unproblematic because none of our modules try to react to anything at
+ *       the start of the game.
+ *
+ * @type {boolean}
+ */
 let socketsReady = false;
 let incoming = new FrameQueue();
 let outgoing = new FrameQueue(); // Reactions of the extension
@@ -573,7 +527,7 @@ function handle(event = null) {
 
     incoming.occupy();
     let ret;
-    while(!incoming.isEmpty()) {
+    while (!incoming.isEmpty()) {
         const event = incoming.take();
         ret = dispatch(event);
     }
@@ -581,16 +535,25 @@ function handle(event = null) {
     return ret;
 }
 
+let injectionLogger = new ConsoleLog("frameInjection", "🪡");
+
+/**
+ * Inject, in this event cycle, the frames that have been collection in the
+ * outgoing queue.
+ *
+ * Typically we want to do this only in the next event cycle. Use 'post_MAIN()'
+ * to do that.
+ */
 function post_handle() {
     if (outgoing.isOccupied()) {
-        // The occupying (recursing) invocation will take care of the rest
-        console.debug("cocaco.js: post_handle(): Backing out - already handling");
+        // The occupying (recurring) invocation will take care of the rest
+        injectionLogger.log("Already handling");
         return;
     }
     outgoing.occupy();
     while (!outgoing.isEmpty()) {
         const event = outgoing.take();
-        console.debug("[!] Outgoing event injection:", event);
+        injectionLogger.log("Inject", event);
         switch (event.direction) {
             case "receive":
                 console.assert(false, "Not implemented");
@@ -611,17 +574,21 @@ function post_handle() {
                 console.assert(false, "Invalid direction");
                 break;
         }
-        console.debug("[!] Outgoing event done:", event);
     }
+    injectionLogger.log("No more outgoing events");
     outgoing.leave();
 }
 
+/**
+ * Schedule handling of the outgoing events in the next event cycle. It should
+ * be called whenever new events are added to the outgoing queue (multiple calls
+ * do not accumulate). Together with the outgoing frame queue, this ensures that
+ * injected frames are kept out of the current event loop. Calling
+ * WebSocket.send() in a nested call would trip up sequence counting between us
+ * and the host.
+ *
+ */
 function post_MAIN() {
-    // Queue handling of the outgoing events in the next event cycle. It should
-    // be called whenever new events are added to the outgoing queue. Together
-    // with the outgoing frame queue, this ensures that inected frames are kept
-    // out of the current event loop. Calling WebSocket.send() in a nested call
-    // would trip up the host.
     setTimeout(post_handle, 0);
 }
 

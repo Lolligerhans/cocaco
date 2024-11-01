@@ -21,6 +21,7 @@
       - [33](#33)
       - [43 Card movement](#43-card-movement)
       - [44 Game state](#44-game-state)
+      - [45 End game state](#45-end-game-state)
       - [48 User update](#48-user-update)
       - [73 Illegal chat message](#73-illegal-chat-message)
       - [80](#80)
@@ -66,18 +67,19 @@
       - [action 50: Trade response](#action-50-trade-response)
       - [action 51: Accept (our) trade](#action-51-accept-our-trade)
       - [action 52: Toggle embargo](#action-52-toggle-embargo)
+      - [action 65](#action-65)
       - [action 67](#action-67)
       - [action 68: Reload](#action-68-reload)
 <!--toc:end-->
 
 ## Frames received by client from server
 
-We consider messages received in binary format only. Binary messages can be
-decoded to JavaScript objects from [MessagePack][MessagePack].
+We consider frames received in binary format only. Binary frames can be decoded
+to JavaScript objects from [MessagePack][MessagePack].
 
 ### ID and type
 
-All messages consist of id and data; most have this form:
+All frames consist of id and data; most have this form:
 
 ```JSON
 {
@@ -92,18 +94,17 @@ All messages consist of id and data; most have this form:
 }
 ```
 
-Messages have an `id` and a `type`. Both indicate the content type.
+Frames have an `id` and a `type`. Both indicate the content type.
 
 The id is the top level indicator, distinguishing between in-game data and
-meta-, control- or other data. Maybe `id` denotes the source of the message in
-the backend code.
+meta-, control- or other data. Maybe `id` denotes the source of the frame in the
+backend code.
 
-The payload level indicator is `type`.
+In-game related frames have `id="130"` and a `type` represented by an integer.
+The `type` determines what keys are present and/or allowed, and how they are
+interpreted.
 
-In-game messages have id="130" and a type represented by an integer. The type
-determines what keys are present and/or allowed, and how they are interpreted.
-
-`sequence` counts up from 1.
+`sequence` counts up from `0` (?).
 
 ### Types with id=133
 

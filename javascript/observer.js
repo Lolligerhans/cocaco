@@ -9,28 +9,55 @@
 
 "use strict";
 
+/**
+ * @typedef {Object} Observation
+ * @property {string} Observation.type One of the documented observation types
+ * @property {Object} Observation.payload A payload depending on the type of
+ *                                        observation.
+ */
+
+/**
+ * Observer base class. Specifies the possible observation types and provides
+ * functions to emit them.
+ */
 class Observer extends Trigger {
 
+    /**
+     * @typedef {"road" | "settlement" | "city" | "devcard"} Buyable
+     * An object palyers can buy in the game
+     * @typedef {"main" | ""} Phase A phase within the game
+     */
+
+    /**
+     * @type {Buyable[]} List of available buyables
+     */
     static buyables = ["road", "settlement", "city", "devcard"];
     static property = {};
     static phases = ["main", ""];
 
-    // The State module/class set a callback to be notified on observations
-    constructor(theState) {
+    /**
+     * The trigger name activated on observations
+     * @type {String}
+     */
+    static #triggerName = "observation";
+
+    /**
+     * @type {ConsoleLog}
+     */
+    #logger = new ConsoleLog("Observer", "👀");
+
+    constructor() {
         super();
-        this.state = theState;
-        const triggerName = "observation";
-        this.onTrigger(
-            triggerName,
-            observation => theState.activateTrigger(triggerName, observation)
-        );
     }
 
-    // Only the standard observations should invoke this
+    /**
+     * Only the standard observations should invoke this
+     * @param {Observation} observation
+     */
     #observe(observation) {
-        // console.debug("Observer: Making observation:", observation);
-        this.activateTrigger("observation", observation);
-    }
+        this.#logger.log(observation.type, observation);
+        super.activateTrigger(Observer.#triggerName, observation);
+    };
 
     // ╭───────────────────────────────────────────────────────╮
     // │ Standard observations                                 │
@@ -40,7 +67,12 @@ class Observer extends Trigger {
     // map to Source packets in a traight forwards manner. Otherwise the Observer
     // must implement the logic to obtain the appropriate inputs.
 
-    buy({ player, object, cost = null }) {
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player The player buying something
+     * @param {Buyable} param0.object The object bought
+     */
+    buy({ player, object }) {
         let observation = {
             type: "buy",
             payload: {
@@ -48,13 +80,16 @@ class Observer extends Trigger {
                 object: Observer.property.buyable(object),
             },
         };
-        if (cost !== null) {
-            console.assert(cast instanceof Resources)
-            observation.payload.cost = cost;
-        }
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player The player starting a collusion. Should
+     *                               currently always be us.
+     * @param {Player[]} param0.players List of clluding palyers, including
+     *                                  'player'.
+     */
     collusionStart({ player, players }) {
         let observation = {
             type: "collusionStart",
@@ -66,6 +101,12 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player
+     * Player stopping colluding. Currently that should always be us, but we
+     * could react to other players exiting the collusion group.
+     */
     collusionStop({ player }) {
         let observation = {
             type: "collusionStop",
@@ -76,6 +117,18 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * Another player has accepted our collusion offer. A collusion offer is
+     * just a trade offer that we intend to evaluate with the CollusinoPlanner.
+     * @param {Object} param0
+     * @param {Player} param0.player
+     * Player who accepted the collusion trade offer
+     * @param {*} param0.trade Trade in Oberver property trade format
+     * @param {function([Boolean])} param0.accept
+     * Function which, if called with 'true', finalises the collusion trade. If
+     * 'false' is passed as argument, the acceptance is rejected. (Currently not
+     * implemented!)
+     */
     collusionAcceptance({ player, trade, accept }) {
         console.assert(typeof accept === "function");
         let observation = {
@@ -89,6 +142,14 @@ class Observer extends Trigger {
         this.#observe(observation);
     };
 
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player The player who created the trade offer
+     * @param {*} param0.trade Observer property trade
+     * @param {function([Boolean])} param0.accept
+     * Function sending acceptance of the offer if called with 'true' as
+     * argument. If called with 'false', sends a rejection.
+     */
     collusionOffer({ player, trade, accept }) {
         console.assert(typeof accept === "function");
         let observation = {
@@ -102,6 +163,14 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player Player discarding cards
+     * @param {Resources} param0.resources Discarded resources
+     * @param {Number} [param0.limit=7]
+     * The discard limit implied by the discard action. Currently only the
+     * default is used.
+     */
     discard({ player, resources, limit = 7 }) {
         console.assert(resources instanceof Resources);
         let observation = {
@@ -115,6 +184,12 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * A player got resources by an unspecified mechanism
+     * @param {Object} param0
+     * @param {Player} param0.player Player who got resources
+     * @param {Resources} param0.resources Obtained resources
+     */
     got({ player, resources }) {
         console.assert(resources instanceof Resources);
         let observation = {
@@ -127,6 +202,13 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player Player playing the monopoly
+     * @param {string} param0.resource Name of the stolen resource
+     * @param {Resources} param0.resources
+     * Total amount of resources stolen using the monopoly
+     */
     mono({ player, resource, resources }) {
         console.assert(resources instanceof Resources);
         let observation = {
@@ -140,6 +222,12 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {*} param0.offer Observer property trade describing the offer
+     * @param {any[]} [param0.targets=[]] Currently unused
+     * @param {boolean} [param0.isCounter=false] Currently unused
+     */
     offer({ offer, targets = [], isCounter = false }) {
         let observation = {
             type: "offer",
@@ -152,6 +240,11 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player Rolling player
+     * @param {Number} param0.number Rolled number (2-12)
+     */
     roll({ player, number }) {
         console.assert(2 <= number && number <= 12);
         let observation = {
@@ -164,6 +257,12 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * Start a game between the provided players.
+     * @param {Object} param0
+     * @param {Player} param0.us
+     * @param {Players} param0.players The 'Players' object to be used
+     */
     start({ us, players }) {
         console.assert(players.size() === 4,
             "Can remove this check when more players are intended");
@@ -180,6 +279,14 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * One player steals resources from another player
+     * @param {Object} param0
+     * @param {Player} thief
+     * @param {Player} victim
+     * @param {string} [param0.resource=null]
+     * Name of stolen resource. If 'null', the steal is interpreted as unknown.
+     */
     steal({ thief = null, victim = null, resource = null }) {
         // Can leave out one of them, but not both.
         console.assert(thief || victim);
@@ -199,6 +306,11 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {*} param0.give Observer property transfer
+     * @param {*} param0.take Observer property transfer
+     */
     trade({ give, take }) {
         console.assert(give && take);
         const observation = {
@@ -211,6 +323,12 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * Currently only emitter when it is our turn in the main phase
+     * @param {Object} param0
+     * @param {Player} param0.player Player whos turn it is
+     * @param {Phase} param0.phase Phase of the game
+     */
     turn({ player, phase }) {
         const observation = {
             type: "turn",
@@ -222,8 +340,14 @@ class Observer extends Trigger {
         this.#observe(observation);
     }
 
+    /**
+     * @param {Object} param0
+     * @param {Player} param0.player The player usign the yop
+     * @param {Resources} param0.resources The chosen resources
+     */
     yop({ player, resources }) {
         console.assert(resources instanceof Resources);
+        console.assert(resources.sum() === 2);
         const observation = {
             type: "yop",
             payload: {
@@ -240,8 +364,8 @@ class Observer extends Trigger {
 // │ Standard properties                                       │
 // ╰───────────────────────────────────────────────────────────╯
 
-// NOTE: These builders make it convenient to construct valid standard
-//       properties. They are not meant to verify them thoroughly.
+// These builders make it convenient to construct valid standard properties.
+// They are not meant to verify them thoroughly.
 
 Observer.property.player = function (player) {
     console.assert(player instanceof Player);
@@ -265,7 +389,7 @@ Observer.property.trader = function (arg) {
 }
 
 Observer.property.resource = function (arg) {
-    console.assert(Resources.resourceNames.includes(arg));
+    console.assert(Resources.names().includes(arg));
     return arg;
 }
 

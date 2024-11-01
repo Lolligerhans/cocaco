@@ -4,29 +4,52 @@ if (typeof cocaco_config === "undefined") {
     var cocaco_config;
 }
 
+/**
+ * A global config. This object is defined first and only in this file, and not
+ * written afterwards.
+ */
 cocaco_config = {
 
     // Ad-hoc tsest
-    test: false,
-    tradeTest: false,
-    resendTest: false,
+    resendTestOnClick: false,
 
     // ── Features ───────────────────────────────────────────────
     // Balance resource income within a group of players by auto-trading.
     // - Challenge: Set autocollude=true in a game with bots, and no manual
     //              trading.
     collude: {
-        // Start the game balancing with everyone. For bots mostly.
+        /**
+         * Start the game balancing with everyone. For bot games or private
+         * games with installed extension.
+         * @type {Boolean}
+         */
         autocollude: false,
-        // Trade at most this many resoruces per side. Makes the trades more bot
-        // friendly.
+
+        /**
+         * Trade at most this many resoruces per side. Makes the trades more bot
+         * friendly.
+         * @type {Number} 1, 2, ...
+         */
         maxOfferPerSide: 1,
-        // Chat triggers
+
+        /**
+         * Chat triggers
+         * @type {Object.<string,string>}
+         */
         phrases: { start: "hi", stop: "gg" },
     },
-    pipeline: "Colonist", // "Colonist", "Colony"
+
+    /**
+     * @type { "Colonist" | "Colony" }
+     */
+    pipeline: "Colonist",
+
     render: {
-        type: "cards", // "table", "cards"
+        /**
+         * Toggle between showing resources as table of number or cards
+         * @type { "table" | "cards" }
+         */
+        type: "cards",
     },
     // Print even more stuff in the rolls plot
     extraRollProbabilities: false,
@@ -58,14 +81,23 @@ cocaco_config = {
     logDom: true,
     // Print card tracking state to console
     printWorlds: false,
-    // Logger of individual modules
+    /**
+     * Logger of individual modules. 'ConsoleLog' ready this for default values.
+     * @type {Object.<string,Boolean>}
+     */
     log: {
-        collude: true,
+        Collude: false,
+        CollusionPlanner: false,
+        ColonistTrade: false,
+        frameInjection: false,
+        Observer: false,
+        RenderCards: true,
+        Reparse: false,
+        Resend: false,
         colony: false,
         main: true,
         trade: false,
-        observations: false,
-        resend: false,
+        worlds: false,
 
         // Log unprocessed frames
         receive: false,
@@ -120,4 +152,4 @@ if (cocaco_config.replay) {
     cocaco_config.ownIcons = true;
 }
 
-console.table(cocaco_config);
+console.dir(cocaco_config);

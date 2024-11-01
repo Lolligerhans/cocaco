@@ -1,12 +1,5 @@
 "use strict";
 
-// Use this class for events to ensure a minimum delay between events. Do NOT
-// use when each of the events must be preserved (i.e., when the events carry
-// data).
-
-// We use this for socket events that trigger updates to the state. Example:
-// the DOM should not be updated after every frame.
-
 // Illustration:
 //      A timeout interval is started after executing an event.
 //            +             +
@@ -19,7 +12,7 @@
 //          --<======|======>----<======|======>--
 //            ✔  ✖   ●           ✔  ✖   ●
 //
-//      Restarted timeouts again defer new evets. event restarts the timeout.
+//      Restarted timeout again defer new events. Event restarts the timeout.
 //            +  +      +               +  +      +      +
 //          --<======|======|======>----<======|======|======|======>
 //            ✔  ✖   ●  ✖   ●           ✔  ✖   ●  ✖   ●  ✖   ●
@@ -49,21 +42,70 @@
 //        <===>  Timeout interval
 //      <==|==>  Extended timeout interval after delayed action
 
+/**
+ * Use this class for events to ensure a minimum delay between events. Do NOT
+ * use when each of the events must be preserved (i.e., when the events carry
+ * data).
+ *
+ * We use this for reducing the UI update frequency when triggered by socket
+ * frames.
+ */
 class Delay {
 
+    /**
+     * Update member function bound to 'this'. To be used for intervals.
+     */
+    #boundUpdate;
+
+    /**
+     * @type {function(void):void} Function to be run with possible delay
+     */
+    delayAction;
+
+    /**
+     * Timeout ID produced by setTimeout, corresponding to the currently active
+     * timeout. -1 when there is no active timeout.
+     * @type {Number}
+     */
+    timeout = -1;
+
+    /**
+     * Options to tweak behaviour
+     * @property {Number} delayTime
+     * @property {Boolean} delayInitially
+     * @property {Boolean} refresh
+     */
+    options;
+
+    /**
+     * Set by 'request()' to indicate outstanding action. Reset by 'action()'
+     * whenever an action is executed.
+     * @type {Boolean}
+     */
+    waiting = false;
+
     constructor(
+        /**
+         * @type {function(void):void} Function to be run with possible delay
+         */
         action,
         {
-            // Duration of delay time in milliseconds
+            /**
+             * Minimum duration between actions, in milliseconds
+             * @type {Number}
+             */
             delayTime = 1000,
-            // On initial event, start timeout and execute it at completion
-            // instead of executing immediately. This option is to delay
-            // auto-actions like trades that result from socket input.
+            /**
+             * On a first event, start timeout and execute it at completion
+             * instead of executing immediately.
+             * @type {Boolean}
+             */
             delayInitially = false,
-            // Delete running interval ony every new request (delaying the
-            // action indefinitely if more and more requests occur). This option
-            // is to delay auto-actions like trades that result from socket
-            // input.
+            /**
+             * Delete active interval on every new request (delaying the action
+             * indefinitely if more and more requests occur in time).
+             * @type {Boolean}
+             */
             refresh = false,
         } = {},
     ) {
@@ -76,18 +118,15 @@ class Delay {
             delayInitially: delayInitially,
             refresh: refresh,
         };
-        // -1 when interval is inactive. The interval id when delay interval is
-        //  active. We have at most a single interval active at a time. When we
-        //  want to prolong an ongoing interval, we delete the old interval and
-        //  start a new one.
-        this.timeout = -1;
-        // Set by 'request()' to indicate outstanding action. Reset by
-        // 'action()' whenever an action is executed.
-        this.waiting = false;
-
+        this.#boundUpdate = this.#update.bind(this);
         // console.debug("delay.js: created", this.options);
     }
 
+    /**
+     * Request a new action. Delay will enact the request with the appropriate
+     * delay. If there is a previous action already waiting, Delay will not
+     * execute two actions.
+     */
     request() {
         // console.debug("delay.js: request()");
         this.waiting = true;
@@ -95,6 +134,10 @@ class Delay {
         return;
     }
 
+    /**
+     * Call the entry point depending on whether the Delay is currently free or
+     * not.
+     */
     #begin() {
         if (this.#isTimeout()) {
             // console.debug("delay.js: delayed during interval!");
@@ -104,6 +147,10 @@ class Delay {
         this.#first();
     }
 
+    /**
+     * If the refresh option is set, resets the ongoing timeout. Does nothing if
+     * the reset option is not set.
+     */
     #refresh() {
         console.assert(this.#isTimeout());
         if (this.options.refresh === true) {
@@ -113,6 +160,9 @@ class Delay {
         }
     }
 
+    /**
+     * Implements an action request assuming the Delay is currently free.
+     */
     #first() {
         console.assert(this.#isFree());
         if (this.options.delayInitially === true) {
@@ -124,7 +174,10 @@ class Delay {
         }
     }
 
-    // Resolves waiting request
+    /**
+     * Resolves waiting request. When an action is enacted, a new timeout is
+     * started.
+     */
     #action() {
         console.assert(this.#isFree());
         if (this.waiting === false) {
@@ -140,16 +193,17 @@ class Delay {
     // │ Delay                                                 │
     // ╰───────────────────────────────────────────────────────╯
 
-    // Starts delay time
+    /**
+     * Starts delay timeout
+     */
     #start() {
-
         console.assert(this.#isFree());
-        let timeoutId = NaN;
+        // let timeoutId = NaN;
         this.timeout = setTimeout(
-            () => this.#update(timeoutId),
+            this.#boundUpdate,
             this.options.delayTime,
         );
-        timeoutId = deepCopy(this.timeout);
+        // timeoutId = deepCopy(this.timeout);
         // console.debug(
         //     "delay.js: start()-ing interval",
         //     this.timeout,
@@ -157,10 +211,13 @@ class Delay {
         // );
     }
 
-    // Called whenever the delay time ends
+    /**
+     * The update function called when the timeout ends. Used as binding
+     * 'this.#boundUpdate'.
+     */
     #update() {
         // console.debug("delay.js: update()-ing at end of interval", id);
-        // Since this update was reached, the interval has not beed aborted
+        // Since this update was reached, the interval has not been aborted
         this.timeout = -1;
         this.#stop();
         console.assert(this.#isFree());
@@ -171,14 +228,32 @@ class Delay {
     // │ Non-conditional helpers                               │
     // ╰───────────────────────────────────────────────────────╯
 
+    /**
+     * Test if the Delay is free, meaning that it is in the resting state.
+     *
+     * Being free implies that
+     * there is no pending action. Being not free does not imply a pending
+     * action: After the last pending action is enacted, a timeout is started to
+     * catch the next action, without leading to an action by itself.
+     * @return {Boolean} true if there are no pending timeouts
+     */
     #isFree() {
         return this.timeout === -1;
     }
 
+    /**
+     * Test if the Delay has an ongoing timeout.
+     *
+     * Ongoing timeouts do not imply a pending action. But pending actions imply
+     * ongoing timeouts.
+     */
     #isTimeout() {
         return !this.#isFree();
     }
 
+    /**
+     * Clears remaining timeout, if any
+     */
     #stop() {
         // console.debug("delay.js: stop()-ing interval", this.timeout);
         clearTimeout(this.timeout);

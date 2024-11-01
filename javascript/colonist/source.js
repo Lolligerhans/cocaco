@@ -2,12 +2,39 @@
 
 "use strict";
 
+/**
+ * Source for the Colonist pipeline (see: doc/pipelines.md).
+ *
+ * Uses @see Reparse as the Data module.
+ */
 class ColonistSource extends Trigger {
-    // Functions producing the log message Source packets
-    static logInterpreters = {};
+
+    /**
+     * Stores the interpreters for chat message frames. Interpreters generate
+     * the Source packets for the Observer module.
+     * @type {Object<string,function(*):*}
+     */
     static chatInterpreters = {};
+
+    /**
+     * Stores the interpreters for game state frames. Interpreters generate the
+     * Source packets for the Observer module.
+     * @type {Object<string,function(*):*}
+     */
     static gameStateInterpreters = {};
-    // Function name used to interpret each log-message type
+
+    /**
+     * Stores the interpreters for log message frames. Interpreters generate the
+     * Source packets for the Observer module.
+     * @type {Object<string,function(*):*}
+     */
+    static logInterpreters = {};
+
+    /**
+     * Maps the frame log message type to function names responsible for
+     * handling them.
+     * @type {Object<Number,string>}
+     */
     static logTypeMap = {
         1: "buyDev",
         5: "buyBuilding",
@@ -24,12 +51,27 @@ class ColonistSource extends Trigger {
         117: "tradeCounter",
         118: "tradeOffer",
     };
+
+    /**
+     * Mapping from turnState enum to human readable string
+     * @type {Object<Number,string>}
+     */
     static turnStateMap = {
         2: "main",
     };
+
+    /**
+     * Mapping from actionState enum to human readable string
+     * @type {Object<Number,string>}
+     */
     static actionStateMap = {
         0: "main",
     };
+
+    /**
+     * Mapping from action enum to human readable string
+     * @type {Object<Number,string>}
+     */
     static actionMap = {
         0: "sendChatMessage",
         2: "rollDice",
@@ -41,17 +83,25 @@ class ColonistSource extends Trigger {
         68: "forceReload",
     };
 
+    /**
+     * Reparsers are registered on construction. Make sure to enable frame input
+     * only after constructing the ColonistSource.
+     */
     constructor() {
         super();
         this.registerPacketGenerators();
     }
+
 };
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Setup                                                     │
 // ╰───────────────────────────────────────────────────────────╯
 
-// Register reparsers for log elements
+/**
+ * Register reparsers to obtain the necessary frames from the @see Reparse
+ * module.
+ */
 ColonistSource.prototype.registerPacketGenerators = function () {
 
     // It is generally a good idea to use 'setInterval()' when reacting to data,
@@ -61,7 +111,7 @@ ColonistSource.prototype.registerPacketGenerators = function () {
     Reparse.register(
         "receive",
         "ColonistSource-playerUserStates",
-        Reparse.applyDoers.isState(),
+        Reparse.applyDoers.isState(), // Require set (type 4, not 91)?
         Reparse.entryPoints.payload,
         // The payload of this type always contains a playerUserStates object
         payload => this.readPlayerUserStatesData(payload),
@@ -92,7 +142,7 @@ ColonistSource.prototype.registerPacketGenerators = function () {
     );
 
     Reparse.register(
-        // 'gameLogState' is excempt because we reparse it separately
+        // 'gameLogState' is exempt because we reparse it separately
         "receive",
         "ColonistSource-gameState",
         Reparse.applyDoers.isStateOrDiff(),
@@ -161,7 +211,7 @@ ColonistSource.prototype.readPlayerUserStatesData = function (payload) {
 
 ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
     console.assert(logMessage.text);
-    console.assert(logMessage.text.type != null); // Neither undefined nor null
+    console.assert(logMessage.text.type != null);
     const type = ColonistSource.logTypeMap[logMessage.text.type];
     if (!type || !ColonistSource.logInterpreters[type]) {
         return null;
@@ -171,10 +221,22 @@ ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
         type: type, // Log message type, not Source packet type
         payload: ColonistSource.logInterpreters[type](logMessage),
     };
-    const packet = { type: "gameLogState", data: data };
+    const packet = {
+        // Source packet type
+        type: "gameLogState",
+        data: data,
+    };
     return packet;
 }
 
+/**
+ * @param {Number} chatIndex
+ * @param {Object} chatMessage Chat message as given in the frame
+ * @param {Number} chatMessage.type
+ * @param {string} chatMessage.message
+ * @param {Number} chatMessage.from
+ * @return {null|{type:string,data:{index:Number,type:string,payload:*}}}
+ */
 ColonistSource.prototype.readGameChatData = function (chatIndex, chatMessage) {
     const text = chatMessage.text.message;
     let type;
@@ -198,6 +260,11 @@ ColonistSource.prototype.readGameChatData = function (chatIndex, chatMessage) {
     return packet;
 }
 
+/**
+ * @param {Object} gameState gameState object of the frame
+ * @param {boolean} isUpdate
+ * @return {null | {type: "gameState", data: {type: string, payload: *}}}
+ */
 ColonistSource.prototype.readGameStateData = function (gameState, isUpdate) {
     let packets = [];
     Object.entries(gameState).forEach(([k, v]) => {
@@ -214,6 +281,11 @@ ColonistSource.prototype.readGameStateData = function (gameState, isUpdate) {
     return packets;
 }
 
+/**
+ * Capture the manual pseudo "frame" that we invoke from the Colonist main
+ * module.
+ * @param {string} name
+ */
 ColonistSource.prototype.setPlayerUsername = function (name) {
     const packet = {
         type: "playerUsername",
@@ -398,7 +470,7 @@ ColonistSource.gameStateInterpreters.currentState = function (currentState) {
     // undefined.
     let turnState = ColonistSource.turnStateMap[currentState.turnState];
     let actionState = ColonistSource.actionStateMap[currentState.actionState];
-    turnState ??= null; // Set null if value is there but meaning doesnt matter
+    turnState ??= null;
     actionState ??= null;
     const payload = {
         currentTurnPlayerColor: currentState.currentTurnPlayerColor,

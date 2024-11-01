@@ -10,6 +10,10 @@ A successful start is indicated by a coconut icon in the background:
 
 ![Icon](/assets/coconut_32.png?raw=true)
 
+---
+
+Instructions for version 3:
+
 ## Interaction
 
 - hide/show: click game log

@@ -54,6 +54,8 @@ class CollusionPlanner {
      */
     #collude = null;
 
+    #consoleLogger = new ConsoleLog("CollusionPlanner", "🪠");
+
     /**
      * The object corresponding to the user
      * @type {Player}
@@ -72,7 +74,7 @@ class CollusionPlanner {
     constructor(us, outputElement) {
         this.#us = us;
         this.#logger = new MessageLog(outputElement);
-        console.debug("CollusionPlanner: Created for", us.name);
+        this.#consoleLogger.log("Created for", us.name);
     }
 
     /**
@@ -86,25 +88,22 @@ class CollusionPlanner {
         console.assert(trade.give.from !== null);
         console.assert(trade.give.to !== null);
         if (!this.#us.equals(trade.give.from)) {
-            console.debug("CollusionPlanner: Accept ignored (not our offer)");
+            this.#consoleLogger.log("Accept ignored (not our offer)");
             return false;
         }
-        console.debug(
-            "CollusionPlanner: Evaluating",
-            trade.give.to.name, "acceptance",
-        );
+        this.#consoleLogger.log("Evaluating", trade.give.to.name, "acceptance");
         let newTemplate = this.#collude.getCollusionTemplate(
             trade.give.from,
-            trade.give.to.name,
+            trade.give.to,
         );
         if (newTemplate === null) {
-            console.debug("CollusionPlanner: Accept ignored (not colluder)");
+            this.#consoleLogger.log("Accept ignored (not colluder)");
             return false;
         }
         // Assume existing trades are valid for giver and taker
-        const matchesTemplate = Trade.tradeMatchesTemplate(newTemplate, trade);
-        console.debug(
-            "CollusionPlanner: Should",
+        const matchesTemplate = this.tradeMatchesTemplate(newTemplate, trade);
+        this.#consoleLogger.log(
+            "Should",
             matchesTemplate ? "finalize" : "reject", "acceptance"
         );
         return matchesTemplate;
@@ -121,27 +120,24 @@ class CollusionPlanner {
         }
         console.assert(trade.give.from !== null);
         console.assert(trade.give.to !== null);
-        if (!trade.give.from.equals(this.#us)) {
-            console.debug("CollusionPlanner: Offer ignored (ours)");
+        if (trade.give.from.equals(this.#us)) {
+            this.#consoleLogger.log("Offer ignored (ours)");
             return false;
         }
-        console.debug(
-            "CollusionPlanner: Evaluating",
-            trade.give.from.name, "offer",
-        );
+        this.#consoleLogger.log("Evaluating", trade.give.from.name, "offer");
         let newTemplate = this.#collude.getCollusionTemplate(
             trade.give.from,
             trade.give.to,
         );
         if (newTemplate === null) {
-            console.debug("CollusionPlanner: Offer ignored (not colluder)");
+            this.#consoleLogger.log("Offer ignored (not colluder)");
             return false;
         }
         // Assume existing trades are valid for giver
         Collude.adjustForTaker(newTemplate, trade.give.to, guessAndRange);
-        const matchesTemplate = Trade.tradeMatchesTemplate(newTemplate, trade);
-        console.debug(
-            "CollusionPlanner: Should",
+        const matchesTemplate = this.tradeMatchesTemplate(newTemplate, trade);
+        this.#consoleLogger.log(
+            "Should",
             matchesTemplate ? "accepted" : "rejected", "offer",
         );
         return matchesTemplate;
@@ -174,7 +170,10 @@ class CollusionPlanner {
      *                  if not suggesting a trade.
      */
     #generateOurTrade(otherPlayer, guessAndRange) {
-        // console.debug("CollusionPlanner: Generating for", otherPlayer.name);
+        // this.#consoleLogger.log(
+        //     "CollusionPlanner: Generating for",
+        //     otherPlayer.name,
+        // );
         let template = this.#collude.getCollusionTemplate(
             this.#us, otherPlayer,
         );
@@ -183,7 +182,9 @@ class CollusionPlanner {
         Collude.adjustForTaker(template, otherPlayer, guessAndRange);
         const isValid = Collude.adjustForTradeValidity(template);
         if (!isValid) {
-            // console.debug("CollusionPlanner: No offer (no valid trade)");
+            // this.#consoleLogger.log(
+            //     "CollusionPlanner: No offer (no valid trade)",
+            // );
             return null;
         }
         const give = new Resources(template);
@@ -203,7 +204,10 @@ class CollusionPlanner {
                 resources: take,
             }),
         });
-        console.debug("CollusionPlanner: Valid offer for", otherPlayer.name);
+        this.#consoleLogger.log(
+            "CollusionPlanner: Valid offer for",
+            otherPlayer.name,
+        );
         return trade;
     }
 
@@ -213,18 +217,22 @@ class CollusionPlanner {
 
     /**
      * Begin colluding as the provided group.
-     * @param {Player[]} players Collusion participants. Must include the 'us'
-     *                           player used during construction.
+     * @param {Player[]} players
+     * Collusion participants. Must include the 'us' player used during
+     * construction.
      */
     start(players) {
         // Resets all state and start colluding.
         console.assert(players.length >= 2);
         console.assert(players.some(p => p.equals(this.#us)));
-        console.debug("CollusionPlanner: Starting new group", p(players));
-        this.#logger.log(null, `Colluding: ${players.map(p => p.name)}`);
+        const hint = `(chat "${cocaco_config.collude.phrases.stop}" to stop)`;
+        this.#logger.log(
+            null,
+            `Colluding: ${players.map(p => p.name)} ${hint}`,
+        );
         if (this.#collude !== null) {
-            console.debug(
-                "CollusionPlanner: Overwriting existing collusion group",
+            this.#consoleLogger.log(
+                "Overwriting existing collusion group",
                 p(this.#collude.playerNames()),
             );
         }
@@ -236,11 +244,48 @@ class CollusionPlanner {
      */
     stop() {
         this.#logger.log(null, "Stop colluding")
-        console.debug(
-            "CollusionPlanner: Stopping.",
-            p(this.#collude.playerNames()),
-        );
+        this.#consoleLogger.log("Stopping.", p(this.#collude.playerNames()));
         this.#collude = null;
+    }
+
+    /**
+     * A trade matches the template if all transferred resources are in the
+     * template range. The template range consists of any number between
+     * 0 and the number present in the template for the same resource.
+     *
+     * We use the pending collusion deficit as template to incoming trade
+     * offers. If the offer matches, the trade is accepted as colluding.
+     *
+     * Define as member function to have access to this.#consoleLogger.
+     *
+     * @param {Resources} template Trade template. No special resources allowed.
+     * @param trade Trade as observer 'trade' property
+     * @return {boolean}
+     */
+    tradeMatchesTemplate(template, trade) {
+        const tradeCombined = Resources.fromObserverTrade(trade);
+        console.assert(tradeCombined.hasSpecial() === false);
+        const intervalContainsValue = (interval, x) => {
+            return interval[0] <= x && x <= interval[1];
+        };
+        let templateCopy = new Resources(template);
+        templateCopy.merge(tradeCombined, (templateValue, tradeValue) => {
+            const intervalEnds = [0, templateValue];
+            const lo = Math.min(...intervalEnds);
+            const hi = Math.max(...intervalEnds);
+            const conformsToTemplate = intervalContainsValue([lo, hi], tradeValue);
+            return conformsToTemplate ? 0 : 1;
+        });
+        const allConformToTemplate = templateCopy.countHamming() === 0;
+        if (!allConformToTemplate) {
+            const tradeStr = tradeCombined.toSymbols();
+            this.#consoleLogger.log(
+                trade.give.from.name,
+                `${tradeStr} 🚫 ${Collude.formatTemplate(template)}`,
+                trade.give.to.name,
+            );
+        }
+        return allConformToTemplate;
     }
 
     /**
@@ -248,7 +293,6 @@ class CollusionPlanner {
      */
     updateGotResources(...args) {
         if (this.#collude !== null) {
-            console.debug("CollusionPlanner: Got resources", args[1].toSymbols());
             this.#collude.updateGotResources(...args);
         }
     }
@@ -258,7 +302,7 @@ class CollusionPlanner {
      */
     updateTradeResources(...args) {
         if (this.#collude !== null) {
-            console.debug("CollusionPlanner: Trade resources", args[2].toSymbols());
+            this.#consoleLogger.log("Trade resources", args[2].toSymbols());
             this.#collude.updateTradeResources(...args);
         }
     }

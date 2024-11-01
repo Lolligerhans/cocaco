@@ -12,12 +12,15 @@
  * able to:
  *  - use it as Object key
  *  - compare them with ===
- * The expects these in place of player objects. Generated frames will again
- * contain them.
+ * The Observer implements the stateful components to translate IDs to 'Player'
+ * Objects. When generating frames, the player ID must be used to identify the
+ * player.
+ *
+ * For Colonist the colour enum plays the role of the player ID.
  */
 
 /**
- * Data class combining a the name, ID, colour and index of a player.
+ * Data class combining the name, ID, colour and index of a player.
  */
 class Player {
 
@@ -87,7 +90,7 @@ class Player {
 /**
  * Represent the set of all players. Allows to query 'Player' instances from
  * either of the identifying values. Cannot change after construction.
- * The values returned from the member functions are referenes to the internal
+ * The values returned from the member functions are references to the internal
  * state. They must not be modified.
  *
  * This class is meant to represent exactly all participating players, not any
@@ -149,14 +152,16 @@ class Players {
      * then simply show the players in the index order.
      * @param {string} lastname Name of the player to be put in the last
      *                          position (with the highest index).
-     * @param {...Player} players All players. Cannot be changed later.
+     * @param {Player[]} players All players. Cannot be changed later.
+     * @param {Id[]} playOrder
+     * Play order represented by player IDs (colour enums).
      */
-    constructor(lastName, ...players) {
+    constructor(lastName, players, playOrder) {
         console.assert(players.length >= 1); // Required
         console.assert(players.length >= 2); // Sanity only. Remove when intended.
         this.#allPlayers = players;
-        this.#rotateNameToLastPlayer(lastName);
-        this.#generateIds();
+        this.#generateIds(); // Needed to sort by playOrder
+        this.#orderPlayers(lastName, playOrder);
         this.#generteIndices();
         this.#generateNames();
         this.print();
@@ -221,8 +226,38 @@ class Players {
         return this.#allPlayers.map(p => p.name);
     }
 
+    /**
+     * Reorder players such that the player with name 'lastName' is in last
+     * place.
+     * @param {string} lastName
+     * @param {Id[]} playOrder If provided, order players in this order
+     */
+    #orderPlayers(lastName, playOrder = null) {
+        // Since the order is not crucial, skip 'playOrder' as fallback
+        if (playOrder !== null) {
+            this.#allPlayers = this.#reorderByPlayOrder(playOrder);
+        }
+        this.#rotateNameToLastPlayer(lastName);
+    }
+
     print() {
         console.debug("Players:", this);
+    }
+
+    /**
+     * Return a shallow copy of this.#allPlayers array with entries sorted like
+     * 'playOrder'.
+     * @param {Id[]} playOrder Order of player IDs
+     * @return {Player[]}
+     */
+    #reorderByPlayOrder(playOrder) {
+        let ret = [];
+        const pickPlayerWithId = id => {
+            const picked = this.id(id); // Requires IDs to be set
+            ret.push(picked);
+        };
+        playOrder.forEach(pickPlayerWithId);
+        return ret;
     }
 
     #rotateNameToLastPlayer(lastName) {

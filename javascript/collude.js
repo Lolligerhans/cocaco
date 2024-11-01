@@ -99,7 +99,7 @@ class Collude {
     /**
      * @type {MessageLog}
      */
-    static #logger = new MessageLog(null);
+    static #logger = new ConsoleLog("Collude", "🤝");
 
     /**
      * Maximum amount of resources templates should have for each player
@@ -119,10 +119,7 @@ class Collude {
         players.forEach(p => this.#balances[p.name] = new Resources());
         console.assert(this.#playerCount() === players.length); // No duplicates
 
-        Collude.#logger.log(
-            null,
-            `Colluding group: ${this.playerNames()}`,
-        );
+        Collude.#logger.log("Colluding group:", this.playerNames());
         this.print();
     }
 
@@ -170,7 +167,7 @@ class Collude {
      */
     getCollusionTemplate(playerFrom, playerTo) {
         if (!this.#hasColluders(playerFrom.name, playerTo.name)) {
-            console.debug(
+            Collude.#logger.log(
                 playerFrom.name,
                 Collude.formatTemplate(),
                 playerTo.name,
@@ -188,7 +185,7 @@ class Collude {
             }
             return 0;
         });
-        console.debug(
+        Collude.#logger.log(
             playerFrom.name,
             Collude.formatTemplate(template),
             playerTo.name,
@@ -232,13 +229,13 @@ class Collude {
     print(playerName = null) {
         if (playerName !== null) {
             console.assert(Object.hasOwn(this.#balances, playerName));
-            console.debug(
+            Collude.#logger.log(
                 `𝚫 ${playerName} =`,
                 `${Collude.formatDelta(this.#delta(playerName))}`,
             );
         }
         else {
-            console.debug(`𝚺 =`, p(this.#groupTotal));
+            Collude.#logger.log(`𝚺 =`, p(this.#groupTotal));
             this.playerNames().forEach(p => this.print(p));
         }
     }
@@ -283,7 +280,7 @@ class Collude {
         console.assert(resources.countNegative() === 0);
         this.#groupTotal.add(resources);
         this.#balances[playerName].add(resources);
-        console.debug("⨁", playerName, resources.toSymbols());
+        Collude.#logger.log("⨁", playerName, resources.toSymbols());
         this.print(playerName);
     }
 
@@ -307,8 +304,8 @@ class Collude {
         console.assert(resources.countNegative() > 0);
         this.#balances[playerNameFrom].subtract(resources);
         this.#balances[playerNameTo].add(resources);
-        console.debug(
-            "Collude: update trade:",
+        Collude.#logger.log(
+            "↔",
             playerNameFrom, resources.toSymbols(), playerNameTo,
         );
         this.print(playerNameFrom.name);
@@ -371,18 +368,12 @@ class Collude {
         const positiveCount = template.countPositive();
         const negativeCount = template.countNegative();
         if (positiveCount === 0 || negativeCount === 0) {
-            Collude.#logger.log(
-                null,
-                `✖ ${template.toSymbols()}`,
-            );
+            Collude.#logger.log(`✖ ${template.toSymbols()}`);
             return false;
         }
         Collude.#reducePositive(template);
         Collude.#reduceNegative(template);
-        Collude.#logger.log(
-            null,
-            `✔ ${template.toSymbols()}`,
-        );
+        Collude.#logger.log(`✔ ${template.toSymbols()}`);
         return true;
     }
 

@@ -1,5 +1,12 @@
 "use strict";
 
+// The frame format is described in the documentation:
+//      doc/colonist/message_format.md
+
+/**
+ * @param {Uint8Array} frame Encoded frame
+ * @return {*} Decoded frame
+ */
 function cocaco_decode_receive(frame) {
     let res;
     try {
@@ -11,6 +18,10 @@ function cocaco_decode_receive(frame) {
     return res;
 }
 
+/**
+ * @param {*} frame Decoded frame
+ * @return {Uint8Array} Encoded frame
+ */
 function cocaco_encode_receive(frame) {
     let res;
     try {
@@ -22,6 +33,10 @@ function cocaco_encode_receive(frame) {
     return res;
 }
 
+/**
+ * @param {Uin8Array} frame Encoded frame
+ * @return {*} Decoded frame
+ */
 function cocaco_decode_send(frame) {
     const [v0, v1, strlen] = frame.slice(0, 3);
     // console.debug("deserialized v0 v1 strlen:", v0, v1, strlen);
@@ -29,8 +44,8 @@ function cocaco_decode_send(frame) {
     const [start, stop] = [frame.byteOffset + 2, frame.byteOffset + overlen];
     // console.log("String start and stop:", start, stop);
     const data_str = frame.buffer.slice(start, stop);
-    // HACK: Covnert from [length][str] to msgpack format
-    // TODO: Use the fixStr internal?
+    // HACK: Convert from [length][str] to msgpack format
+    // TODO: Use the fixstr internal?
     let tmp = new Uint8Array(data_str);
     // console.debug("str array before manipulation:", tmp);
     tmp[0] += 0xa0;
@@ -50,11 +65,17 @@ function cocaco_decode_send(frame) {
     return res;
 }
 
-// We create a larger ArrayBuffer with a new fll-sized uint8 view and copythe
-// serialized message into it. Not sure if we could convince msgpack to write
-// into a buffer we give to it.
-// See doc/colonist/message_format.md for the message format.
+/**
+ * @param {Number} v0 Value v0 as described in the documentation
+ * @param {Number} v1 Value v1 as described in the documentation
+ * @param {string} str Value str as described in the documentation
+ * @param {*} message Message object as described in the documentation
+ * @return {Uint8Array} Encoded frame
+ */
 function cocaco_encode_send({ v0, v1, str, message }) {
+    // We create a larger ArrayBuffer with a new full-sized uint8 view and copy the
+    // serialized message into it. Not sure if we could convince msgpack to write
+    // into a buffer we give to it.
     const isByte = x => x >= 0 && x <= 255;
     console.assert(str.length >= 1); // Empty str is not intended
     console.assert(isByte(v0));

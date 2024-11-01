@@ -4,7 +4,7 @@
   "manifest_version": 3,
   "author": "Lolligerhans",
   "description": "Correctly correlated Catan card chance Counter",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "icons": {
     "32": "assets/coconut_32.png",
     "512": "assets/coconut_512.png"
@@ -32,12 +32,15 @@
         "statistics.js/statistics.min.js",
         "plotly/plotly-2.25.2.min.js",
         "javascript/config.js",
+
         "javascript/utils.js",
         "javascript/player.js",
         "javascript/log.js",
+        "javascript/console_log.js",
         "javascript/delay.js",
         "javascript/resources.js",
         "javascript/reparse_options.js",
+
         "javascript/collude.js",
         "javascript/collusion_planner.js",
         "javascript/frame_queue.js",

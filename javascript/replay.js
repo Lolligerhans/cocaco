@@ -1,6 +1,20 @@
 "use strict";
 
+/**
+ * Class to inject pre-recorded frames. So we can test without having to visit
+ * the host website. Set matching URLS to "<all_urls>" in manifest to test on
+ * any website.
+ *
+ * The frame data is hardcoded in JS, coming from data/. In the future this
+ * could be a web-accessible resources to be loaded.
+ */
 class Replay {
+
+    /**
+     * This object is overwritten on startup by hardcoded frames given in
+     * data/example.js.
+     * @type {*[]}
+     */
     static frames = [
         { example: "example" }
     ];
@@ -13,11 +27,21 @@ class Replay {
         return Object.hasOwn(frame, "id");
     }
 
+    /**
+     * Emulate a sent frame by calling the same function used by the MAIN world
+     * to pass frames to content scripts.
+     * @param {*} frame Frame, decoded, to be encoded and "sent"
+     */
     static #send(frame) {
         const encodedFrame = cocaco_encode_send(frame);
         send_MAIN(encodedFrame, { native: true, doReparse: true });
     }
 
+    /**
+     * Emulate a received frame by calling the same function used by the MAIN
+     * world to pass frames to content scripts.
+     * @param {*} frame Frame, decoded, to be encoded and "received"
+     */
     static #receive(frame) {
         const encodedFrame = cocaco_encode_receive(frame);
         receive_MAIN(encodedFrame, { native: true, doReparse: true });
@@ -56,6 +80,9 @@ class Replay {
         return this.#done();
     }
 
+    /**
+     * Start emitting frames at a constant rate. Can be stooped with stop().
+     */
     start() {
         this.stop();
         const activeIndex = this.active;
@@ -71,6 +98,10 @@ class Replay {
         );
     }
 
+    /**
+     * Stop emitting frames after having called start() previously. Does nothing
+     * if start() was not called.
+     */
     stop() {
         if (this.active !== 0) {
             console.info("⏸️ Stopping replay at position", this.position);

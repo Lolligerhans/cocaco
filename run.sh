@@ -206,7 +206,6 @@ command_release()
   declare tag;
   version="$(current_version)";
   tag="$(get_tag_name "$version")";
-  echot "Did not test new tag creation and push yet";
   choice="$(boolean_prompt "Release ${text_user}${force_flag}${text_normal} ${version}?")";
   if [[ "$choice" == "n" ]]; then
     abort "Abort: No changes";

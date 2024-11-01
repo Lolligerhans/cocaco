@@ -15,6 +15,10 @@
 //   log(null,           "with %ccolour%c", "<css>", "")    // '%' is reserved. '%c' inserts a styled span.
 //   clear()                                                // Deletes elements added by logDom()
 
+/**
+ * Logger for styling palyer names with colour. Writes console.log and a DOM
+ * element of choice (if enabled).
+ */
 class MessageLog {
     enabled = true;
 
@@ -64,7 +68,14 @@ MessageLog.prototype.init = function (chatElement) {
     }
 }
 
-// Entry point
+/**
+ * If DOM logging is enabled:
+ *  - log into element if provided
+ *  - log to chat element if not provided
+ * If console logging is enabled:
+ *  - log to console (same content as DOM logging)
+ * @param {[e:?HTMLElement, m:string, ...colouring]} args
+ */
 MessageLog.prototype.log = function (...args) {
     if (this.enabled === false) {
         return;

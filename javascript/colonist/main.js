@@ -1,16 +1,20 @@
-// Colonist.io main module
-
 "use strict";
 
+// Colonist.io main module
+
+/**
+ * Class to orchestrate the "Colonist" pipeline by defining the order in which
+ * to
+ *  - read information from the DOM
+ *  - find key HTMLElements
+ *  - construct the required modules
+ *  - start reading frames
+ */
 class Colonist {
 
-    static colorMap = {
-        1: "red",
-        2: "green",
-        3: "orange",
-        4: "blue",
-    }
-
+    /**
+     * Remove some HTMLElements on a best effort basis. Its ok if this fails.
+     */
     static deleteSomeElements() {
         const ids = ["remove_ad_in_game_left", "remove_ad_in_game_right",
             "in_game_ab_right", "in_game_ab_left"];
@@ -22,6 +26,9 @@ class Colonist {
         }
     }
 
+    /**
+     * Calls logger.clear() and logs a hello message
+     */
     clearLog() {
         console.assert(this.logger !== null);
         this.logger.clear();
@@ -41,6 +48,9 @@ class Colonist {
         // this.boundRecoverNames = Colonist.prototype.recoverNames.bind(this);
     }
 
+    /**
+     * Find key HTMLElements. Progresses only when the elements are found.
+     */
     findElements() {
         // When replaying we start without log element
         if (cocaco_config.replay) {
@@ -56,16 +66,21 @@ class Colonist {
         }
         this.chatElement = document.getElementById("game-chat-text");
         if (!this.chatElement) {
-            console.warn("Did not find game chat");
+            // Log and chat element should appear at the same time
+            console.warn("Did not find game chat despite game log present");
         }
         if (this.chatElement) {
             if (Colony.enlarger) {
-                this.chatElement.removeEventListener("click", Colony.enlarger, false);
+                this.chatElement.removeEventListener(
+                    "click", Colony.enlarger, false,
+                );
                 Colony.enlarger = null;
             }
             if (cocaco_config.largeLog) {
                 Colony.enlarger = enlarge.bind(null, this.logElement);
-                this.chatElement.addEventListener("click", Colony.enlarger, false);
+                this.chatElement.addEventListener(
+                    "click", Colony.enlarger, false,
+                );
             }
         }
 
@@ -76,6 +91,9 @@ class Colonist {
         return true;
     }
 
+    /**
+     * Waits for the username element to appear, setting 'playerUsername'.
+     */
     findName() {
         if (!cocaco_config.replay) {
             this.playerUsernameElement = document.getElementById(
@@ -101,6 +119,14 @@ class Colonist {
         return true;
     }
 
+    /**
+     * Registers the set of reparsers this class wants to utilize. Any game
+     * relevant stuff should be done in the regular pipeline stages. I.e., in
+     * 'ColonistSource'.
+     * Here we add:
+     *  - Country matcher
+     *  - Dev spy (that is somehow still not fixed)
+     */
     registerReceiveReparsers() {
         Reparse.register(
             "receive",
@@ -111,7 +137,10 @@ class Colonist {
             groups => {
                 let any = false;
                 for (let group of groups) {
-                    this.logger.log(this.chatElement, `${group.code}: ${group.players}`)
+                    this.logger.log(
+                        this.chatElement,
+                        `${group.code}: ${group.players}`,
+                    );
                     any = true;
                 }
                 if (any === false) {
@@ -124,6 +153,12 @@ class Colonist {
         // Dev spy helpers
         // TODO: Remove once Colonist ifxed it
         let playerUserStates = null;
+
+        /**
+         * Helper mapping a colour index to the player's name
+         * @param {Number} colourIndex
+         * @return {string} Player name corresponding to the given colour
+         */
         let getPlayerName = function (colourIndex) {
             if (playerUserStates === null) {
                 console.error("getPlayerName called before setting playerUserStates");
@@ -132,11 +167,14 @@ class Colonist {
             // Two equal signs to compare with string type colourIndex
             const player = playerUserStates.find(
                 x => x.selectedColor == colourIndex);
-            console.assert(player !== undefined,
-                `Player with colour index ${colourIndex} not found in playerUserStates`);
+            console.assert(
+                player !== undefined,
+                "colour index should be available",
+            );
             return player.username;
         };
 
+        // Gets a copy of the playerUserStates used as lookup for the dev spy
         Reparse.register(
             "receive",
             "Colonist set playerUserStates",
@@ -145,7 +183,7 @@ class Colonist {
             state => state,
             state => {
                 playerUserStates = state;
-                console.info("playerUserStates:", playerUserStates);
+                // console.info("playerUserStates:", playerUserStates);
                 return { isDone: false };
             }
         );
@@ -158,14 +196,18 @@ class Colonist {
             check_development_cards,
             cards => {
                 if (Object.hasOwn(cards, "bank")) {
-                    const names = cards.bank.map(card => enumNames.devcards[card]);
+                    const names = cards.bank.map(
+                        card => Colony.enumNames.devcards[card],
+                    );
                     const icons = names.map(name => utf8Symbols[name]);
                     const show = `Bank: ${icons.join("")}`;
                     // console.debug(show);
                     this.logger.log(this.chatElement, show);
                 }
                 for (let [index, player_cards] of Object.entries(cards.players)) {
-                    const names = player_cards.map(card => enumNames.devcards[card]);
+                    const names = player_cards.map(
+                        card => Colony.enumNames.devcards[card],
+                    );
                     const icons = names.map(name => utf8Symbols[name]);
                     const playerName = getPlayerName(index);
                     const show = `${playerName}: ${icons.join("")}`;
@@ -176,9 +218,12 @@ class Colonist {
             }
         );
 
-        return true;
+        return true; // Register only once
     }
 
+    /**
+     * Register some sent-message reparsers. This is currently for testing only.
+     */
     registerSendReparsers() {
 
         Reparse.register(
@@ -211,6 +256,14 @@ class Colonist {
         return true;
     }
 
+    /**
+     * Reset instance to pristine state. Note that the modules can still exist,
+     * may still continue running and do not clean, for example, the UI.
+     * This function is currently only used on construction; in the future it
+     * may be used for hard reset.
+     *
+     * Initializes all members to their default 'null'.
+     */
     reset() {
         // Host
         this.chatElement = null;
@@ -231,14 +284,19 @@ class Colonist {
         return true;
     }
 
+    /**
+     * Construct the pipeline modules. After this funciton, the pipeline is
+     * essentially ready to receive data.
+     */
     setupState() {
+        this.source = new ColonistSource();
+        this.observer = new ColonistObserver(this.source, this.resender);
         this.state = new State(
+            this.observer,
             this.logElement,
             this.resender,
             this.chatElement,
         );
-        this.source = new ColonistSource();
-        this.observer = new ColonistObserver(this.source, this.state);
 
         // HACK: Supply playerUsername manually instead of reparsing
         this.source.setPlayerUsername(this.playerUsername);
@@ -246,7 +304,14 @@ class Colonist {
         return true;
     }
 
+    /**
+     * Determines the program flow for Colonist by calling member functions in
+     * the appropriate order.
+     *
+     * The user of this class only has to call 'start()'.
+     */
     start() {
+        // Execute these tasks in order. Repeat each task until returning true.
         let tasks = [
             { name: "Reset", funct: () => this.reset() },
             { name: "Parse Home DOM", funct: () => this.findName() },
@@ -261,8 +326,14 @@ class Colonist {
         executeWithRetries(tasks);
     }
 
+    /**
+     * Construct the Resend object used within the pipeline
+     *
+     * The restrictions of the Resend class require that do this relatively
+     * early, before any other reparsers are registered (explicitly or
+     * implicitly by other modules).
+     */
     startResender() {
-        // Create the resender first
         this.resender = new Resend();
 
         {
@@ -276,7 +347,7 @@ class Colonist {
 
                 this.logElement.addEventListener("click", runTest, false);
                 console.log("☺ Test ready");
-            } else if (cocaco_config.test === true) {
+            } else if (cocaco_config.resendTestOnClick === true) {
                 console.warn("Cannot run test during replay (no click element");
             }
         }
@@ -284,6 +355,11 @@ class Colonist {
         return true;
     }
 
+    /**
+     * Active the web socket input. We start the extension with input disabled
+     * to give us time to enter a gmae and set up the data pipeline. The
+     * incoming frames are buffered until we set the ready flag.
+     */
     webSocketReady() {
         socketsReady = true;
         setTimeout(handle);

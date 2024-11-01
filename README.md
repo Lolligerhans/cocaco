@@ -50,6 +50,9 @@ git checkout "$(git describe --tags --abbrev=0)";
 [GitHub](https://github.com/Lolligerhans/cocaco/tags).
 1. Extract the `.zip` file, producing the `cocaco/` folder.
 
+> [!NOTE]
+> Version 4 supports base game only. Use version 3 for expansions.
+
 ### Installation
 
 Install as [temporary extension](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ "Tutorial") in Firefox:
@@ -65,7 +68,7 @@ Install as [temporary extension](https://extensionworkshop.com/documentation/dev
 <!--   - Load unpacked -->
 <!--   - Select the 'cocaco/' directory. (The inner one if there are two.) -->
 
-> [!NOTE]
+> [!TIP]
 > Firefox does not allow permanent installation of local extensions. Bookmark
 > the URL to repeat these steps more easily after restarting the browser.
 > (Developer versions may allow it.)

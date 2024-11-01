@@ -22,18 +22,18 @@ function reportReceive(event) {
         console.warn("Switch to content-script failed:", e);
     }
     if (returnedFrame === null) {
-        console.debug(
-            "socket_main.js: reportReceive():", cocaco.receivedCount++,
-            "delete:", message,
-        );
+        // console.debug(
+        //     "socket_main.js: reportReceive():", cocaco.receivedCount++,
+        //     "delete:", message,
+        // );
         event.stopImmediatePropagation();
         event.preventDefault();
     } else if (typeof returnedFrame === "undefined") {
         // Nothing
     } else {
-        console.debug("socket_main.js: reportReceive: Replacing frame with:",
-            returnedFrame
-        );
+        // console.debug("socket_main.js: reportReceive: Replacing frame with:",
+        //     returnedFrame
+        // );
         event.data = returnedFrame;
     }
 }
@@ -68,13 +68,13 @@ if (typeof cocaco_MAIN === "undefined") {
             //  - frame (assumed): Replace frame
             let res;
             if (frame === null) {
-                console.debug("socket_main.js: send(): Deleting frame");
+                // console.debug("socket_main.js: send(): Deleting frame");
                 res = undefined;
             } else if (typeof frame === "undefined") {
                 res = send_real.call(webSocket, data);
             } else {
-                console.debug("socket_main.js: send(): Replacing frame");
-                console.debug("frame:", frame, "data:", data);
+                // console.debug("socket_main.js: send(): Replacing frame");
+                // console.debug("frame:", frame, "data:", data);
                 res = send_real.call(webSocket, frame);
             }
             return res;

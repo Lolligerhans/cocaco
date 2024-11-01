@@ -504,10 +504,10 @@ findInitialResources: function()
         const name = nameElement.textContent;
         const resources = twosheep.extractResourcesFromLogMessage(msg.innerHTML);
         console.assert(name !== null);
-        twosheep.worlds.mwTransformSpawn(name, mw.generateFullSliceFromNames(resources));
+        twosheep.worlds.transformSpawn(name, mw.generateFullSliceFromNames(resources));
         console.log(`▶️ %c${name}%c ${resourcesAsUtf8(resources)}`, twosheep.consoleCss(name), "");
         //console.debug(`• Set initial resources for ${name} to`, resources);
-        twosheep.multiverse.mwTransformSpawn(name, Multiverse.asSlice(resources));
+        twosheep.multiverse.transformSpawn(name, Multiverse.asSlice(resources));
     }
 
     //console.debug("◦ Initial resources set");
@@ -683,8 +683,8 @@ recoverCards: function()
         const count = prompt(`🩹 ${player} number of cards:`, 0);
         counts[player] = count;
     }
-    twosheep.worlds.mwCardRecovery(counts);
-    twosheep.multiverse.mwCardRecovery(counts);
+    twosheep.worlds.enterCardRecovery(counts);
+    twosheep.multiverse.enterCardRecovery(counts);
 
     // The MW state changes despite no message sent, so force update display
     // into recovery mode.
@@ -840,8 +840,8 @@ parsers:
         console.log(`%c${player}%c ➡️ ${resourcesAsUtf8(offer)} ⇄️ ${resourcesAsUtf8(demand)}`, twosheep.consoleCss(player), "");
 
         const offerSlice = mw.generateWorldSlice(offer);
-        twosheep.worlds.mwCollapseMin(player, offerSlice);
-        twosheep.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
+        twosheep.worlds.collapseMin(player, offerSlice);
+        twosheep.multiverse.collapseMin(player, Multiverse.asSlice(offer));
 
         return true;
     },
@@ -861,8 +861,8 @@ parsers:
         //console.debug("• Trade counter:", player, "<-", demand, "->", offer);
         const asSlice = mw.generateWorldSlice(offer);
 
-        twosheep.worlds.mwCollapseMin(player, asSlice);
-        twosheep.multiverse.mwCollapseMin(player, Multiverse.asSlice(offer));
+        twosheep.worlds.collapseMin(player, asSlice);
+        twosheep.multiverse.collapseMin(player, Multiverse.asSlice(offer));
 
         return true;
     },
@@ -880,8 +880,8 @@ parsers:
         console.log(`%c${player}%c ← ${resourcesAsUtf8(obtainedResources)}`, twosheep.consoleCss(player), "");
         //console.log("Got resources:", player, "<-", obtainedResources);
 
-        twosheep.worlds.mwTransformSpawn(player, asSlice);
-        twosheep.multiverse.mwTransformSpawn(player, Multiverse.asSlice(obtainedResources));
+        twosheep.worlds.transformSpawn(player, asSlice);
+        twosheep.multiverse.transformSpawn(player, Multiverse.asSlice(obtainedResources));
         twosheep.multiverse.printWorlds();
 
         return true;
@@ -928,8 +928,8 @@ parsers:
         //logs("[INFO] Built:", player, buildResources);
 
         const asSlice = -mw.mwBuilds[building];
-        twosheep.worlds.mwTransformSpawn(player, asSlice);
-        twosheep.multiverse.mwTransformSpawn(player, Multiverse.costs[building]);
+        twosheep.worlds.transformSpawn(player, asSlice);
+        twosheep.multiverse.transformSpawn(player, Multiverse.costs[building]);
         twosheep.multiverse.printWorlds();
 
         return true;
@@ -949,8 +949,8 @@ parsers:
         console.log(`🂠 %c${player}%c → ${resourcesAsUtf8(devCardResources)}`, twosheep.consoleCss(player), "");
 
         const asSlice = -mw.mwBuilds.devcard;
-        twosheep.worlds.mwTransformSpawn(player, asSlice);
-        twosheep.multiverse.mwTransformSpawn(player, Multiverse.costs.devcard);
+        twosheep.worlds.transformSpawn(player, asSlice);
+        twosheep.multiverse.transformSpawn(player, Multiverse.costs.devcard);
         twosheep.multiverse.printWorlds();
 
         return true;
@@ -971,8 +971,8 @@ parsers:
         const takeSlice = mw.generateWorldSlice(took);
         console.log(`🏦 %c${player}%c ${resourcesAsUtf8(gave)} ↔ ${resourcesAsUtf8(took)}`, twosheep.consoleCss(player), "");
 
-        twosheep.worlds.mwTransformSpawn(player, takeSlice - giveSlice);
-        twosheep.multiverse.mwTransformSpawn(player,
+        twosheep.worlds.transformSpawn(player, takeSlice - giveSlice);
+        twosheep.multiverse.transformSpawn(player,
             Multiverse.sliceSubtract(
                 Multiverse.asSlice(took),
                 Multiverse.asSlice(gave)));
@@ -992,7 +992,7 @@ parsers:
 
         // Remove print eventually
         console.info("Exporting worlds in times of monopoly:");
-        const w = twosheep.multiverse.mwHumanReadableWorld();
+        const w = twosheep.multiverse.toHumanReadableObject();
         console.info(w);
 
         const thief = textContent.substring(0, textContent.indexOf(" "));
@@ -1047,7 +1047,7 @@ parsers:
         console.assert(stolenResource !== "none");
         const stolenResourceIndex = mw.worldResourceIndex(stolenResource);
         console.assert(0 <= stolenResourceIndex && stolenResourceIndex <= 4);
-        console.log(`📈 %c${thief}%c ${resourceIcons[stolenResource]}`, twosheep.consoleCss(thief), "");
+        console.log(`📈 %c${thief}%c ${utf8Symbols[stolenResource]}`, twosheep.consoleCss(thief), "");
         for (const trade of trades)
         {
             console.log(`📉 %c${trade.victim}%c ${resourcesAsUtf8(trade.resources)}`, twosheep.consoleCss(trade.victim), "");
@@ -1085,7 +1085,7 @@ parsers:
                 dummyDemand,
                 true // skip nonzero check (for dummyDemand)
             );
-            twosheep.worlds.mwCollapseMax(trade.victim, collapseSlice);
+            twosheep.worlds.collapseMax(trade.victim, collapseSlice);
             twosheep.multiverse.transformTradeByName
             (
                 trade.victim,
@@ -1094,7 +1094,7 @@ parsers:
                 dummyDemand, // Using MW resource here but are by name
                 true
             )
-            twosheep.multiverse.mwCollapseMax(trade.victim, Multiverse.asSlice(collapseResources));
+            twosheep.multiverse.collapseMax(trade.victim, Multiverse.asSlice(collapseResources));
         }
 
         return true;
@@ -1122,10 +1122,10 @@ parsers:
         console.log(`🗑 %c${player}%c → ${resourcesAsUtf8(discarded)}`, twosheep.consoleCss(player), "");
         //logs("[INFO] Discarded:", player, "->", discarded);
 
-        twosheep.worlds.mwCollapseMinTotal(player); // Total can be unknown to MW after monopoly
-        twosheep.worlds.mwTransformSpawn(player, -discardedCardsAsSlie);
-        twosheep.multiverse.mwCollapseTotal(player, n => n >= 8);
-        twosheep.multiverse.mwTransformSpawn(player,
+        twosheep.worlds.collapseMinTotal(player); // Total can be unknown to MW after monopoly
+        twosheep.worlds.transformSpawn(player, -discardedCardsAsSlie);
+        twosheep.multiverse.collapseTotal(player, n => n >= 8);
+        twosheep.multiverse.transformSpawn(player,
             Multiverse.sliceNegate(
                 Multiverse.asSlice(discarded)));
 
@@ -1217,11 +1217,11 @@ parsers:
             const stolenResourceIndex = mw.worldResourceIndex(stolenResourceType);
             console.log(`🥷 %c${stealingPlayer}%c ← ${resourcesAsUtf8(resources)} %c${targetPlayer}%c`, twosheep.consoleCss(stealingPlayer), "", twosheep.consoleCss(targetPlayer), "");
             console.info("• Steal (known):", targetPlayer, "->", stealingPlayer, "(", resources, ")");
-            twosheep.worlds.collapseAsRandom(targetPlayer, stolenResourceIndex);
+            twosheep.worlds.transformRandomReveal(targetPlayer, stolenResourceIndex);
             twosheep.worlds.transformExchange(targetPlayer, stealingPlayer, asSlice);
-            twosheep.multiverse.collapseAsRandom(targetPlayer,
+            twosheep.multiverse.transformRandomReveal(targetPlayer,
                 Multiverse.getResourceIndex(stolenResourceType));
-            twosheep.multiverse.mwTransformExchange(targetPlayer, stealingPlayer,
+            twosheep.multiverse.transformExchange(targetPlayer, stealingPlayer,
                 Multiverse.asSlice(resources));
         }
 

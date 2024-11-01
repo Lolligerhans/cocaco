@@ -300,7 +300,6 @@ observation: {
   payload: {
     player: <player>,
     object: <buyable>,
-    cost: <resources>,
   },
 }
 ```
