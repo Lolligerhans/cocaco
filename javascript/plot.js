@@ -942,6 +942,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
         return `rgb(${Math.ceil(c[0] * f)},${Math.ceil(c[1] * f)},${Math.ceil(c[2] * f)})`;
     });
     const N = trackerObject.rolls.length;
+    console.assert(N > 0, "Can not plot rolls before any rolls are available");
     const n = trackerObject.rolls.length / 36;
     // Pad by 1 value front + back back
     const probability36 = [1, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 1];

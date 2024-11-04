@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Renderer for the more casual card-based resoruce display
+ * Renderer for the more casual card-based resource display
  */
 class RenderCards {
 
@@ -40,6 +40,8 @@ class RenderCards {
      * @type {HTMLElement|null}
      */
     #sidebar = null;
+
+    #toggle = new Toggle("cards").enable();
 
     /**
      * Generate a new sidebar element by cloning the template
@@ -132,9 +134,16 @@ class RenderCards {
         this.#updateSidebar();
     }
 
-    // TODO: make the displayed element toggle-able
     toggle() {
-        console.warn("RenderCards does not have any toggle yet");
+        if (this.#toggle.toggle("cards")) {
+            // Render into the hidden sidebar. Prevents potentially showing the
+            // old data first. Not sure if the actual render engine would wait
+            // for our JS to finish or not.
+            this.render();
+            unhide(this.#sidebar);
+        } else {
+            hide(this.#sidebar);
+        }
     }
 
     /**
@@ -255,6 +264,10 @@ class RenderCards {
      * Update the data shown in the existing sidebar element
      */
     #updateSidebar() {
+        if (!this.#toggle.isToggled("cards")) {
+            // Save the cycles when nothing has to be shown anyway
+            return;
+        }
         // this.#logger.log("Updating sidebar");
         this.#multiverse.updateStats();
         const distribution = this.#multiverse.marginalDistribution;

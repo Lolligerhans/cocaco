@@ -165,6 +165,9 @@ class Players {
         this.#generteIndices();
         this.#generateNames();
         this.print();
+        if (!(this.name(lastName).index === this.#allPlayers.length - 1)) {
+            debugger; // BUG: should not happen
+        }
         console.assert(
             this.name(lastName).index === this.#allPlayers.length - 1,
             "The indicated player should be in last position",

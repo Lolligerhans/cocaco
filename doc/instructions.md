@@ -1,24 +1,78 @@
-# Usage
+# Instructions
 
-Follow [#Installation](../README.md#installation).
+> [!NOTE]
+> Version 3 instructions are [here](https://github.com/Lolligerhans/cocaco/blob/v3.4.6/doc/usage.md)
 
-Visit [Colonist][Colonist] and find the add-on in the browser toolbar at the top
-right. Click on `🥥 Correct Card Counter` to start the tracker. If you select
-"always allow", you must reload the website.
+Follow [#Installation](../README.md#installation). Then:
+
+1. Visit [Colonist][Colonist]
+1. Open the 🧩 Extensions pop-up menu. It is located at the top right.
+1. Click on the gear  ⚙️  next to `🥥 Correct Card Counter`. Select `Always Allow`.
+1. Reload by pressing `F5`
 
 A successful start is indicated by a coconut icon in the background:
 
 ![Icon](/assets/coconut_32.png?raw=true)
 
----
+## Card display
 
-Instructions for version 3:
+![Screenshot](/assets/screenshots/cards.png)
 
-## Interaction
+The display can be toggled by clicking the 🥥 icon in the URL bar.
 
-- hide/show: click game log
+| Action | Effect |
+|-:|:-|
+| 🥥 (URL bar) | Hide/show |
+| `Ctrl` `+`, `Ctrl` `-` | Resize |
+
+Uncertain cards have a coloured outline:
+
+| Colour | Meaning  |
+|-------:|:---------|
+|     🟥 | Unlikely |
+|     🟨 | Possible |
+|     🟩 | Likely   |
+
+## Collusion
+
+> [!CAUTION]
+> Collusion is experimental. Colluding effectively prevents manual trading to
+> colluding players.
+
+When colluding with other players, Cocaco will autonomously trade resources with
+them. The generated trades ensure that all future resource income is distributed
+evenly between colluding players. This is meant to reduce bargaining friction
+between losing players.
+
+Collude with John and Jess by chatting:
+
+```text
+hi John, Jess
+```
+
+Stop colluding by chatting:
+
+```text
+gg
+```
+
+These are sensitive to:
+
+<!--markdownlint-disable MD038-->
+- whitespace (` `)
+- commas (`,`)
+- capitalization (`aA`)
+
+## Table display
+
+![Screenshot](/assets/screenshots/table.png)
+
+A table based display can be [configured](./config.md). It does not look as
+nice, but shows more information.
+
+### Interaction
+
 - show/hide extras: click road/settlement/dev-card icon
-- resize: `Ctrl` + `+`, `Ctrl` + `-`
 - guess resource count manually: click number
   - exact number: `5`
   - more-than: `>5`
@@ -31,20 +85,21 @@ Instructions for version 3:
   - reset card counts: click resource card icon
   - reset player names: click 🌎 icon, later reset card counts
 
-## Understanding resource table
+### Understanding resource table
 
 - `4 / 80%` means:
   - count is 4
-  - 80% chance to rob this card (exact)
+  - 80% chance to rob this card (exact) (colour coded)
   - certainty > 99.9%, guaranteed if `1 🌎` is shown)
 - `4 (67%) / 73%` means:
   - The most likely count is 4
+    - The shown combination of marginal probabilities is often impossible
   - 67% marginal probability that count is exactly 4
-  - 73% chance to rob this card (across possible states)
+  - 73% chance to rob this card (across possible states) (colour coded)
+- Building columns: Probability the player can afford at least 1. Colour coded.
 - Number of possible states: top left table cell. `1 🌎` indicates 100% certainty.
-- The shown combination of marginal probabilities is often impossible
 
-## Understanding rolls plot
+### Understanding rolls plot
 
 - orange blocks: lighter = newer
 - green line: expectation

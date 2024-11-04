@@ -152,7 +152,10 @@ class Track {
             this.rollsProcessed.push(nextRoll)
             this.rollsHistogram[nextRoll] += 1;
             this.rollsHistogram[0] += 1;
-            this.rollsHistogram[1] = Math.max(this.rollsHistogram[1], this.rollsHistogram[nextRoll]);
+            this.rollsHistogram[1] = Math.max(
+                this.rollsHistogram[1],
+                this.rollsHistogram[nextRoll],
+            );
             this.updateKL();
             this.updateRarity();
         };

@@ -773,8 +773,8 @@ ColonistObserver.sourceObserver.collusionStart = function (packetData) {
 };
 
 ColonistObserver.sourceObserver.collusionStop = function (packetData) {
-    const player = this.storage.players.name(packetData.player);
-    console.assert(!player.equals(this.storage.us));
+    const player = this.storage.players.id(packetData.player);
+    console.assert(player.equals(this.storage.us));
     this.collusionStop({
         player: player,
     });

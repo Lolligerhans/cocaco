@@ -15,8 +15,10 @@ cocaco_config = {
 
     // ── Features ───────────────────────────────────────────────
     // Balance resource income within a group of players by auto-trading.
-    // - Challenge: Set autocollude=true in a game with bots, and no manual
-    //              trading.
+    // - Challenge: Set autocollude=true in a game with bots. No manual trading.
+    // - Challenge: Set autocollude=true in a game with bots. Play to the
+    //              maximum VP limit (20 VPs), with maximum discard limit (20
+    //              cards instead of 7).
     collude: {
         /**
          * Start the game balancing with everyone. For bot games or private
@@ -26,9 +28,9 @@ cocaco_config = {
         autocollude: false,
 
         /**
-         * Trade at most this many resoruces per side. Makes the trades more bot
-         * friendly.
-         * @type {Number} 1, 2, ...
+         * Trade at most this many resource per side. Makes the trades more bot
+         * friendly. Colonist prevents too unbalaned trades (?).
+         * @type {Number} Stay within [1,5].
          */
         maxOfferPerSide: 1,
 
@@ -57,8 +59,6 @@ cocaco_config = {
     timeout: 1000,
     // Write in/out to files
     dump: { receive: false, send: false },
-    // Enable the log element toggle
-    enableToggle: true,
 
     // ── Style ──────────────────────────────────────────────────
     // Do not fetch Colonist assets. For replay/offline/testing.
@@ -86,8 +86,8 @@ cocaco_config = {
      * @type {Object.<string,Boolean>}
      */
     log: {
-        Collude: false,
-        CollusionPlanner: false,
+        Collude: true,
+        CollusionPlanner: true,
         ColonistTrade: false,
         frameInjection: false,
         Observer: false,

@@ -13,6 +13,11 @@ function reportReceive(event) {
         // console.debug("--- (Ignored message) ---");
         return;
     }
+    if (typeof receive_MAIN === "undefined") {
+        console.warn("Not defined: receive_MAIN");
+        console.info("Load Cocaco first. Then start a new tab.");
+        return;
+    }
     let returnedFrame;
     try {
         returnedFrame = receive_MAIN(event.data);

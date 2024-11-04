@@ -19,3 +19,5 @@ vim.keymap.set(
   "<cmd>argdo norm j<cr>", -- Use "norm j" as NOP
   { remap = false, desc = "Load all args" }
 )
+
+vim.opt.foldlevelstart = 99

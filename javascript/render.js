@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Renderer for number based resource disaplay.
+ * Renderer for number based resource display.
  */
 class Render {
 
@@ -18,14 +18,11 @@ class Render {
     #colour_map;
 
     /**
-     * Set to 'true' to hide panels
+     * Toggle flags to hide individual panels
+     * @type {Toggle}
      */
-    #configHidden = {
-        bubbles: true,
-        rolls: true,
-        robs: true,
-        resourceTable: false,
-    };
+    #configShown = new Toggle("bubbles", "rolls", "robs", "resourceTable");
+
     #context; // Callback functions
     #iconElements;
 
@@ -73,6 +70,8 @@ class Render {
         recoverNamesCallback, // Goes in the corner cell
         iconAssets // {"road": '<img src=...>', ...}
     ) {
+        this.#configShown.enable("resourceTable");
+
         // Callbacks may be null
         console.assert(
             ![
@@ -97,15 +96,18 @@ class Render {
     }
 
     /**
-     * @param value  If 'null', toggle. If 'true'/'false', set.
+     * Enable/disable panels. Updates with 'render()' afterwards.
+     * @param {string|Number} [which=null]
+     * If set, toggle the corresponding panel. If not set, toggle all panels.
+     * @param {boolean} [value=null] 
+     * If 'null', toggle. If 'true'/'false', set.
      */
-    toggle(which, value = null) {
-        if (typeof (which) === "number")
-            which = Object.keys(this.#configHidden)[which];
-        this.#configHidden[which] = value === null
-            ? !this.#configHidden[which]
-            : value;
-        console.log(`🖥Toggle ${which} ➜ ${this.#configHidden[which] ? "hide" : "show"}`);
+    toggle(which = null, value = null) {
+        this.#configShown.toggle(which, value);
+        console.log(
+            `🖥Toggle ${which} ➜`,
+            `${this.#configShown.isToggled(which) ? "hide" : "show"}`,
+        );
         this.#mustRedraw = true;
         this.render();
     }
@@ -121,41 +123,41 @@ class Render {
             });
         }
         catch (e) {
-            // We don't really care if this fails at the moment, but it might help
-            // identify bugs.
+            // We don't really care if this fails at the moment, but it might
+            // help identify bugs.
             console.warn("Exception in unrender():", e);
             alertIf(46);
         }
     }
 
     /**
-     * Update exisintg elements. Create elements if missing. If the element is
-     * disabled by this.#configHidden, we do not touch, update or create it.
+     * Update existing elements. Create elements if missing. If the element is
+     * disabled by this.#configShown, we do not touch, update or create it.
      */
     update() {
         //console.debug("🖥 Updating display...");
 
         // Display resource plot
-        if (this.#configHidden.bubbles === false) {
+        if (this.#configShown.isToggled("bubbles")) {
             let plt = this.ensureResourcePlot();
             fillElementWithPlot(plt, this.#multiverse, this.#colour_map);
         }
 
-        // Dispaly rolls histogram
-        if (this.#configHidden.rolls === false) {
+        // Display rolls histogram
+        if (this.#configShown.isToggled("rolls")) {
             let plt = this.ensureRollsPlot();
             this.#track.updateRollsData();
             plotRollsAsHistogram(this.#track, plt.id);
         }
 
         // Display table
-        if (this.#configHidden.resourceTable === false) {
+        if (this.#configShown.isToggled("resourceTable")) {
             let tbl = this.ensureResourceTable();
             this.fillResourceTable(tbl);
         }
 
         // Display rob table
-        if (this.#configHidden.robs === false) {
+        if (this.#configShown.isToggled("robs")) {
             let tbl = this.ensureRobTable();
             this.fillRobTable(tbl);
         }
@@ -189,25 +191,25 @@ class Render {
         // Resource plot
         {
             let plt = this.ensureResourcePlot();
-            setHidden(this.#configHidden.bubbles, plt);
+            setHidden(!this.#configShown.isToggled("bubbles"), plt);
         }
 
         // Rolls histogram
         {
             let plt = this.ensureRollsPlot();
-            setHidden(this.#configHidden.rolls, plt);
+            setHidden(!this.#configShown.isToggled("rolls"), plt);
         }
 
         // Resource table
         {
             let tbl = this.ensureResourceTable();
-            setHidden(this.#configHidden.resourceTable, tbl);
+            setHidden(!this.#configShown.isToggled("resourceTable"), tbl);
         }
 
         // Rob table
         {
             let tbl = this.ensureRobTable();
-            setHidden(this.#configHidden.robs, tbl);
+            setHidden(!this.#configShown.isToggled("robs"), tbl);
         }
 
         this.update();
@@ -288,7 +290,9 @@ class Render {
         header.className = "cocaco-tbl-header";
         let headerRow = header.insertRow(0);
         let playerHeaderCell = headerRow.insertCell(0);
-        playerHeaderCell.addEventListener("click", this.#context.recoverNamesCallback, false);
+        playerHeaderCell.addEventListener(
+            "click", this.#context.recoverNamesCallback, false,
+        );
         playerHeaderCell.className = "cocaco-tbl-player-col-header";
         // const icon = document.createElement("img");
         // const text = document.createElement("div");
@@ -297,11 +301,15 @@ class Render {
         // playerHeaderCell.appendChild(text);
         for (let i = 0; i < Multiverse.resources.length; i++) {
             let resourceHeaderCell = headerRow.insertCell(i + 1);
-            resourceHeaderCell.addEventListener("click", this.#context.recoverCardsCallback, false);
+            resourceHeaderCell.addEventListener(
+                "click", this.#context.recoverCardsCallback, false,
+            );
             resourceHeaderCell.className = "cocaco-tbl-cell";
         }
         for (const [i, name] of Object.keys(Multiverse.costs).entries()) {
-            let headerCell = headerRow.insertCell(i + 1 + Multiverse.resources.length);
+            let headerCell = headerRow.insertCell(
+                i + 1 + Multiverse.resources.length,
+            );
             headerCell.className = "cocaco-tbl-cell";
             headerCell.innerHTML = this.#iconElements[name];
 
@@ -314,7 +322,9 @@ class Render {
         const measureTotalCountFunction = (playerName) => {
             // Show the most likely value as default
             const defa = this.#multiverse.guessAndRange[playerName].cardSum[2];
-            const guessStr = prompt(`${playerName}'s true card count:`, defa.toString());
+            const guessStr = prompt(
+                `${playerName}'s true card count:`, defa.toString(),
+            );
             const guessCount = parseInt(guessStr, 10)
             this.#multiverse.collapseExactTotal(playerName, guessCount);
 
@@ -330,13 +340,15 @@ class Render {
             const startsWithDigit = guessStr.match(/^\d+/);
             if (startsWithDigit) {
                 const guessCount = parseInt(guessStr, 10);
-                this.#multiverse.weightGuessExact(playerName, resourceIndex, guessCount);
+                this.#multiverse.weightGuessExact(
+                    playerName, resourceIndex, guessCount,
+                );
             }
             else {
                 const guessCount = parseInt(guessStr.slice(1), 10);
                 const operator = guessStr[0];
-                if (!Object.hasOwn(predicates, operator)) // Sanity check
-                {
+                if (!Object.hasOwn(predicates, operator)) {
+                    // Sanity check
                     log("[ERROR] Unknown operator: ", operator);
                     alertIf(52);
                 }
@@ -387,7 +399,7 @@ class Render {
     }
 
     /**
-     * Ensure existence of resoruce table element, creating if necessary
+     * Ensure existence of resource table element, creating if necessary
      * @return {HTMLElement}
      */
     ensureResourceTable() {
@@ -415,7 +427,7 @@ class Render {
     }
 
     /**
-     * Ensure existence of resoruce plot element
+     * Ensure existence of resource plot element
      * @return {HTMLElement}
      */
     ensureResourcePlot() {
@@ -444,7 +456,7 @@ class Render {
     }
 
     /**
-     * Update existing resoruce table element with new data
+     * Update existing resource table element with new data
      * @param {HTMLElement} tbl
      */
     fillResourceTable(tbl) {

@@ -22,7 +22,7 @@
 class MessageLog {
     enabled = true;
 
-    static className = "ex-dbg-msg";
+    static className = "cocaco-dbg-msg";
 
     // Take a string containing '%c' and pslit it into spans with styles
     // prescribed by ...args.
@@ -91,7 +91,7 @@ MessageLog.prototype.logChat = function (...args) {
     }
     const element = MessageLog.styledElement(...args);
     this.chatElement.appendChild(element);
-    element.scrollIntoView();
+    element.scrollIntoView(); // Does nothing (?)
 }
 
 MessageLog.prototype.logConsole = function (_messageElement, ...args) {

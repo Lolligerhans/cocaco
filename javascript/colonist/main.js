@@ -293,7 +293,6 @@ class Colonist {
         this.observer = new ColonistObserver(this.source, this.resender);
         this.state = new State(
             this.observer,
-            this.logElement,
             this.resender,
             this.chatElement,
         );
@@ -341,12 +340,10 @@ class Colonist {
             if (cocaco_config.replay === false) {
                 // May not have a log element in replay mode
                 const runTest = () => {
-                    console.debug("main.js: Starting test");
                     this.resender.test();
                 };
 
                 this.logElement.addEventListener("click", runTest, false);
-                console.log("☺ Test ready");
             } else if (cocaco_config.resendTestOnClick === true) {
                 console.warn("Cannot run test during replay (no click element");
             }

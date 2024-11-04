@@ -5,10 +5,11 @@
     - [x] [Version 4](colonist/pipeline.md)
     - [ ] Version 3 (legacy)
 - [ ] UI
-  - [x] [Usage](usage.md)
+  - [x] [Instructions](instructions.md)
   - [ ] Render
     - [ ] Table
     - [ ] Plots
+    - [ ] cards
   - [ ] Clickables
   - [ ] Logging
 - [ ] Algorithms

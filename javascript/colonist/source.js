@@ -438,13 +438,13 @@ ColonistSource.chatInterpreters.collusionStart = function (player, text) {
     const regEx = new RegExp(
         / (?<name>[^,]+)/g,
     );
-    console.debug("Searching", text);
+    // console.debug("Searching", text);
     const search = text.matchAll(regEx);
     for (const other of search) {
-        console.debug("Adding", other.groups.name, other);
+        // console.debug("Adding", other.groups.name, other);
         others.push(other.groups.name);
     }
-    console.debug("ColonistSource: Start colluding with", others);
+    // console.debug("ColonistSource: Start colluding with", others);
     const payload = {
         player: player,
         others: others,

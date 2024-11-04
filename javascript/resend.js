@@ -260,6 +260,11 @@ class Resend {
      * added to call this function.
      */
     test() {
+        if (cocaco_config.resendTestOnClick === false) {
+            return;
+        }
+        console.info("Testing");
+
         const message = {
             action: 0,
             payload: "test",

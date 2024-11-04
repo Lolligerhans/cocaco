@@ -154,7 +154,7 @@ class CollusionPlanner {
         }
         let trades = [];
         for (const player of this.#collude.players()) {
-            if (player.equals(this.#us.name)) {
+            if (player.equals(this.#us)) {
                 continue;
             }
             trades.push(this.#generateOurTrade(player, guessAndRange));

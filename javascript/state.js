@@ -12,6 +12,11 @@ class State extends Trigger {
     collusionPlanner = null;
 
     /**
+     * @type {Connect}
+     */
+    #connect = new Connect();
+
+    /**
      * Delay object. The delay decouples the incoming observations from UI
      * updates. Require minimum delay between UI updates to reduce performance
      * impact (especially from plots).
@@ -79,7 +84,7 @@ class State extends Trigger {
      * The pipeline observer, deriving from 'Observer'.
      * @param {Resend} resend
      */
-    constructor(observer, toggleElement, resend, outputElement) {
+    constructor(observer, resend, outputElement) {
         super();
         this.outputElement = outputElement;
         this.resend = resend;
@@ -87,16 +92,11 @@ class State extends Trigger {
         observer.onTrigger("observation",
             observation => this.#observe(observation));
 
-        // Bind "click" callback to make them compare equal
-        this.boundToggle = State.prototype.toggle.bind(this, null);
-        const doListenToggle = toggleElement != null && cocaco_config.enableToggle;
-        if (doListenToggle) {
-            this.toggleElement = toggleElement;
-            this.toggleElement.addEventListener("click",
-                this.boundToggle, false);
-        }
-        console.assert(cocaco_config.replay === true || toggleElement != null,
-            "Toggle element expected (unless in replay mode)");
+        // Use page action for enable/disable
+        this.#connect.onTrigger("page_action", payload => {
+            console.assert(payload === "onClicked");
+            this.toggle("global");
+        });
     }
 
     /**
@@ -206,6 +206,7 @@ State.implementor.collusionOffer = function ({ player, trade, accept }) {
         // Do not interfere with auto-decline
         if (CollusionPlanner.takerHasEnough(trade, guessAndRange)) {
             // console.debug("State: Rejecting offer (can afford)");
+            // TODO: Don't send if embargo in either direction
             accept(false);
         } else {
             // console.debug("State: Ignoring offer (can not afford)");
@@ -443,12 +444,16 @@ State.implementor.yop = function ({ player, resources }) {
 // ╰───────────────────────────────────────────────────────────╯
 
 /**
- * Bound for onclick events to toggle the resource display
+ * Toggle or set panels for 'this.render'. If the render Object exists, passes
+ * the arguments to its toggle function.
+ * Wraps 'this.render.toggle()'. NOP when render is not (yet) defined.
+ * @param {string} [which] Panel to toggle. If not given, toggle all panels.
+ * @param {boolean} [value] Value to set to. If not given, toggle values.
  */
-State.prototype.toggle = function (value = null) {
+State.prototype.toggle = function (which = null, value = null) {
     if (this.render === null) {
         console.warn("Nothing to toggle");
         return;
     }
-    this.render.toggle("resourceTable", value);
+    this.render.toggle(which, value);
 }

@@ -3,6 +3,23 @@
 // HACK: Opens browser console
 //alert("Open browser console");
 
+// ╭───────────────────────────────────────────────────────────╮
+// │ Page action                                               │
+// ╰───────────────────────────────────────────────────────────╯
+
+browser.tabs.onUpdated.addListener((tabId) => {
+    // Always show page action
+    browser.pageAction.show(tabId);
+});
+
+browser.pageAction.onClicked.addListener((tab, ...rest) => {
+    // Send to content script (received by 'Connect')
+    browser.tabs.sendMessage(tab.id, {
+        type: "page_action",
+        payload: "onClicked",
+    });
+});
+
 // ╭───────────────────────────────────────────────────────────────────────────╮
 // │ Sending to dump program                                                   │
 // ╰───────────────────────────────────────────────────────────────────────────╯
@@ -14,12 +31,20 @@ function newNativePort(id) {
     // Native endpoint selects a unique filename based in the id
     port.postMessage(id);
     port.onMessage.addListener(response => {
-        // debugger; // What triggers this assert ??
-        console.assert(id.toString() === response.id, "Native port should respond with its id");
-        console.debug(`nativePorts[${response.id}]: Ack ${response.ack} / ${contentScriptAck[id]}`);
+        console.assert(
+            id.toString() === response.id,
+            "Native port should respond with its id",
+        );
+        console.debug(
+            `nativePorts[${response.id}]:`,
+            `Ack ${response.ack} / ${contentScriptAck[id]}`,
+        );
         const diff = Math.abs(contentScriptAck[id] - response.ack);
         if (diff > 100)
-            console.warn(`background.js: nativePorts[${response.id}] out of sync with content-script ${id}`);
+            console.warn(
+                `background.js: nativePorts[${response.id}]`,
+                `out of sync with content-script ${id}`,
+            );
     })
     return port;
 }
@@ -31,7 +56,6 @@ function getNativePort(id) {
 }
 
 function dump_message(message, id) {
-    // debugger; // Make sure the ports are all set up corectly
     // console.debug(`background.js: Dumping to nativePort[${id}]: `, message);
     getNativePort(id).postMessage(message);
 }
@@ -41,7 +65,11 @@ function dump_message(message, id) {
 // ╰───────────────────────────────────────────────────────────────────────────╯
 
 let contentScriptPorts = [];
-// contentScriptAck: { <id>: count }
+
+/**
+ * Maps IDs to nnumbr of received messages
+ * @tpye {Object.<string, Number>}
+ */
 let contentScriptAck = {};
 
 let portHandlers = {
@@ -60,6 +88,7 @@ let portHandlers = {
 }
 
 function connected(port) {
+
     const number = contentScriptPorts.length;
     console.log(`🛜 🟢 Connecting content-script #${number} as ${port.sender.contextId} from tab ${port.sender.tab.id}`);
     contentScriptPorts.push(port);

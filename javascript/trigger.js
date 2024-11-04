@@ -1,5 +1,7 @@
 "use strict";
 
+// No dependencies
+
 /**
  * @callback CallbackFunction
  * A callback function registered to be called on trigger events

@@ -3,23 +3,24 @@
 
 # ![Icon](assets/coconut_32.png?raw=true) Correctly correlated Catan card chance Counter
 
-![Outdated Screenshot](assets/screenshot.png?raw=true)
+![Screenshot](assets/screenshots/game.png)
 
 ## Features
 
-| 🥥 | Correct Catan Counter |
-| -: | :- |
-| 🂠 | Track cards |
-| 🎲 | Analyze dice rolls |
-| 🥷 | Record robs |
-| ⛵ 🛡 | All expansions |
-| 👁 | Spectate games |
-| ∫ | Bayesian tracking algorithm |
-| 👤 💡 | Include manual deductions |
+|       |                               |
+|------:|:------------------------------|
+| 🂠     | Track cards                   |
+| 🎲    | Analyze dice rolls            |
+| 🥷    | Record robs                   |
+| ⛵ 🛡 | All expansions                |
+| 👀    | Spectate games                |
+| ∫     | Bayesian tracking algorithm   |
+| 💡    | Include manual deductions     |
+| 🤝    | Auto-trade (experimental)     |
 
-| Display dense dice data | Rightfully revenge ridiculous robs |
-| :-: | :-: |
-| ![rolls plot](assets/rolls.png?raw=true) | ![robs table](assets/robs.png?raw=true) |
+| Correctly correlate card counts | Display dense dice data | Rightfully revenge ridiculous robs |
+| :-: | :-: | :-: |
+| ![resource table](assets/screenshots/table.png) | ![rolls plot](assets/rolls.png?raw=true) | ![robs table](assets/robs.png?raw=true) |
 
 ## Getting started
 
@@ -69,13 +70,16 @@ Install as [temporary extension](https://extensionworkshop.com/documentation/dev
 <!--   - Select the 'cocaco/' directory. (The inner one if there are two.) -->
 
 > [!TIP]
-> Firefox does not allow permanent installation of local extensions. Bookmark
-> the URL to repeat these steps more easily after restarting the browser.
-> (Developer versions may allow it.)
+> Bookmark the URL to repeat these steps more easily after restarting the
+> browser.
+<!-- > Firefox does not allow permanent installation of local extensions -->
+<!-- > (developer versions may allow it). -->
 
-## Usage
+## Instructions
 
-See [doc/usage.md](doc/usage.md).
+See [doc/instructions.md](doc/instructions.md) for instructions. Use
+[Issues](https://github.com/Lolligerhans/cocaco/issues?q=is%3Aissue) for
+troubleshooting.
 
 ## Attribution
 
