@@ -88,34 +88,45 @@ class CollusionPlanner {
     }
 
     /**
-     * @param trade Trade as observer property 'trade'
-     * @return {boolean} true if we should accept, else false
+     * Evaluate whether an offered trade conforms to current collusion
+     * obligations.
+     * Always returns false when:
+     *  - stopped
+     *  - dormant
+     *  - trade is by us
+     *  - not all players are in the collusion group
+     * The State is meant to present all trade offers, and react when true is
+     * returned.
+     * @param {Trade} trade
+     * @return {boolean} true if we should accept, else false.
      */
     evaluateAccept(trade) {
         if (this.#isStoppedOrDormant()) {
             return false;
         }
-        console.assert(trade.give.from !== null);
-        console.assert(trade.give.to !== null);
-        if (!this.#us.equals(trade.give.from)) {
-            this.#consoleLogger.log("Accept ignored (not our offer)");
+        console.assert(trade.giver !== null);
+        console.assert(trade.taker !== null);
+        if (!this.#us.equals(trade.giver)) {
+            this.#consoleLogger.log("Do not accept (not our offer)");
             return false;
         }
         let newTemplate = this.#collude.getCollusionTemplate(
-            trade.give.from,
-            trade.give.to,
+            trade.giver,
+            trade.taker,
         );
         if (newTemplate === null) {
-            this.#consoleLogger.log("Accept ignored (not colluder)");
+            this.#consoleLogger.log("Do not accept (not colluder)");
             return false;
         }
-        // Assume existing trades are valid for giver and taker
+        // Assume trade offers from others are always valid for giver and taker,
+        // no need to adjustFor{TradeValidity,Giver,Taker}
         const matchesTemplate = this.tradeMatchesTemplate(newTemplate, trade);
         return matchesTemplate;
     }
 
     /**
-     * @param trade Trade as observer property 'trade'
+     * Evaluate whether an existing trade should be accepted as collusion
+     * @param {Trade}
      * @param guessAndRange Multiverse guess and range object
      * @return {boolean} true if we should accept, else false
      */
@@ -123,35 +134,31 @@ class CollusionPlanner {
         if (this.#isStoppedOrDormant()) {
             return false;
         }
-        console.assert(trade.give.from !== null);
-        console.assert(trade.give.to !== null);
-        if (trade.give.from.equals(this.#us)) {
+        console.assert(trade.giver !== null);
+        console.assert(trade.taker !== null);
+        if (trade.giver.equals(this.#us)) {
             this.#consoleLogger.log("Offer ignored (ours)");
             return false;
         }
         // this.#consoleLogger.log("Evaluating", trade.give.from.name, "offer");
         let newTemplate = this.#collude.getCollusionTemplate(
-            trade.give.from,
-            trade.give.to,
+            trade.giver,
+            trade.taker,
         );
         if (newTemplate === null) {
             this.#consoleLogger.log("Offer ignored (not colluder)");
             return false;
         }
         // Assume existing trades are valid for giver
-        Collude.adjustForTaker(newTemplate, trade.give.to, guessAndRange);
+        Collude.adjustForTaker(newTemplate, trade.taker, guessAndRange);
         const matchesTemplate = this.tradeMatchesTemplate(newTemplate, trade);
-        // this.#consoleLogger.log(
-        //     "Should",
-        //     matchesTemplate ? "accepted" : "rejected", "offer",
-        // );
         return matchesTemplate;
     }
 
     /**
      * Generate the trades we should make
      * @param guessAndRange Multiverse guess and range object
-     * @return {[*]} Array of Observer properties 'trades'
+     * @return {Trade[]}
      */
     evaluateTurn(guessAndRange) {
         if (this.#isStoppedOrDormant()) {
@@ -170,11 +177,10 @@ class CollusionPlanner {
          * Update #collusionTracker with the newly generated trades
          * @param {*} trade Trade as Observer property 'trade'
          */
-        const updateTracker = trade => {
-            const asTrade = Trade.fromObserverProperty(trade);
-            this.#collusionTracker.updateSuggestion(asTrade);
+        const updateCollusionTracker = trade => {
+            this.#collusionTracker.updateSuggestion(trade);
         }
-        trades.forEach(updateTracker);
+        trades.forEach(updateCollusionTracker);
 
         if (trades.length === 0) {
             this.#consoleLogger.log("No collusion trades available");
@@ -187,45 +193,29 @@ class CollusionPlanner {
      * Generate the trade we should offer to another player
      * @param {Player} otherPlayer Other player to generate trades for
      * @param guessAndRange Multiverse guess and range object
-     * @return {*|null} Suggested trade as Observer property 'trade', or 'null'
-     *                  if not suggesting a trade.
+     * @return {Trade|null} Suggested trade or 'null' to not suggest any trade
      */
     #generateOurTrade(otherPlayer, guessAndRange) {
-        // this.#consoleLogger.log(
-        //     "CollusionPlanner: Generating for",
-        //     otherPlayer.name,
-        // );
         let template = this.#collude.getCollusionTemplate(
             this.#us, otherPlayer,
         );
         console.assert(template !== null, "If not colluding do not call this");
+        const originalTemplate = new Resources(template);
         Collude.adjustForGiver(template, this.#us, guessAndRange);
         Collude.adjustForTaker(template, otherPlayer, guessAndRange);
         const isValid = Collude.adjustForTradeValidity(template);
         if (!isValid) {
-            // this.#consoleLogger.log(
-            //     "CollusionPlanner: No offer (no valid trade)",
-            // );
             return null;
         }
-        const give = new Resources(template);
-        const take = new Resources(template);
-        give.filter(x => x > 0);
-        take.filter(x => x < 0);
-        take.abs();
-        const trade = Observer.property.trade({
-            give: Observer.property.transfer({
-                from: this.#us,
-                to: otherPlayer,
-                resources: give,
-            }),
-            take: Observer.property.transfer({
-                from: otherPlayer,
-                to: this.#us,
-                resources: take,
-            }),
+        const trade = new Trade({
+            giver: this.#us,
+            taker: otherPlayer,
+            resources: template,
         });
-        this.#consoleLogger.log("Valid offer for", otherPlayer.name);
+        this.#consoleLogger.log(
+            "Suggest",
+            trade.toString(originalTemplate, true),
+        )
         return trade;
     }
 
@@ -295,20 +285,20 @@ class CollusionPlanner {
      * We use the pending collusion deficit as template to incoming trade
      * offers. If the offer matches, the trade is accepted as colluding.
      *
-     * Define as member function to have access to this.#consoleLogger.
+     * Defined as member function to have access to this.#consoleLogger.
      *
      * @param {Resources} template Trade template. No special resources allowed.
-     * @param trade Trade as observer 'trade' property
+     * @param {Trade} trade
      * @return {boolean}
      */
     tradeMatchesTemplate(template, trade) {
-        const tradeCombined = Resources.fromObserverTrade(trade);
-        console.assert(tradeCombined.hasSpecial() === false);
+        const tradeResources = new Resources(trade.resources);
+        console.assert(tradeResources.hasSpecial() === false);
         const intervalContainsValue = (interval, x) => {
             return interval[0] <= x && x <= interval[1];
         };
         let templateCopy = new Resources(template);
-        templateCopy.merge(tradeCombined, (templateValue, tradeValue) => {
+        templateCopy.merge(tradeResources, (templateValue, tradeValue) => {
             const intervalEnds = [0, templateValue];
             const lo = Math.min(...intervalEnds);
             const hi = Math.max(...intervalEnds);
@@ -316,12 +306,12 @@ class CollusionPlanner {
             return conformsToTemplate ? 0 : 1;
         });
         const allConformToTemplate = templateCopy.countHamming() === 0;
-        const tradeStr = tradeCombined.toSymbols();
+        const tradeStr = tradeResources.toSymbols();
         const symbol = allConformToTemplate ? "✅" : "🚫";
         this.#consoleLogger.log(
-            trade.give.from.name,
+            trade.giver.name,
             tradeStr, symbol, Collude.formatTemplate(template),
-            trade.give.to.name,
+            trade.taker.name,
         );
         return allConformToTemplate;
     }
@@ -394,14 +384,14 @@ class CollusionPlanner {
 
     /**
      * Check if the taker has sufficient resources for the trade
-     * @param trade Trade as Observer property 'trade'. Will not be modified.
+     * @param {Trade} trade
      * @param {*} guessAndRange Multiverse guess and range object
      * @return {boolean}
      */
     static takerHasEnough(trade, guessAndRange) {
-        const original = Resources.fromObserverTrade(trade);
+        const original = new Resources(trade.resources);
         let adjusted = new Resources(original);
-        Collude.adjustForTaker(adjusted, trade.give.to, guessAndRange);
+        Collude.adjustForTaker(adjusted, trade.taker, guessAndRange);
         const takerHasEnough = original.equals(adjusted);
         return takerHasEnough;
     }

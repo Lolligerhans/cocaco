@@ -45,9 +45,11 @@ class Resources {
     /**
      * Modify the object in-place, replacing each resource count with its
      * absolute value.
+     * @return {Resources} The modified object
      */
     abs() {
         mapObject(this, Math.abs);
+        return this;
     }
 
     /**
@@ -136,9 +138,11 @@ class Resources {
     /**
      * Modify in-place. Reset values to 0 if they do not match a unary
      * predicate.
+     * @return {Resources} The modified object
      */
     filter(predicate) {
         mapObject(this, v => predicate(v) ? v : 0);
+        return this;
     }
 
     /**
@@ -323,10 +327,14 @@ class Resources {
 
     /**
      * Convert to string of symbols. See 'resourcesAsUtf8()'.
+     * @param {boolean} [asTemplate=false] Format as template
      * @return {string} New string representing the resources
      */
-    toSymbols() {
-        const ret = resourcesAsUtf8(this);
+    toSymbols(asTemplate = false) {
+        let ret = resourcesAsUtf8(this);
+        if (asTemplate) {
+            ret = `{ ${ret} }`;
+        }
         return ret;
     }
 

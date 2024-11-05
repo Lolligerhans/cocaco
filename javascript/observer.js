@@ -123,7 +123,7 @@ class Observer extends Trigger {
      * @param {Object} param0
      * @param {Player} param0.player
      * Player who accepted the collusion trade offer
-     * @param {*} param0.trade Trade in Observer property trade format
+     * @param {Trade} param0.trade
      * @param {function([Boolean])} param0.accept
      * Function which, if called with 'true', finalises the collusion trade. If
      * 'false' is passed as argument, the acceptance is rejected. (Currently not
@@ -135,7 +135,7 @@ class Observer extends Trigger {
             type: "collusionAcceptance",
             payload: {
                 player: Observer.property.player(player),
-                trade: Observer.property.trade(trade),
+                trade: trade,
                 accept: accept,
             },
         };
@@ -145,7 +145,7 @@ class Observer extends Trigger {
     /**
      * @param {Object} param0
      * @param {Player} param0.player The player who created the trade offer
-     * @param {*} param0.trade Observer property trade
+     * @param {Trade} param0.trade
      * @param {function([Boolean])} param0.accept
      * Function sending acceptance of the offer if called with 'true' as
      * argument. If called with 'false', sends a rejection.
@@ -156,7 +156,7 @@ class Observer extends Trigger {
             type: "collusionOffer",
             payload: {
                 player: Observer.property.player(player),
-                trade: Observer.property.trade(trade),
+                trade: trade,
                 accept: accept,
             },
         };

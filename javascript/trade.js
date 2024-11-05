@@ -88,12 +88,25 @@ class Trade {
 
     /**
      * Generate human readable string representing the trade
+     * @param {Resources} [template] When provided, format with template
+     * @param {boolean} [matches]
+     * When provided, indicate the trade to match / not match the template
      * @return {string}
      */
-    toString() {
-        const ret = this.giver.name + " " +
-            this.resources.toSymbols() + " " +
-            this.taker.name;
+    toString(template = null, matches = null) {
+        let templateAppend = "";
+        if (template !== null) {
+            switch (matches) {
+                case true: matches = "✅"; break;
+                case false: matches = "🚫"; break;
+                default: matches = "❓"; break;
+            }
+            templateAppend = ` ${matches} ${template.toSymbols(true)}`;
+        }
+        const ret = this.giver.name
+            + " " + this.resources.toSymbols()
+            + templateAppend
+            + " " + this.taker.name;
         return ret;
     }
 

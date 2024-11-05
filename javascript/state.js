@@ -116,15 +116,18 @@ class State extends Trigger {
 
     /**
      * Sends a rade offer based on the given trade, using our Resend instance
-     * @param {*} trade Trade in Observer property trade format
+     * @param {Trade} trade
      */
     sendTradeHelper(trade) {
-        console.assert(trade.give.from.name === this.us.name);
-        const offerList = ColonistObserver.resourcesToCards(trade.give.resources);
-        const demandList = ColonistObserver.resourcesToCards(trade.take.resources);
+        console.assert(trade.giver.equals(this.us));
+        const offer = new Resources(trade.resources).filter(x => x > 0);
+        const demand = new Resources(trade.resources).filter(x => x < 0).abs();
+        const offerList = ColonistObserver.resourcesToCards(offer);
+        const demandList = ColonistObserver.resourcesToCards(demand);
         const message = {
             action: 49,
             payload: {
+                // The taker is ignored, targets all other players
                 creator: this.us.id,
                 isBankTrade: false,
                 counterOfferInResponseToTradeId: null,
@@ -133,11 +136,7 @@ class State extends Trigger {
             },
             sequence: -1, // Auto selected
         };
-        // console.debug(
-        //     "State: Sending collusion offer for",
-        //     trade.give.to.name,
-        //     p(message),
-        // );
+        // console.debug("Sending trade message:", trade.toString(), p(message));
         this.resend.sendMessage(message);
     }
 
@@ -214,7 +213,8 @@ State.implementor.collusionOffer = function ({ player, trade, accept }) {
     }
 }
 
-State.implementor.collusionAcceptance = function ({ trade, accept }) {
+State.implementor.collusionAcceptance = function ({ player, trade, accept }) {
+    player; // Unused
     if (!this.collusionPlanner.isStarted()) {
         return;
     }

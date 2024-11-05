@@ -64,7 +64,7 @@ class ColonistObserver extends Observer {
     }
 
     /**
-     * Convert resources to the Colonist frame format: A list of indices
+     * Convert resources to the Colonist frame format: An array of indices
      * according to the cardMap.
      * @param {Resources} resources
      * @return {Number[]} Resources in frame format
@@ -99,18 +99,17 @@ class ColonistObserver extends Observer {
     }
 
     /**
-     * Fill 'resources' parts of the Observer 'trade' property by converting
-     * values from 'frameTrade'.
-     * @param trade Observer trade property 'trade', where all traders are
-     *              already present. The 'resources' are added by this function.
-     * @param frameTrade Trade in frame format. Currently same as Source format.
-     *                   See: doc/colonist/message_format.md#activeOffers.
+     * Generate a resource object summarizing the resources moved by a frame
+     * trade.
+     * @param {*} frameTrade Trade in frame format (doc/colonist/message_format.md)
+     * @return {Resources}
+     * Resources corresponding to the difference offer - demand.
      */
-    static fillResourcesFromFrame(trade, frameTrade) {
-        const offer = ColonistObserver.cardsToResources(frameTrade.offeredResources);
+    static getResourcesFromFrameTrade(frameTrade) {
+        let offer = ColonistObserver.cardsToResources(frameTrade.offeredResources);
         const demand = ColonistObserver.cardsToResources(frameTrade.wantedResources);
-        trade.give.resources = offer;
-        trade.take.resources = demand;
+        offer.subtract(demand);
+        return offer;
     }
 
     /**
@@ -183,7 +182,7 @@ class ColonistObserver extends Observer {
 
     /**
      * @return {boolean}
-     * true if inde is larger than all previously seen indices, else false
+     * true if index is larger than all previously seen indices, else false
      */
     #isNewLogMessage(index) {
         if (index < this.#nextLogMessageIndex) {
@@ -560,39 +559,27 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
      * assumed to be unique to each trade.
      * @param  tradeId The trade ID of 'trade'. Usually would be also given by
      *                 'trade.id'.
-     * @param trade Trade in the source trade format.
+     * @param {*} trade Trade in the source trade format.
      * @param {Player} acceptingPlayer The player that accepted the trade offer.
      *                                 Not verified any further.
      */
-    const suggestFinalisation = ([tradeId, trade], acceptingPlayer) => {
+    const offerAcceptance = ([tradeId, trade], acceptingPlayer) => {
         console.assert(acceptingPlayer != null);
         // Notify aobut finalisation opportunity at most once. The Source
         // packages can contain trades over and over.
-        const singletonKey = tradeId + "_" + acceptingPlayer.name;
-        if (this.storage.finalisedTrades.has(singletonKey)) {
-            // console.debug(
-            //     "Not finalising", singletonKey, "(finalised previously)",
-            // );
+        const uniqueId = tradeId + "_" + acceptingPlayer.name;
+        if (this.storage.finalisedTrades.has(uniqueId)) {
             return;
         }
-        this.storage.finalisedTrades.add(singletonKey);
-        // console.debug("Finalising observation for ", singletonKey);
-        let tradeProperty = {
-            give: {
-                from: this.storage.us,
-                to: acceptingPlayer,
-                resources: null,
-            },
-            take: {
-                from: acceptingPlayer,
-                to: this.storage.us,
-                resources: null,
-            },
-        };
-        ColonistObserver.fillResourcesFromFrame(tradeProperty, trade);
+        this.storage.finalisedTrades.add(uniqueId);
+        let tradeObject = new Trade({
+            giver: this.storage.us,
+            taker: acceptingPlayer,
+            resources: ColonistObserver.getResourcesFromFrameTrade(trade),
+        });
         const offer = {
             player: acceptingPlayer,
-            trade: tradeProperty,
+            trade: tradeObject,
             accept: (doAccept = true) => {
                 let tradeResponseFinalise;
                 if (doAccept === true) {
@@ -614,10 +601,6 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
                         sequence: -1, // Auto selected
                     }
                 };
-                // console.debug(
-                //     "<finalise trade>", doAccept, trade,
-                //     "with", acceptingPlayer.name,
-                // );
                 this.resend.sendMessage(
                     tradeResponseFinalise,
                 );
@@ -644,7 +627,7 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
             playerId => this.storage.players.id(playerId)
         );
         for (const acceptingPlayer of acceptingPlayers) {
-            suggestFinalisation([tradeId, trade], acceptingPlayer);
+            offerAcceptance([tradeId, trade], acceptingPlayer);
         }
     });
 
@@ -657,22 +640,14 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
      */
     const offerCollusion = ([id, trade]) => {
         const tradeCreator = creatorPlayer(trade);
-        let tradeProperty = {
-            give: {
-                from: tradeCreator,
-                to: this.storage.us, // Pretend it is for us
-                resources: null,
-            },
-            take: {
-                from: this.storage.us,
-                to: tradeCreator,
-                resources: null,
-            },
-        };
-        ColonistObserver.fillResourcesFromFrame(tradeProperty, trade);
+        let tradeObject = new Trade({
+            giver: tradeCreator,
+            taker: this.storage.us,
+            resources: ColonistObserver.getResourcesFromFrameTrade(trade),
+        });
         const offer = {
             player: tradeCreator,
-            trade: tradeProperty,
+            trade: tradeObject,
             accept: (doAccept = true) => {
                 const tradeResponseAccept = {
                     action: 50,
@@ -682,19 +657,11 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
                     },
                     sequence: -1, // Auto selected
                 };
-                // console.debug(
-                //     "<accept trade>", doAccept, trade,
-                //     "with", tradeResponseAccept
-                // );
                 this.resend.sendMessage(
                     tradeResponseAccept,
                 );
             },
         };
-        // console.debug(
-        //     "Generating collusion offer observation for new trade",
-        //     trade,
-        // );
         this.collusionOffer(offer);
     };
     let foundNewOffer = false;

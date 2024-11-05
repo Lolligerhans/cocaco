@@ -25,7 +25,7 @@ cocaco_config = {
          * games with installed extension.
          * @type {Boolean}
          */
-        autocollude: false,
+        autocollude: true,
 
         /**
          * Trade at most this many resource per side. Makes the trades more bot

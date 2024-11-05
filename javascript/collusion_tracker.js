@@ -127,7 +127,7 @@ class CollusionTracker {
             return;
         }
         if (!this.#isDormant) {
-            this.#logger.log("Going dormant |", trade.toString());
+            this.#logger.log("Going dormant because", trade.toString());
         }
         this.#isDormant = true;
     }
