@@ -5,7 +5,7 @@
 // activate the "observation" trigger directly.
 //
 // Using the interface defined here ensures that Observer implementations
-// generate only the common set of obsevations that the State understands.
+// generate only the common set of observations that the State understands.
 
 "use strict";
 
@@ -24,7 +24,7 @@ class Observer extends Trigger {
 
     /**
      * @typedef {"road" | "settlement" | "city" | "devcard"} Buyable
-     * An object palyers can buy in the game
+     * An object players can buy in the game
      * @typedef {"main" | ""} Phase A phase within the game
      */
 
@@ -63,8 +63,8 @@ class Observer extends Trigger {
     // │ Standard observations                                 │
     // ╰───────────────────────────────────────────────────────╯
 
-    // The interface defines observation functions for game events. Ideally these
-    // map to Source packets in a traight forwards manner. Otherwise the Observer
+    // The interface defines observation functions for game events. Ideally
+    // these map to Source packets in a simple manner. Otherwise the Observer
     // must implement the logic to obtain the appropriate inputs.
 
     /**
@@ -87,7 +87,7 @@ class Observer extends Trigger {
      * @param {Object} param0
      * @param {Player} param0.player The player starting a collusion. Should
      *                               currently always be us.
-     * @param {Player[]} param0.players List of clluding palyers, including
+     * @param {Player[]} param0.players List of colluding players, including
      *                                  'player'.
      */
     collusionStart({ player, players }) {
@@ -123,7 +123,7 @@ class Observer extends Trigger {
      * @param {Object} param0
      * @param {Player} param0.player
      * Player who accepted the collusion trade offer
-     * @param {*} param0.trade Trade in Oberver property trade format
+     * @param {*} param0.trade Trade in Observer property trade format
      * @param {function([Boolean])} param0.accept
      * Function which, if called with 'true', finalises the collusion trade. If
      * 'false' is passed as argument, the acceptance is rejected. (Currently not
@@ -326,7 +326,7 @@ class Observer extends Trigger {
     /**
      * Currently only emitter when it is our turn in the main phase
      * @param {Object} param0
-     * @param {Player} param0.player Player whos turn it is
+     * @param {Player} param0.player Player who's turn it is
      * @param {Phase} param0.phase Phase of the game
      */
     turn({ player, phase }) {
@@ -342,7 +342,7 @@ class Observer extends Trigger {
 
     /**
      * @param {Object} param0
-     * @param {Player} param0.player The player usign the yop
+     * @param {Player} param0.player The player using the YOP
      * @param {Resources} param0.resources The chosen resources
      */
     yop({ player, resources }) {
@@ -404,7 +404,7 @@ Observer.property.transfer = function ({
         to: Observer.property.trader(to),
         resources: resources,
     }
-    // Sanity check: transfer between different players (wllow both null)
+    // Sanity check: transfer between different players (allow both null)
     console.assert(transfer.from !== transfer.to || transfer.from === null);
     return transfer;
 }

@@ -483,10 +483,6 @@ ColonistObserver.sourceObserver.currentState = function (
     const playerWhosTurnItIs = this.storage.players.id(
         this.storage.currentTurnPlayerColor,
     );
-    if (!this.storage.us.equals(playerWhosTurnItIs)) {
-        // Legitimate in principle. We currently care only about our turns.
-        return;
-    }
     const turn = this.storage.turnState;
     const action = this.storage.actionState;
     // Currently we only care about one specific state+action combination. We
@@ -557,7 +553,7 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
         return ret;
     };
 
-    // ── Collusion acceptance (maybe finalize) ──────────────────
+    // ── Collusion acceptance (maybe finalise) ──────────────────
     /**
      * Ensures that the observation is emitted for this trade-player pair. Does
      * nothing if the trade-player pairs was suggested before. The trade IDs are
@@ -619,7 +615,7 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
                     }
                 };
                 // console.debug(
-                //     "<finalize trade>", doAccept, trade,
+                //     "<finalise trade>", doAccept, trade,
                 //     "with", acceptingPlayer.name,
                 // );
                 this.resend.sendMessage(
@@ -760,9 +756,12 @@ ColonistObserver.sourceObserver.collusionStart = function (packetData) {
         return;
     }
     const others = packetData.others.map(o => this.storage.players.name(o));
-    const hasNonPlayerName = others.includes(null);
+    const hasNonPlayerName = others.some(p => p == null);
     if (hasNonPlayerName) {
-        console.warn("Cannot collude with non-player(s) in", p(others));
+        console.warn(
+            "Cannot collude with non-player(s) in",
+            p(packetData.others),
+        );
         return;
     }
     // console.log("ColonistObserver: Start colluding with", others);

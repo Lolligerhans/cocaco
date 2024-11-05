@@ -124,6 +124,16 @@ function resourcesAsUtf8(resources) {
 }
 
 /**
+ * Remove an element from an array. Changes the order of elements.
+ * @param {*[]} array Any JS array
+ * @param {Number} index Index of the element to be removed
+ */
+function removeElementUnordered(array, index) {
+    array[index] = array[array.length - 1];
+    array.pop();
+}
+
+/**
  * Updates object in-place by recursively merging 'update' into it. Conflicts
  * are resolved by preferring the 'update' object. Used to implement
  * 'combineObject()'.

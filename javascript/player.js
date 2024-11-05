@@ -216,7 +216,8 @@ class Players {
     /**
      * Get player by name
      * @param {string} name
-     * @return {Player|undefined} The player who's name is 'name'
+     * @return {Player|undefined}
+     * The player with the given name when existing. Else undefined.
      */
     name(name) {
         return this.#names[name];

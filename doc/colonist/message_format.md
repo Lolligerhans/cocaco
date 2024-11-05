@@ -808,7 +808,7 @@ a [trade offer](#action-49-trade-offer) in-between.
 
 #### action 51: Accept (our) trade
 
-Finalizes a trade, that means, accept the accepting response. This establishes
+Finalises a trade, that means, accept the accepting response. This establishes
 agreement to a trade and leads to immediate realization of the trade.
 
 ```JSON

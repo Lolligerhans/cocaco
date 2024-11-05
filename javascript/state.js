@@ -220,22 +220,28 @@ State.implementor.collusionAcceptance = function ({ trade, accept }) {
     }
     const plannerResult = this.collusionPlanner.evaluateAccept(trade);
     if (plannerResult === true) {
-        if (this.noMoreAcceptThisTurn === true) {
+        if (this.noMoreFinaliseThisTurn === true) {
             // This value is reset in the 'turn()' implementor. This ensures
-            // that we accept trades one by one. Accepting all at once is
-            // not intended (the host server ignores the rest). The remainign
-            // trades are re-opened after the trade is completed, because we
-            // re-enter the "main" phase.
+            // that we finalise trades one by one. Accepting all at once is not
+            // intended (the host server ignores the rest). The remainign trades
+            // are re-opened after the trade is completed, because we re-enter
+            // the "main" phase.
             // console.debug("State: ❌ Skipping this acceptance!");
             return;
         }
         accept();
-        this.noMoreAcceptThisTurn = true;
+        this.noMoreFinaliseThisTurn = true;
     } else {
-        // If we manke sure to reject only once and only if all other players
-        // already answered we could run
+        // If we made sure to reject only once and only after all opponents
+        // answered, we could run
         //      accept(false);
         // here. But currently we do not check this.
+        //
+        // Because we want to allow manual trading, we also do not want to
+        // auto-reject.
+
+        // It may be possible to react only to counter offers, but we do not
+        // consider this at the moment.
     }
 }
 
@@ -417,11 +423,17 @@ State.implementor.trade = function ({ give, take }) {
 
 State.implementor.turn = function ({ player, phase }) {
     console.assert(phase === "main");
-    console.assert(player.equals(this.us));
-    this.noMoreAcceptThisTurn = false;
+    this.noMoreFinaliseThisTurn = false;
     if (!this.collusionPlanner.isStarted()) {
+        // No need to update stats
         return;
     }
+    this.collusionPlanner.updateTurn(player);
+
+    if (!player.equals(this.us)) {
+        return;
+    }
+
     this.multiverse.updateStats();
     const guessAndRange = this.multiverse.guessAndRange;
     let trades = this.collusionPlanner.evaluateTurn(guessAndRange);

@@ -35,7 +35,7 @@
 //  3. Finalisation of our own collusion offers once accepted:
 //      - Generate template
 //      - (*) Trade offer matches template?
-//      - (*) Finalize trade
+//      - (*) Finalise trade
 // Numbers 2 and 3 are different because of the additional assumptions we can
 // safely make in 3.
 
@@ -166,7 +166,7 @@ class Collude {
      *                     not both colluding.
      */
     getCollusionTemplate(playerFrom, playerTo) {
-        if (!this.#hasColluders(playerFrom.name, playerTo.name)) {
+        if (!this.#hasColludersByName(playerFrom.name, playerTo.name)) {
             Collude.#logger.log(
                 playerFrom.name,
                 Collude.formatTemplate(),
@@ -194,10 +194,20 @@ class Collude {
     }
 
     /**
+     * Test whether all given players are part of the collusion group
+     * @param {...Player} players
+     * @return {boolean}
+     */
+    hasColluders(...players) {
+        const ret = this.#hasColludersByName(...players.map(p => p.name));
+        return ret;
+    }
+
+    /**
      * @param {...string} names 1 or more player names to test
      * @return {boolean} true if all names belong to colluder(s), else false
      */
-    #hasColluders(...names) {
+    #hasColludersByName(...names) {
         const ret = names.every(name => Object.hasOwn(this.#balances, name));
         return ret;
     }
@@ -274,7 +284,7 @@ class Collude {
      */
     updateGotResources(player, resources) {
         const playerName = player.name;
-        if (!this.#hasColluders(playerName)) {
+        if (!this.#hasColludersByName(playerName)) {
             return;
         }
         console.assert(resources.countNegative() === 0);
@@ -288,17 +298,22 @@ class Collude {
      * Updates the state after a trade within the colluding group. The passed
      * trades count towards lowering or increasing the collusion balance of the
      * involved players, but not the total group balance.
+     * When some of the players are not part of the collusion group, does
+     * nothing.
      * @param {Player} playerFrom The player giving positive entries of
      *                            'resources', receiving the negative.
      * @param {Player} playerTo The player receiving positive entries of
      *                          resources, giving the negative.
      * @param {Resources} resources Traded resources
+     * @return {boolean}
+     * true when balances were update. Else false (meaning at least one player
+     * is not in the collusion group).
      */
     updateTradeResources(playerFrom, playerTo, resources) {
         const playerNameFrom = playerFrom.name;
         const playerNameTo = playerTo.name;
-        if (!this.#hasColluders(playerNameFrom, playerNameTo)) {
-            return;
+        if (!this.#hasColludersByName(playerNameFrom, playerNameTo)) {
+            return false;
         }
         console.assert(resources.countPositive() > 0);
         console.assert(resources.countNegative() > 0);
@@ -310,6 +325,7 @@ class Collude {
         );
         this.print(playerNameFrom.name);
         this.print(playerNameTo.name);
+        return true;
     }
 
     /**

@@ -82,7 +82,7 @@ class Resources {
 
     /**
      * Does not sum amounts of resources.
-     * @return {Number} Count resource types with negative value
+     * @return {Number} Count of resource types with negative value
      */
     countNegative() {
         const ret = Object.values(this).reduce(
@@ -185,6 +185,16 @@ class Resources {
     halve() {
         // Normal integer division; truncating towards 0
         mapObject(this, x => Math.trunc(x / 2));
+    }
+
+    /**
+     * Test whether the resource object has both positive and negative
+     * values.
+     * @return {boolean}
+     */
+    hasPositiveAndNegative() {
+        const ret = this.countPositive() >= 1 && this.countNegative() >= 1;
+        return ret;
     }
 
     /**

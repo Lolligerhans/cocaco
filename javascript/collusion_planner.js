@@ -7,11 +7,12 @@
 //  - Relevant updates are provided to CollusionPlanner by the user
 //      - updateGotResources: A player got resources for rolling
 //      - updateTradeResources: Two players traded resources
+//      - updateTurn: Our turn ends
 //  - At the appropriate time, the user obtains collusion suggestions with
-//      - evalueAcccept: Generate our new collusion offers
+//      - evalueAcccept: Decide on finalising our collusion offers which they
+//                       accepted.
 //      - evalueOffer: Decide on accepting their collusion offers
-//      - evalueTurn: Decide on finalising our collusion offers which they
-//                    accepted.
+//      - evalueTurn: Generate our new collusion offers
 //  - While stopped, these operations always return false or empty arrays [].
 //
 // Note: Collusion is the same as trading. In the context of automated trading
@@ -54,6 +55,14 @@ class CollusionPlanner {
      */
     #collude = null;
 
+    /**
+     * @type {CollusionTracker}
+     */
+    #collusionTracker;
+
+    /**
+     * @type {ConsoleLog}
+     */
     #consoleLogger = new ConsoleLog("CollusionPlanner", "🪠");
 
     /**
@@ -73,6 +82,7 @@ class CollusionPlanner {
      */
     constructor(us, outputElement) {
         this.#us = us;
+        this.#collusionTracker = new CollusionTracker(us);
         this.#logger = new MessageLog(outputElement);
         this.#consoleLogger.log("Created for", us.name);
     }
@@ -82,7 +92,7 @@ class CollusionPlanner {
      * @return {boolean} true if we should accept, else false
      */
     evaluateAccept(trade) {
-        if (!this.isStarted()) {
+        if (this.#isStoppedOrDormant()) {
             return false;
         }
         console.assert(trade.give.from !== null);
@@ -91,7 +101,6 @@ class CollusionPlanner {
             this.#consoleLogger.log("Accept ignored (not our offer)");
             return false;
         }
-        this.#consoleLogger.log("Evaluating", trade.give.to.name, "acceptance");
         let newTemplate = this.#collude.getCollusionTemplate(
             trade.give.from,
             trade.give.to,
@@ -102,10 +111,6 @@ class CollusionPlanner {
         }
         // Assume existing trades are valid for giver and taker
         const matchesTemplate = this.tradeMatchesTemplate(newTemplate, trade);
-        this.#consoleLogger.log(
-            "Should",
-            matchesTemplate ? "finalize" : "reject", "acceptance"
-        );
         return matchesTemplate;
     }
 
@@ -115,7 +120,7 @@ class CollusionPlanner {
      * @return {boolean} true if we should accept, else false
      */
     evaluateOffer(trade, guessAndRange) {
-        if (!this.isStarted()) {
+        if (this.#isStoppedOrDormant()) {
             return false;
         }
         console.assert(trade.give.from !== null);
@@ -124,7 +129,7 @@ class CollusionPlanner {
             this.#consoleLogger.log("Offer ignored (ours)");
             return false;
         }
-        this.#consoleLogger.log("Evaluating", trade.give.from.name, "offer");
+        // this.#consoleLogger.log("Evaluating", trade.give.from.name, "offer");
         let newTemplate = this.#collude.getCollusionTemplate(
             trade.give.from,
             trade.give.to,
@@ -136,20 +141,20 @@ class CollusionPlanner {
         // Assume existing trades are valid for giver
         Collude.adjustForTaker(newTemplate, trade.give.to, guessAndRange);
         const matchesTemplate = this.tradeMatchesTemplate(newTemplate, trade);
-        this.#consoleLogger.log(
-            "Should",
-            matchesTemplate ? "accepted" : "rejected", "offer",
-        );
+        // this.#consoleLogger.log(
+        //     "Should",
+        //     matchesTemplate ? "accepted" : "rejected", "offer",
+        // );
         return matchesTemplate;
     }
 
     /**
      * Generate the trades we should make
      * @param guessAndRange Multiverse guess and range object
-     * @return {[*]} Array of Objserver properties 'trades'
+     * @return {[*]} Array of Observer properties 'trades'
      */
     evaluateTurn(guessAndRange) {
-        if (!this.isStarted()) {
+        if (this.#isStoppedOrDormant()) {
             return [];
         }
         let trades = [];
@@ -159,7 +164,23 @@ class CollusionPlanner {
             }
             trades.push(this.#generateOurTrade(player, guessAndRange));
         }
-        return trades.filter(trade => trade !== null);
+        trades = trades.filter(trade => trade !== null);
+
+        /**
+         * Update #collusionTracker with the newly generated trades
+         * @param {*} trade Trade as Observer property 'trade'
+         */
+        const updateTracker = trade => {
+            const asTrade = Trade.fromObserverProperty(trade);
+            this.#collusionTracker.updateSuggestion(asTrade);
+        }
+        trades.forEach(updateTracker);
+
+        if (trades.length === 0) {
+            this.#consoleLogger.log("No collusion trades available");
+        }
+
+        return trades;
     }
 
     /**
@@ -204,15 +225,33 @@ class CollusionPlanner {
                 resources: take,
             }),
         });
-        this.#consoleLogger.log(
-            "CollusionPlanner: Valid offer for",
-            otherPlayer.name,
-        );
+        this.#consoleLogger.log("Valid offer for", otherPlayer.name);
         return trade;
     }
 
+    /**
+     * @return {boolean}
+     */
     isStarted() {
-        return this.#collude !== null;
+        return !this.isStopped();
+    }
+
+    /**
+     * Check if there is no active collusion. To whether to generate suggestions
+     * on request, use isStoppedOrWaiting().
+     * @return {boolean}
+     */
+    isStopped() {
+        return this.#collude === null;
+    }
+
+    /**
+     * Used to determine when the CollusionPlanner should veto generation of
+     * trades/acceptances/finalisations towards the outside.
+     * @return {boolean}
+     */
+    #isStoppedOrDormant() {
+        return this.isStopped() || this.#collusionTracker.isDormant();
     }
 
     /**
@@ -277,34 +316,80 @@ class CollusionPlanner {
             return conformsToTemplate ? 0 : 1;
         });
         const allConformToTemplate = templateCopy.countHamming() === 0;
-        if (!allConformToTemplate) {
-            const tradeStr = tradeCombined.toSymbols();
-            this.#consoleLogger.log(
-                trade.give.from.name,
-                `${tradeStr} 🚫 ${Collude.formatTemplate(template)}`,
-                trade.give.to.name,
-            );
-        }
+        const tradeStr = tradeCombined.toSymbols();
+        const symbol = allConformToTemplate ? "✅" : "🚫";
+        this.#consoleLogger.log(
+            trade.give.from.name,
+            tradeStr, symbol, Collude.formatTemplate(template),
+            trade.give.to.name,
+        );
         return allConformToTemplate;
     }
 
     /**
-     * Delegates to Collude.updateGotResources
+     * Call when any player got resources.
+     * Delegates to Collude.updateGotResources.
      */
     updateGotResources(...args) {
-        if (this.#collude !== null) {
-            this.#collude.updateGotResources(...args);
+        if (this.isStopped()) {
+            return;
         }
+        this.#collude.updateGotResources(...args);
     }
 
     /**
-     * Delegates to Collude.updateTradeResources
+     * Call when a trade is observed.
+     * Delegates to Collude.updateTradeResources, and updates
+     * #waitUntilNextTurn.
+     * @param {Player} playerFrom The player giving positive entries of
+     *                            'resources', receiving the negative.
+     * @param {Player} playerTo The player receiving positive entries of
+     *                          resources, giving the negative.
+     * @param {Resources} resources Traded resources
      */
-    updateTradeResources(...args) {
-        if (this.#collude !== null) {
-            this.#consoleLogger.log("Trade resources", args[2].toSymbols());
-            this.#collude.updateTradeResources(...args);
+    updateTradeResources(playerFrom, playerTo, resources) {
+        if (this.isStopped()) {
+            return;
         }
+        this.#consoleLogger.log(
+            playerFrom.name, resources.toSymbols(), playerTo.name,
+        );
+        this.#collude.updateTradeResources(playerFrom, playerTo, resources);
+
+        const playersAreColluding = this.#collude.hasColluders(
+            playerFrom,
+            playerTo,
+        );
+        if (!playersAreColluding) {
+            // When we collude with only some players, trading with the others
+            // starts dormant mode.
+            if (playerFrom.equals(this.#us)) {
+                this.#collusionTracker.goDormant();
+            }
+            return;
+        }
+        const trade = new Trade({
+            giver: playerFrom,
+            taker: playerTo,
+            resources: resources,
+        });
+        this.#collusionTracker.updateTrade(trade);
+    }
+
+    /**
+     * Call on turn observations.
+     * @param {Player} player
+     * The player who's turn it is. Used to detect when a player's turn ends.
+     */
+    updateTurn(player) {
+        // Do not check for isStopped() here. The #collusionTracker module
+        // should leave the dormant state independent of the #collude module.
+        // The only consequence is that we may remain dormant when stopping and
+        // starting collusion in the same turn. But since collusion starts with
+        // zero balances, this has no effect. If we started with nonzero
+        // balance, we would only have to wait a single turn to sync.
+        this.#collusionTracker.updateTurn(player);
+
     }
 
     /**

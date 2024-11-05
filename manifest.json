@@ -4,7 +4,7 @@
   "manifest_version": 3,
   "author": "Lolligerhans",
   "description": "Correctly correlated Catan card chance Counter",
-  "version": "4.1.2",
+  "version": "4.1.3",
   "icons": {
     "32": "assets/coconut_32.png",
     "512": "assets/coconut_512.png"
@@ -45,6 +45,9 @@
 
         "javascript/toggle.js",
         "javascript/connect.js",
+        "javascript/trade.js",
+        "javascript/trade_set.js",
+        "javascript/collusion_tracker.js",
 
         "javascript/collude.js",
         "javascript/collusion_planner.js",

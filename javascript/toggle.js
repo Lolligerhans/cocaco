@@ -206,9 +206,11 @@ class Toggle {
             which = allFlags[which];
         }
         console.assert(this.has(which));
-
         const newValue = value ?? !this.isToggled(which);
         this.#flags[which] = newValue;
+
+        this.#logger.log(which, "⟶", newValue);
+
         return newValue;
     }
 

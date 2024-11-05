@@ -36,8 +36,7 @@ Uncertain cards have a coloured outline:
 ## Collusion
 
 > [!CAUTION]
-> Collusion is experimental. Colluding effectively prevents manual trading to
-> colluding players.
+> Collusion is experimental.
 
 When colluding with other players, Cocaco will autonomously trade resources with
 them. The generated trades ensure that all future resource income is distributed

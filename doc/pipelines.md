@@ -55,18 +55,14 @@ Pipelines consist of three modules:
 1. Source
 1. Observer
 
-<!--FIXME: Definitions dont work on gitlab. Work on github?-->
-Data
-: Generate Data frames via some raw method of data access, e.g., hooking
+***Data*** Generate Data frames via some raw method of data access, e.g., hooking
 WebSockets or parsing DOM element.
 
-Source
-: Convert Data frames output to Source packets with common (but loose)
+***Source*** Convert Data frames output to Source packets with common (but loose)
 conventions for naming and structure.
 
-Observer
-: Convert Source packets to observations with common (and strict) convention for
-naming, structure and semantic.
+***Observer*** Convert Source packets to observations with common (and strict)
+convention for naming, structure and semantic.
 
 The Observer's observations are finally interpreted by the State module to
 create the client's view of the active game. The state module is independent of
@@ -112,6 +108,9 @@ specific per-Data format and meaning, to a common set of observation.
 
 Observations typically correspond to atomic in-game events as human players
 would experience them, like robbing a player or getting cards.
+
+Observers can contain significant stateful components to implement the desired
+observations.
 
 ### Observations
 

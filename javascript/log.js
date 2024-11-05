@@ -16,7 +16,7 @@
 //   clear()                                                // Deletes elements added by logDom()
 
 /**
- * Logger for styling palyer names with colour. Writes console.log and a DOM
+ * Logger for styling player names with colour. Writes console.log and a DOM
  * element of choice (if enabled).
  */
 class MessageLog {
@@ -24,11 +24,11 @@ class MessageLog {
 
     static className = "cocaco-dbg-msg";
 
-    // Take a string containing '%c' and pslit it into spans with styles
+    // Take a string containing '%c' and split it into spans with styles
     // prescribed by ...args.
-    // Mimicks the behaviour of console.log().
+    // Mimics the behaviour of console.log().
     // ❕ The '%' character is reserved for styling only.
-    // To remove them later we use a common class names for all added dom
+    // To remove them later we use a common class names for all added DOM
     // elements.
     static styledElement(formatString, ...args) {
         const html = formatString.replace(/%c([^%]*)/g, (_match, text) => {
@@ -99,8 +99,8 @@ MessageLog.prototype.logConsole = function (_messageElement, ...args) {
     console.log(...args);
 }
 
-// Switch between logMessage() and logChat() dependign on the presence of
-// a message element. Results in a dom element being added somewhere.
+// Switch between logMessage() and logChat() depending on the presence of
+// a message element. Results in a DOM element being added somewhere.
 MessageLog.prototype.logDom = function (messageElement, ...args) {
     if (messageElement)
         this.logMessage(messageElement, ...args);
@@ -115,7 +115,7 @@ MessageLog.prototype.logMessage = function (messageElement, ...args) {
 
 MessageLog.configOptions =
 {
-    // These keys must be in the gloval cocaco_config element
+    // These keys must be in the global cocaco_config element
     "logConsole": MessageLog.prototype.logConsole,
     "logDom": MessageLog.prototype.logDom,
 };

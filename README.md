@@ -61,7 +61,7 @@ Install as [temporary extension](https://extensionworkshop.com/documentation/dev
 - Visit URL [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
 - Temporary Extensions
 - Load Temporary Add-on...
-- Select 'cocaco/manifest.json'
+- Select _cocaco/manifest.json_
 <!--Chrome worked in the Game Log version, but socket is FF only.-->
 <!-- - [Chrome](https://www.cnet.com/tech/services-and-software/how-to-install-chrome-extensions-manually/ "Tutorial") -->
 <!--   - Visit URL [chrome://extensions/](chrome://extensions/) -->

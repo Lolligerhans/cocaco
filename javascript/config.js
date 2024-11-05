@@ -86,8 +86,9 @@ cocaco_config = {
      * @type {Object.<string,Boolean>}
      */
     log: {
-        Collude: true,
+        Collude: false,
         CollusionPlanner: true,
+        CollusionTracker: true,
         ColonistTrade: false,
         frameInjection: false,
         Observer: false,
