@@ -45,10 +45,9 @@ class Trigger {
             });
         // console.debug("trigger: Activating trigger:", name, data);
         this.#ensureTrigger(name);
-        this.#triggers[name] = this.#triggers[name]
-            .filter(callback => {
-                return !callback(data);
-            });
+        this.#triggers[name] = this.#triggers[name].filter(callback => {
+            return !callback(data);
+        });
     }
 
     /**

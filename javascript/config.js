@@ -87,8 +87,8 @@ cocaco_config = {
      */
     log: {
         Collude: false,
-        CollusionPlanner: true,
-        CollusionTracker: true,
+        CollusionPlanner: false,
+        CollusionTracker: false,
         ColonistTrade: false,
         frameInjection: false,
         Observer: false,

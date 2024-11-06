@@ -15,6 +15,7 @@
  * @property {Number} cloth
  * @property {Number} coin
  * @property {Number} paper
+ * @property {Number} unknown Special
  */
 class Resources {
 
@@ -30,6 +31,15 @@ class Resources {
         "cloth",
         "coin",
         "paper",
+        "unknown",
+    ];
+
+    /**
+     * The subset of resource names that are special. We include some special
+     * resources to ease implementation. For example, to include the "any card"
+     * from trade offers in a Resources object.
+     */
+    static #specialResourcesNames = [
         "unknown",
     ];
 
@@ -58,6 +68,17 @@ class Resources {
      */
     add(resources) {
         this.merge(resources, (a, b) => a + b);
+    }
+
+    /**
+     * Modify this in-placce, resetting all special resources to 0. See
+     * Resources.#specialResourcesNames.
+     * @return {Resources} The modified object
+     */
+    clearSpecial() {
+        Resources.#specialResourcesNames.forEach(
+            k => this[k] = 0
+        );
     }
 
     /**
@@ -196,13 +217,14 @@ class Resources {
     }
 
     /**
-     * Test whether the resource object has some of the special resources.
-     * Currently only "unknown" is special, but we may add new special resources
-     * in the future.
+     * Test whether the resource object has some of the special resources. See
+     * Resources.#specialResourcesNames.
      * @return {Boolean}
      */
     hasSpecial() {
-        const ret = this.unknown !== 0;
+        const ret = Resources.#specialResourcesNames.some(
+            r => this[r] !== 0,
+        );
         return ret;
     }
 
@@ -246,6 +268,29 @@ class Resources {
     }
 
     /**
+     * Modify this in-palce, resetting positive entries to 0.
+     * @param {boolean} [absoluteValue=false]
+     * When true, inverts the previously negative values, returning resources
+     * with only positive values.
+     * @return {Resources} The modified object
+     */
+    negative(absoluteValue = false) {
+        this.filter(x => x < 0);
+        if (absoluteValue) {
+            this.abs();
+        }
+        return this;
+    }
+
+    /**
+     * Modify this in-palce, resetting negative entries to 0.
+     * @return {Resources} The modified object
+     */
+    positive() {
+        return this.filter(x => x > 0);
+    }
+
+    /**
      * Split positive from negative entries. Does not modify this. Used to
      * generate the Multiverse inputs from combined trade representation.
      * @return {[Resources,Resources]}
@@ -253,8 +298,8 @@ class Resources {
      * the abs() ❗ of entries < 0. The rest is set to 0 in both.
      */
     splitBySign() {
-        const pos = new Resources(this).filter(x => x > 0);
-        const neg = new Resources(this).filter(x => x < 0).abs();
+        const pos = new Resources(this).positive();
+        const neg = new Resources(this).negative(true);
         return [pos, neg];
     }
 

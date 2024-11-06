@@ -418,28 +418,35 @@ ColonistObserver.sourceObserver.tradeBank = function (packetData) {
 
 ColonistObserver.sourceObserver.tradeCounter = function (packetData) {
     const player = this.storage.players.id(packetData.player.index);
-    const resources = ColonistObserver.cardsToResources(packetData.cards);
-    const trade = {
-        give: {
-            from: player,
-            resources: resources,
-        },
-        isCounter: true,
-    };
+    const original = this.storage.players.id(packetData.originalPlayerId);
+    const res = ColonistObserver.cardsDiffToResources(
+        packetData.cards,
+        packetData.cards_wanted,
+    );
+    const trade = new Trade({
+        // ❗ In collusion counter offers the role of giver and taker is the
+        // other way around.
+        giver: player,
+        taker: original,
+        resources: res,
+    });
     this.offer({
         offer: trade,
+        isCounter: true,
     });
 }
 
 ColonistObserver.sourceObserver.tradeOffer = function (packetData) {
     const player = this.storage.players.id(packetData.player.index);
-    const resources = ColonistObserver.cardsToResources(packetData.cards);
-    const trade = {
-        give: {
-            from: player,
-            resources: resources,
-        },
-    };
+    const res = ColonistObserver.cardsDiffToResources(
+        packetData.cards,
+        packetData.cardsWanted,
+    );
+    const trade = new Trade({
+        giver: player,
+        taker: null,
+        resources: res,
+    });
     this.offer({
         offer: trade,
     });

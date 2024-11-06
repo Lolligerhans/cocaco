@@ -223,16 +223,25 @@ class Observer extends Trigger {
     }
 
     /**
+     * A trade offer or trade counter offer is made.
      * @param {Object} param0
-     * @param {*} param0.offer Observer property trade describing the offer
+     * @param {Trade} param0.offer
+     * The role of giver and take is such that the giver's cards are revealed.
+     * In a counter offer, the countering player is the giver.
+     *
+     * This is different from collusion related observations where it is always
+     * the giver's turn.
      * @param {any[]} [param0.targets=[]] Currently unused
      * @param {boolean} [param0.isCounter=false] Currently unused
      */
     offer({ offer, targets = [], isCounter = false }) {
+        console.assert(offer.giver !== null);
+        // taker may be null for trade offers since there is no dedicated taker
+        console.assert(offer.resources !== null);
         let observation = {
             type: "offer",
             payload: {
-                offer: Observer.property.trade(offer),
+                offer: offer,
                 targets: Observer.property.players(targets),
                 isCounter: isCounter,
             },

@@ -282,17 +282,12 @@ State.implementor.mono = function ({ player, resource, resources }) {
 }
 
 State.implementor.offer = function ({ offer, targets, isCounter }) {
-    const name = offer.give.from.name;
-    // Offers may include unknown cards as request-for-counter
-    const resources = offer.give.resources;
-    if (resources.unknown != null && resources.unknwon !== 0) {
-        resources.unknown = 0;
-    }
-    const slice = Multiverse.asSlice(resources);
-    this.multiverse.collapseMin(
-        name,
-        slice,
-    );
+    let offeredResources = new Resources(offer.resources).positive();
+    // Offers may include unknown cards as request-for-counter. We are only
+    // interested in the regular resource cards.
+    offeredResources.clearSpecial();
+    const slice = Multiverse.asSlice(offeredResources);
+    this.multiverse.collapseMin(offer.giver.name, slice);
     targets; // Ignore
     isCounter; // Ignore
 }

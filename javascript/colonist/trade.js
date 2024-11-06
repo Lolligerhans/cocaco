@@ -161,10 +161,9 @@ class ColonistTrade {
     #getNewTrades() {
         let ret = {};
         this.#newTrades.forEach(key => {
-            console.assert(
-                Object.hasOwn(this.#tradeState.activeOffers, key),
-                "Expecting to find trade in the tradeState",
-            );
+            if (!(Object.hasOwn(this.#tradeState.activeOffers, key))) {
+                Trade.#printWarn("noTrade", this.#tradeState, key);
+            }
             ret[key] = this.#tradeState.activeOffers[key];
         });
 
@@ -196,63 +195,36 @@ class ColonistTrade {
         return this.#getNewTrades();
     }
 
-    static tradesHaveSameParticipants(trade1, trade2) {
-        // Compute whether two trades have the same participants, in any order.
-        // Assumes both trades have two distinct players each. And assumes that,
-        // within a trade, transfers have the same traders. Assumes none of the
-        // traders is the "bank".
-        // @param trade1: Trade as observer property 'trade'
-        // @param trade2: Trade in Source packet format
-        // @return true or false
-        debugger; // TEST: Does it work?
-        const firstFound = trade1.give.from.name == trade2.give.from.name ||
-            trade1.give.from.name == trade2.give.to.name;
-        const secondFound = trade1.give.to.name == trade2.give.from.name ||
-            trade1.take.to.name == trade2.give.to.name;
-        return firstFound && secondFound;
-    }
-
-    static tradeHasTheseTraders(trade, t1, t2) {
-        // @param trade: Observer property 'trade'
-        // @param t1: Observer property 'trader'
-        // @param t2: Observer property 'trader'
-        // @return 'true' if trade is a trade between t1 and t2, else 'false'
-        const hasFirst =
-            t1.name === trade.give.from.name ||
-            t1.name === trade.give.to.name;
-        const hasSecond =
-            t2.name === trade.give.from.name ||
-            t2.name === trade.give.to.name;
-        const res = hasFirst && hasSecond;
-        if (!res) {
-            debugger; // TEST: Does it work?
-        }
-        return hasFirst && hasSecond;
-    }
-
     /**
-     * Collect console warnings here to keep the remaining code shorter
+     * Collect console warnings to keep the remaining code shorter
      */
     static #printWarn(reason, ...args) {
-        // Helper to collect lengthy prints statements
         switch (reason) {
+            case "noTrade":
+                debugger; // TEST: Verify
+                console.warn(
+                    "Expecting to find trade in the tradeState",
+                    "This may happen when starting in the middle of a game",
+                    ...args,
+                );
+                break;
             case "noCreator":
                 debugger;
-                console.warn("Trade without creator");
-                console.info(
-                    "This may happend when starting in the middle of a game",
+                console.warn(
+                    "Trade without creator.",
+                    "This may happen when starting in the middle of a game.",
                 );
                 break;
             case "noCreatorLookup":
                 console.warn(
                     `Creator of trade ${args} not found.`,
-                    "This may happend when starting in the middle of a game.",
+                    "This may happen when starting in the middle of a game.",
                 );
                 break;
             case "nullTrade":
                 console.warn(
                     "Unexpected null trade.",
-                    "This may happend when starting in the middle of a game.",
+                    "This may happen when starting in the middle of a game.",
                 );
                 break;
             case "reusedTradeId":

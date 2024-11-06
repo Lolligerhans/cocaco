@@ -351,14 +351,19 @@ ColonistSource.logInterpreters.tradeOffer = function (logMessage) {
     const payload = {
         player: { index: logMessage.text.playerColor },
         cards: logMessage.text.offeredCardEnums,
+        cardsWanted : logMessage.text.wantedCardEnums,
     };
     return payload;
 }
 
 ColonistSource.logInterpreters.tradeCounter = function (logMessage) {
     const payload = {
+        // Countering player
         player: { index: logMessage.text.playerColorCreator },
         cards: logMessage.text.offeredCardEnums,
+        // Creator of the original trade
+        originalPlayerId: logMessage.text.playerColorOffered,
+        cards_wanted: logMessage.text.wantedCardEnums,
     };
     return payload;
 }

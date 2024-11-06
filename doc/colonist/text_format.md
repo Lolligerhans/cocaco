@@ -134,10 +134,10 @@ originating the message. Maybe the server forwards these messages to some degree
 - 117: Trade offer counter
   - text
     - type: 117
-    - playerColorCreator: 1 (player making the original trade)
-    - playerColorOffered: 3 (player countering offer)
-    - wantedCardEnums: \[ 1, 5 \]
-    - offeredCardEnums: \[ 2, 3 \]
+    - playerColorCreator: 1 (player making the counter offer)
+    - playerColorOffered: 3 (player who made the original trade)
+    - wantedCardEnums: [ 1, 5 ]
+    - offeredCardEnums: [ 2, 3 ]
   - from: 1
 - 118: Trade offer (players)
   - text

@@ -33,7 +33,7 @@ class Trade {
      * @param {Player} taker
      */
     constructor({ giver = null, resources = null, taker = null } = {}) {
-        console.assert(giver && resources && taker);
+        console.assert(giver && resources);
         console.assert(resources.hasPositiveAndNegative());
         this.giver = giver;
         this.resources = resources;
@@ -41,10 +41,14 @@ class Trade {
     }
 
     /**
+     * Compare two fully specified trades for equality
      * @param {Trade} other Another Trade instance to compare to
      * @return {boolean} true if the trades are equal, else false
      */
     equals(other) {
+        // Currently we can only handle fully specified trades
+        console.assert(this.giver && this.taker && this.resources);
+        console.assert(other.giver && other.taker && other.resources);
         if (!(other instanceof Trade)) {
             return false;
         }
