@@ -12,7 +12,7 @@ browser.tabs.onUpdated.addListener((tabId) => {
     browser.pageAction.show(tabId);
 });
 
-browser.pageAction.onClicked.addListener((tab, ...rest) => {
+browser.pageAction.onClicked.addListener((tab, _onClickData) => {
     // Send to content script (received by 'Connect')
     browser.tabs.sendMessage(tab.id, {
         type: "page_action",

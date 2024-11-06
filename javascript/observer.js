@@ -68,15 +68,16 @@ class Observer extends Trigger {
     // must implement the logic to obtain the appropriate inputs.
 
     /**
+     * A player buys/builds something
      * @param {Object} param0
-     * @param {Player} param0.player The player buying something
-     * @param {Buyable} param0.object The object bought
+     * @param {Player} param0.player The player buying/building something
+     * @param {Buyable} param0.object The object being bought/built
      */
     buy({ player, object }) {
         let observation = {
             type: "buy",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 object: Observer.property.buyable(object),
             },
         };
@@ -94,7 +95,7 @@ class Observer extends Trigger {
         let observation = {
             type: "collusionStart",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 players: Observer.property.players(players),
             },
         };
@@ -134,7 +135,7 @@ class Observer extends Trigger {
         let observation = {
             type: "collusionAcceptance",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 trade: trade,
                 accept: accept,
             },
@@ -155,7 +156,7 @@ class Observer extends Trigger {
         let observation = {
             type: "collusionOffer",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 trade: trade,
                 accept: accept,
             },
@@ -176,7 +177,7 @@ class Observer extends Trigger {
         let observation = {
             type: "discard",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 resources: resources,
                 limit: limit,
             },
@@ -195,7 +196,7 @@ class Observer extends Trigger {
         let observation = {
             type: "got",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 resources: resources,
             },
         };
@@ -214,7 +215,7 @@ class Observer extends Trigger {
         let observation = {
             type: "mono",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 resource: Observer.property.resource(resource),
                 resources: resources,
             },
@@ -259,7 +260,7 @@ class Observer extends Trigger {
         let observation = {
             type: "roll",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 number: number,
             },
         };
@@ -281,7 +282,7 @@ class Observer extends Trigger {
         let observation = {
             type: "start",
             payload: {
-                us: Observer.property.player(us),
+                us: us,
                 players: players,
             }
         };
@@ -304,10 +305,10 @@ class Observer extends Trigger {
             payload: {},
         };
         if (thief) {
-            observation.payload.thief = Observer.property.player(thief);
+            observation.payload.thief = thief;
         }
         if (victim) {
-            observation.payload.victim = Observer.property.player(victim);
+            observation.payload.victim = victim;
         }
         if (resource) {
             observation.payload.resource = Observer.property.resource(resource);
@@ -336,7 +337,7 @@ class Observer extends Trigger {
         const observation = {
             type: "turn",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 phase: Observer.property.phase(phase),
             },
         };
@@ -354,7 +355,7 @@ class Observer extends Trigger {
         const observation = {
             type: "yop",
             payload: {
-                player: Observer.property.player(player),
+                player: player,
                 resources: resources,
             },
         };
@@ -370,11 +371,6 @@ class Observer extends Trigger {
 // These builders make it convenient to construct valid standard properties.
 // They are not meant to verify them thoroughly.
 
-Observer.property.player = function (player) {
-    console.assert(player instanceof Player);
-    return player;
-}
-
 Observer.property.players = function (players) {
     console.assert(players.every(x => x instanceof Player));
     return players;
@@ -388,7 +384,7 @@ Observer.property.trader = function (arg) {
         console.assert(arg === "bank");
         return arg;
     }
-    return Observer.property.player(arg);
+    return arg;
 }
 
 Observer.property.resource = function (arg) {

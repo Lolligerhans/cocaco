@@ -127,40 +127,14 @@ observation: {
 }
 ```
 
-Parts of an observation may be missing. The corresponding effects on the State
-objects are silently skipped. It is the responsibility of the Observer to ensure
-that the included subset of properties is sufficient for allowing the desired
-semantic effects on the game state.
-
-While different observations may have identical effects on the resource counts
-(e.g., building vs. discarding resources), their effects on other counters may
-differ (e.g., counting discarded cards vs. counting VPs).
+Observation type and payload are defined by the `observer` base class.
 
 The [start](#start-observation) observation must always be observed first.
 
 #### List of standard properties
 
-For brevity, the following list of standard properties is defined for
-observations. When given, the validity conditions must be met in order to
-for the property to be valid.
-
-Standard properties must be valid in all observations. Standard properties may
-be omitted when the intended semantics do not depend on them.
-
-##### `player` property
-
-Uniquely identifies a player.
-
-```JSON
-player: {
-  name: <string>,
-  index: <int>,
-}
-```
-
-Valid: Either name or index must set. Indices must be set by the `players`
-observation before use in subsequent observations (not yet implemented
-observation).
+> [!TODO]
+> Replace by defining JS classes
 
 ##### `players` property
 
@@ -265,19 +239,10 @@ buyable: "city"
 buyable: "devcard"
 ```
 
-#### List of standard observations
-
-Observations consist of a type and a payload. This is meant to help the State
-module to handle observations based on their type.
-
-When applicable, the semantic effects of each observation listed below are
-prepended with a list of dependency properties that must be present for its
-application. When no dependencies are listed, the observation must be provided
-in full.
+#### List of observations
 
 > [!TODO]
-> The exact semantics and dependencies are sometimes missing here. Add them
-> later when we know what exact semantics we need effects.
+> Not up to date
 
 ##### `buy` observation
 
