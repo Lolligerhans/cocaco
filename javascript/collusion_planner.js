@@ -36,13 +36,11 @@
 //      - 'Resources'
 
 // ── Implementation ─────────────────────────────────────────
-//  - The main algorithmic lifting is done by the instantiated 'Collude' class
+//  - The card counting is done by the instantiated 'Collude' class
 //  - CollusionPlanner
-//      - Implements start + stop
-//      - Sanity checks names and other parameters
-//      - Invokes the required 'Collude' and template operations based on the
-//        context.
-//      - Constructs the 'trade' objects in Observer property format.
+//      - implements start/stop/dormant
+//      - Filter for relevant trades
+//      - adjusts templates based on context (suggest/offer/accept)
 
 /**
  * Provides resources balancing between colluding players
@@ -175,7 +173,7 @@ class CollusionPlanner {
 
         /**
          * Update #collusionTracker with the newly generated trades
-         * @param {*} trade Trade as Observer property 'trade'
+         * @param {Trade} trade
          */
         const updateCollusionTracker = trade => {
             this.#collusionTracker.updateSuggestion(trade);
@@ -306,12 +304,8 @@ class CollusionPlanner {
             return conformsToTemplate ? 0 : 1;
         });
         const allConformToTemplate = templateCopy.countHamming() === 0;
-        const tradeStr = tradeResources.toSymbols();
-        const symbol = allConformToTemplate ? "✅" : "🚫";
         this.#consoleLogger.log(
-            trade.giver.name,
-            tradeStr, symbol, Collude.formatTemplate(template),
-            trade.taker.name,
+            trade.toString(template, allConformToTemplate),
         );
         return allConformToTemplate;
     }

@@ -185,11 +185,7 @@ class Collude {
             }
             return 0;
         });
-        Collude.#logger.log(
-            playerFrom.name,
-            Collude.formatTemplate(template),
-            playerTo.name,
-        );
+        Collude.#logger.log(template.toSymbols(true));
         return template;
     }
 

@@ -697,8 +697,10 @@ class Multiverse {
         });
     }
 
-    /*+
-     * Convert a slice (Multiverse resource object) to a 'Resources' object
+    /**
+     * Convert a slice to a Resources object
+     * @param {Slice} resourcesAsSlice
+     * @return {Resources} New object
      */
     static sliceToResources(resourcesAsSlice) {
         // Assume that the Multiverse resource names are  all valid for
@@ -1060,8 +1062,7 @@ Multiverse.zeroResourcesByName =
 /**
  * @type {Slice[]} Slices that can be used for 'weightGuessNotAvailable()'
  */
-Multiverse.costs =
-{
+Multiverse.costs = {
     road: new Array(Multiverse.resources.length).fill(0).fill(-1, 0, 2),
     settlement: new Array(Multiverse.resources.length).fill(0).fill(-1, 0, 4),
     devcard: new Array(Multiverse.resources.length).fill(0).fill(-1, 2, 5),

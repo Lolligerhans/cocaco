@@ -147,14 +147,20 @@ class Resources {
 
     /**
      * Factory to convert from list of names. Allowed names are all of
-     * 'Resources.#resourceNames'. Some contexts may disallow special resources;
-     * check with 'hasSpecial()'.
+     * 'Resources.#resourceNames'. Some contexts may disallow resources from
+     * hasSpecial().
      * @param {string[]} nameList Array of resource names
+     * @param {string[]} [substractedList]
+     * Array of resources names to be subtracted. This allows combining separate
+     * lists from trade(offer)s etc.
      * @return {Resources} New object initialized by nameList
      */
-    static fromList(nameList) {
+    static fromList(nameList, subtractedList = null) {
         let ret = new Resources();
         nameList.forEach(r => ++ret[r]);
+        if (subtractedList !== null) {
+            subtractedList.forEach(r => --ret[r]);
+        }
         return ret;
     }
 
@@ -169,18 +175,6 @@ class Resources {
      */
     static fromNames(resourcesAsNames) {
         return new Resources(resourcesAsNames);
-    }
-
-    /**
-     * Construct combined resource exchange from trade
-     * @param trade Observer property 'trade'.
-     * @return {Resources} Trade difference "offer - demand"
-     */
-    static fromObserverTrade(trade) {
-        let result = new Resources(trade.give.resources);
-        const demand = trade.take.resources;
-        result.subtract(demand);
-        return result;
     }
 
     /**
@@ -249,6 +243,19 @@ class Resources {
         Resources.#resourceNames.forEach(r => {
             this[r] = operator(this[r] ?? 0, resources[r] ?? 0);
         });
+    }
+
+    /**
+     * Split positive from negative entries. Does not modify this. Used to
+     * generate the Multiverse inputs from combined trade representation.
+     * @return {[Resources,Resources]}
+     * Two new objects. The first contains only the entries > 0, the second only
+     * the abs() ❗ of entries < 0. The rest is set to 0 in both.
+     */
+    splitBySign() {
+        const pos = new Resources(this).filter(x => x > 0);
+        const neg = new Resources(this).filter(x => x < 0).abs();
+        return [pos, neg];
     }
 
     /**

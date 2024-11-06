@@ -383,19 +383,17 @@ State.implementor.steal = function ({ thief, victim, resource }) {
     );
 }
 
-State.implementor.trade = function ({ give, take }) {
-    console.assert(give && give.from, "Inputs must be valid");
-    console.assert((give.from === take.to) || give.from.name === take.to.name);
-    console.assert((give.from === take.to) || take.from.name === give.to.name);
-
-    const traderName = give.from.name;
-    const giveResources = give.resources;
-    const takeResources = take.resources;
-    const giveSlice = Multiverse.asSlice(giveResources);
-    const takeSlice = Multiverse.asSlice(takeResources);
+/**
+ * @param {Trade} trade
+ */
+State.implementor.trade = function (trade) {
+    const traderName = trade.giver.name;
+    let [give, take] = trade.resources.splitBySign();
+    const giveSlice = Multiverse.asSlice(give);
+    const takeSlice = Multiverse.asSlice(take);
 
     // ── Trade with the bank ────────────────────────────────
-    if (give.to === "bank") {
+    if (trade.taker === "bank") {
         this.multiverse.transformSpawn(
             traderName,
             Multiverse.sliceSubtract(takeSlice, giveSlice),
@@ -404,20 +402,19 @@ State.implementor.trade = function ({ give, take }) {
     }
 
     // ── Trade between players ──────────────────────────────
-    const otherName = give.to.name;
+    const otherName = trade.taker.name;
     this.multiverse.transformTradeByName(
         traderName,
         otherName,
-        giveResources,
-        takeResources,
+        give,
+        take,
     );
 
-    let combinedResources = new Resources(giveResources);
-    combinedResources.subtract(takeResources);
     this.collusionPlanner.updateTradeResources(
-        give.from,
-        give.to,
-        combinedResources,
+        // TODO: just pass the trade whole
+        trade.giver,
+        trade.taker,
+        trade.resources,
     );
 }
 

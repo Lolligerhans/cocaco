@@ -225,16 +225,6 @@ resource: "ore"
 resource: "unknown"
 ```
 
-##### `resources` property
-
-Describes a multiset of [resource](#resource-property)s (resource cards). No
-semantic order is implied even though the JavaScript object is ordered. The
-empty array is allowed, meaning no resources.
-
-```JSON
-resource: [ <...resource> ]
-```
-
 ##### `transfer` property
 
 An monodirectional exchange of [resources](#resources-property) between

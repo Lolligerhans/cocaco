@@ -246,16 +246,13 @@ class ColonistTrade {
             case "noCreatorLookup":
                 console.warn(
                     `Creator of trade ${args} not found.`,
-                    "This may happen whenstarting the extension too late",
-                );
-                console.info(
-                    "This may happend when starting in the middle of a game",
+                    "This may happend when starting in the middle of a game.",
                 );
                 break;
             case "nullTrade":
-                console.warn("Unexpected null trade");
-                console.info(
-                    "This may happend when starting in the middle of a game",
+                console.warn(
+                    "Unexpected null trade.",
+                    "This may happend when starting in the middle of a game.",
                 );
                 break;
             case "reusedTradeId":
@@ -268,9 +265,10 @@ class ColonistTrade {
                 console.error("Inconsistent creator", ...args);
                 break;
             case "unknown":
-                console.warn("Trade unknown", ...args);
-                console.info(
-                    "This may happen when starting in the middle of a game",
+                console.warn(
+                    "Trade unknown.",
+                    "This may happen when starting in the middle of a game.",
+                    ...args,
                 );
                 break;
             default:

@@ -57,9 +57,28 @@ class ColonistObserver extends Observer {
         i => Number.parseInt(i),
     );
 
+    /**
+     * Convert frame resources lists to Resources object
+     * @param {Number[]} cards Array of Colonist card enum values
+     * @return {Resources} New Object representing the same resources
+     */
     static cardsToResources(cards) {
         const nameList = cards.map(r => ColonistObserver.cardMap[r]);
         const resources = Resources.fromList(nameList);
+        return resources;
+    }
+
+    /**
+     * Same as cardsToResources but subtract the second list
+     * @param {Number[]} [addCards] Array of Colonist card enum values
+     * @param {Number[]} [subtractCards] Array of Colonist card enum values
+     * @return {Resources}
+     * New Object representing the difference between the two
+     */
+    static cardsDiffToResources(addCards, subtractCards) {
+        const addList = addCards.map(r => ColonistObserver.cardMap[r]);
+        const subtractList = subtractCards.map(r => ColonistObserver.cardMap[r]);
+        const resources = Resources.fromList(addList, subtractList);
         return resources;
     }
 
@@ -386,20 +405,15 @@ ColonistObserver.sourceObserver.stealRandom = function (packetData) {
 
 ColonistObserver.sourceObserver.tradeBank = function (packetData) {
     const player = this.storage.players.id(packetData.player.index);
-    const give = ColonistObserver.cardsToResources(packetData.give);
-    const take = ColonistObserver.cardsToResources(packetData.take);
-    this.trade({
-        give: {
-            from: player,
-            to: "bank",
-            resources: give,
-        },
-        take: {
-            from: "bank",
-            to: player,
-            resources: take,
-        },
+    let res = ColonistObserver.cardsDiffToResources(
+        packetData.give, packetData.take,
+    );
+    const trade = new Trade({
+        giver: player,
+        taker: "bank",
+        resources: res,
     });
+    this.trade(trade);
 }
 
 ColonistObserver.sourceObserver.tradeCounter = function (packetData) {
@@ -432,22 +446,17 @@ ColonistObserver.sourceObserver.tradeOffer = function (packetData) {
 }
 
 ColonistObserver.sourceObserver.tradePlayer = function (packetData) {
-    const resourcesFrom = ColonistObserver.cardsToResources(packetData.cards);
-    const resourcesTo = ColonistObserver.cardsToResources(packetData.target_cards);
     const playerFrom = this.storage.players.id(packetData.player.index);
     const playerTo = this.storage.players.id(packetData.target_player.index);
-    const trade = {
-        give: {
-            from: playerFrom,
-            to: playerTo,
-            resources: resourcesFrom,
-        },
-        take: {
-            from: playerTo, // Swapped
-            to: playerFrom, // Swapped
-            resources: resourcesTo,
-        },
-    };
+    const res = ColonistObserver.cardsDiffToResources(
+        packetData.cards,
+        packetData.target_cards,
+    );
+    const trade = new Trade({
+        giver: playerFrom,
+        taker: playerTo,
+        resources: res,
+    });
     this.trade(trade);
 }
 
@@ -671,8 +680,10 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
             // This can happen when we start in the middle of a game and the
             // Trade module did not record a name. In this case we silently omit
             // the observation. Everything should work in the subsequent turn.
-            console.warn("Unknown trade creator");
-            console.info("Normal when starting in the middle of a game");
+            console.warn(
+                "Unknown trade creator.",
+                "Normal when starting in the middle of a game.",
+            );
             return;
         }
         const rawTradeCreator = rawCreatorName(trade);

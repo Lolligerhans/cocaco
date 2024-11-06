@@ -66,7 +66,7 @@ class CollusionTracker {
      */
     goDormant() {
         if (!this.#isDormant) {
-            this.#logger.log("Going dormant manually", trade);
+            this.#logger.log("Going dormant manually");
         }
         this.#isDormant = true;
     }

@@ -307,18 +307,12 @@ class Observer extends Trigger {
     }
 
     /**
-     * @param {Object} param0
-     * @param {*} param0.give Observer property transfer
-     * @param {*} param0.take Observer property transfer
+     * @param {Trade} trade
      */
-    trade({ give, take }) {
-        console.assert(give && take);
+    trade(trade) {
         const observation = {
             type: "trade",
-            payload: {
-                give: Observer.property.transfer(give),
-                take: Observer.property.transfer(take),
-            },
+            payload: trade,
         };
         this.#observe(observation);
     }

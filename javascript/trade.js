@@ -61,32 +61,6 @@ class Trade {
     }
 
     /**
-     * Factory to construct new Trade object from Observer property 'trade'.
-     * Once we phased out the observer property we can remove this function.
-     * @param {*} trade Trade in Observer property 'trade' format
-     * @return {Trade}
-     * Newly constructed trade object. The new trade object re-uses the
-     * references present in the observer property.
-     */
-    static fromObserverProperty(tradeProperty) {
-        console.assert(
-            tradeProperty.take.from.equals(tradeProperty.give.to),
-            "sanity check",
-        );
-        console.assert(
-            tradeProperty.take.to.equals(tradeProperty.give.from),
-            "sanity check",
-        );
-        let resources = Resources.fromObserverTrade(tradeProperty);
-        const ret = new Trade({
-            giver: tradeProperty.give.from,
-            taker: tradeProperty.give.to,
-            resources: resources,
-        });
-        return ret;
-    }
-
-    /**
      * Generate human readable string representing the trade
      * @param {Resources} [template] When provided, format with template
      * @param {boolean} [matches]
