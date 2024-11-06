@@ -294,33 +294,24 @@ class Collude {
      * Updates the state after a trade within the colluding group. The passed
      * trades count towards lowering or increasing the collusion balance of the
      * involved players, but not the total group balance.
-     * When some of the players are not part of the collusion group, does
-     * nothing.
-     * @param {Player} playerFrom The player giving positive entries of
-     *                            'resources', receiving the negative.
-     * @param {Player} playerTo The player receiving positive entries of
-     *                          resources, giving the negative.
-     * @param {Resources} resources Traded resources
+     * When some of the players are not part of the collusion group, the call is
+     * ignroed.
+     * @param {Trade} trade
      * @return {boolean}
      * true when balances were update. Else false (meaning at least one player
      * is not in the collusion group).
      */
-    updateTradeResources(playerFrom, playerTo, resources) {
-        const playerNameFrom = playerFrom.name;
-        const playerNameTo = playerTo.name;
-        if (!this.#hasColludersByName(playerNameFrom, playerNameTo)) {
+    updateTradeResources(trade) {
+        const playerNameFrom = trade.giver.name;
+        const playerNameTo = trade.taker.name;
+        if (!this.hasColluders(trade.giver, trade.taker)) {
             return false;
         }
-        console.assert(resources.countPositive() > 0);
-        console.assert(resources.countNegative() > 0);
-        this.#balances[playerNameFrom].subtract(resources);
-        this.#balances[playerNameTo].add(resources);
-        Collude.#logger.log(
-            "↔",
-            playerNameFrom, resources.toSymbols(), playerNameTo,
-        );
-        this.print(playerNameFrom.name);
-        this.print(playerNameTo.name);
+        this.#balances[playerNameFrom].subtract(trade.resources);
+        this.#balances[playerNameTo].add(trade.resources);
+        Collude.#logger.log(trade.toString());
+        this.print(playerNameFrom);
+        this.print(playerNameTo);
         return true;
     }
 

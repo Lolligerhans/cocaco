@@ -325,38 +325,29 @@ class CollusionPlanner {
      * Call when a trade is observed.
      * Delegates to Collude.updateTradeResources, and updates
      * #waitUntilNextTurn.
-     * @param {Player} playerFrom The player giving positive entries of
-     *                            'resources', receiving the negative.
-     * @param {Player} playerTo The player receiving positive entries of
-     *                          resources, giving the negative.
-     * @param {Resources} resources Traded resources
+     * @param {Trade} trade
      */
-    updateTradeResources(playerFrom, playerTo, resources) {
+    updateTradeResources(trade) {
         if (this.isStopped()) {
             return;
         }
         this.#consoleLogger.log(
-            playerFrom.name, resources.toSymbols(), playerTo.name,
+            trade.giver.name, trade.resources.toSymbols(), trade.taker.name,
         );
-        this.#collude.updateTradeResources(playerFrom, playerTo, resources);
+        this.#collude.updateTradeResources(trade);
 
         const playersAreColluding = this.#collude.hasColluders(
-            playerFrom,
-            playerTo,
+            trade.giver,
+            trade.taker,
         );
         if (!playersAreColluding) {
             // When we collude with only some players, trading with the others
             // starts dormant mode.
-            if (playerFrom.equals(this.#us)) {
+            if (trade.giver.equals(this.#us)) {
                 this.#collusionTracker.goDormant();
             }
             return;
         }
-        const trade = new Trade({
-            giver: playerFrom,
-            taker: playerTo,
-            resources: resources,
-        });
         this.#collusionTracker.updateTrade(trade);
     }
 

@@ -410,12 +410,7 @@ State.implementor.trade = function (trade) {
         take,
     );
 
-    this.collusionPlanner.updateTradeResources(
-        // TODO: just pass the trade whole
-        trade.giver,
-        trade.taker,
-        trade.resources,
-    );
+    this.collusionPlanner.updateTradeResources(trade);
 }
 
 State.implementor.turn = function ({ player, phase }) {

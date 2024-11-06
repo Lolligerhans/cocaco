@@ -123,6 +123,16 @@ cocaco_config = {
 };
 
 if (cocaco_config.replay) {
+    const require = (parent, key, value = true) => {
+        if (parent[key] !== value) {
+            console.warn("🥥 [Config] Require:", key, value);
+            parent[key] = value;
+        }
+    };
+    require(cocaco_config.log, "Collude");
+    require(cocaco_config.log, "frameInjection");
+    require(cocaco_config.log, "Observer");
+
     // Some settings are incompatible with the replay mode. Warn and overwrite.
     if (!(cocaco_config.replayInterval > 0)) {
         console.warn("config.js: Variable replayInterval adjusted for replay");
