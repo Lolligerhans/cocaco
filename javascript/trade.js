@@ -5,6 +5,9 @@
 
 /**
  * Catan trade object
+ * @property {Player} giver
+ * @property {Player | "bank"} taker
+ * @property {Resources} resources
  */
 class Trade {
 
@@ -23,7 +26,7 @@ class Trade {
     /**
      * Taking player. Positive entries of #resources are taken by this player,
      * negative entries are given.
-     * @type {Player}
+     * @type {Player | "bank"}
      */
     taker;
 

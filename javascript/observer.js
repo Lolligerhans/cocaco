@@ -11,9 +11,15 @@
 
 /**
  * @typedef {Object} Observation
- * @property {string} Observation.type One of the documented observation types
- * @property {Object} Observation.payload A payload depending on the type of
- *                                        observation.
+ * @property {string} type One of the documented observation types
+ * @property {Payload} payload
+ * A payload depending on the type of observation.
+ *
+ * @typedef { BuyPayload | CollusionStartPayload | CollusionStopPayload
+ *            | CollusionAcceptancePayload | CollusionOfferPayload
+ *            | DiscardPayload | GotPayload | MonoPayload | OfferPayload
+ *            | RollPayload | StartPayload | StealPayload | TradePayload
+ *            | TurnPayload | YopPayload } Payload
  */
 
 /**
@@ -25,7 +31,9 @@ class Observer extends Trigger {
     /**
      * @typedef {"road" | "settlement" | "city" | "devcard"} Buyable
      * An object players can buy in the game
-     * @typedef {"main" | ""} Phase A phase within the game
+     * @typedef {"main" | ""} Phase
+     * A phase within the game.
+     *  - main indicates the moment of action for collusion
      */
 
     /**
@@ -60,7 +68,7 @@ class Observer extends Trigger {
     };
 
     // ╭───────────────────────────────────────────────────────╮
-    // │ Standard observations                                 │
+    // │ Available observations                                │
     // ╰───────────────────────────────────────────────────────╯
 
     // The interface defines observation functions for game events. Ideally
@@ -69,27 +77,32 @@ class Observer extends Trigger {
 
     /**
      * A player buys/builds something
-     * @param {Object} param0
-     * @param {Player} param0.player The player buying/building something
-     * @param {Buyable} param0.object The object being bought/built
+     * @typedef {Object} BuyPayload
+     * @property {Player} player The player buying/building something
+     * @property {Buyable} object The object being bought/built
+     *
+     * @param {BuyPayload} param0
      */
     buy({ player, object }) {
         let observation = {
             type: "buy",
             payload: {
                 player: player,
-                object: Observer.property.buyable(object),
+                object: object,
             },
         };
         this.#observe(observation);
     }
 
     /**
-     * @param {Object} param0
-     * @param {Player} param0.player The player starting a collusion. Should
-     *                               currently always be us.
-     * @param {Player[]} param0.players List of colluding players, including
-     *                                  'player'.
+     * The user starts a new collusion group
+     * @typedef {Object} CollusionStartPayload
+     * @property {Player} player
+     * The player starting a collusion. Should always be us.
+     * @property {Player[]} players
+     * List of colluding players, including 'player'.
+     *
+     * @param {CollusionStartPayload} param0
      */
     collusionStart({ player, players }) {
         let observation = {
@@ -103,10 +116,12 @@ class Observer extends Trigger {
     }
 
     /**
-     * @param {Object} param0
-     * @param {Player} param0.player
-     * Player stopping colluding. Currently that should always be us, but we
-     * could react to other players exiting the collusion group.
+     * The user stops colluding.
+     * @typedef {Object} CollusionStopPayload
+     * @property {Player} player
+     * Player stopping colluding. Should always be us.
+     *
+     * @param {CollusionStopPayload} param0
      */
     collusionStop({ player }) {
         let observation = {
@@ -119,16 +134,23 @@ class Observer extends Trigger {
     }
 
     /**
-     * Another player has accepted our collusion offer. A collusion offer is
-     * just a trade offer that we intend to evaluate with the CollusinoPlanner.
-     * @param {Object} param0
-     * @param {Player} param0.player
+     * Another player accepted our collusion offer. A collusion offer is
+     * just a trade offer that we intend to evaluate with the CollusionPlanner.
+     *
+     * (!) The observation for tracking purposes is emitted separately.
+     *
+     * When multiple players accept, multiple observation are emitted.
+     *
+     * @typedef {Object} CollusionAcceptancePayload
+     * @property {Player} player
      * Player who accepted the collusion trade offer
-     * @param {Trade} param0.trade
-     * @param {function([Boolean])} param0.accept
+     * @property {Trade} trade The accepted trade
+     * @property {function([Boolean])} accept
      * Function which, if called with 'true', finalises the collusion trade. If
      * 'false' is passed as argument, the acceptance is rejected. (Currently not
      * implemented!)
+     *
+     * @param {CollusionAcceptancePayload} param0
      */
     collusionAcceptance({ player, trade, accept }) {
         console.assert(typeof accept === "function");
@@ -144,33 +166,39 @@ class Observer extends Trigger {
     };
 
     /**
-     * @param {Object} param0
-     * @param {Player} param0.player The player who created the trade offer
-     * @param {Trade} param0.trade
-     * @param {function([Boolean])} param0.accept
+     * Another player created a collusion offer to be evaluated by the
+     * CollusionPlanner.
+     *
+     * (!) The observation for tracking purposes is emitted separately.
+     *
+     * @typedef {Object} CollusionOfferPayload
+     * @property {Player} player The player who created the trade offer
+     * @property {Trade} trade
+     * @property {function([Boolean])} accept
      * Function sending acceptance of the offer if called with 'true' as
      * argument. If called with 'false', sends a rejection.
+     *
+     * @param {CollusionOfferPayload} payload
      */
-    collusionOffer({ player, trade, accept }) {
-        console.assert(typeof accept === "function");
+    collusionOffer(payload) {
         let observation = {
             type: "collusionOffer",
-            payload: {
-                player: player,
-                trade: trade,
-                accept: accept,
-            },
+            payload: payload,
         };
         this.#observe(observation);
     }
 
     /**
-     * @param {Object} param0
-     * @param {Player} param0.player Player discarding cards
-     * @param {Resources} param0.resources Discarded resources
-     * @param {Number} [param0.limit=7]
+     * A player discards resources due to a rolled 7. The observation for
+     * rolling a 7 is emitted separately.
+     * @typedef {Object} DiscardPayload
+     * @property {Player} player Player discarding cards
+     * @property {Resources} resources Discarded resources
+     * @property {Number} [limit=7]
      * The discard limit implied by the discard action. Currently only the
      * default is used.
+     *
+     * @param {DiscardPayload} param0
      */
     discard({ player, resources, limit = 7 }) {
         console.assert(resources instanceof Resources);
@@ -186,10 +214,13 @@ class Observer extends Trigger {
     }
 
     /**
-     * A player got resources by an unspecified mechanism
-     * @param {Object} param0
-     * @param {Player} param0.player Player who got resources
-     * @param {Resources} param0.resources Obtained resources
+     * A player got resources from rolling
+     *
+     * @typedef {Object} GotPayload
+     * @property {Player} player Player who got resources
+     * @property {Resources} resources Obtained resources
+     *
+     * @param {GotPayload} param0
      */
     got({ player, resources }) {
         console.assert(resources instanceof Resources);
@@ -204,11 +235,14 @@ class Observer extends Trigger {
     }
 
     /**
-     * @param {Object} param0
-     * @param {Player} param0.player Player playing the monopoly
-     * @param {string} param0.resource Name of the stolen resource
-     * @param {Resources} param0.resources
-     * Total amount of resources stolen using the monopoly
+     * A player plays a monopoly.
+     * @typedef {Object} MonoPayload
+     * @property {Player} player Player playing the monopoly
+     * @property {string} resource Name of the stolen resource
+     * @property {Resources} resources
+     * Sum of resources stolen using the monopoly
+     *
+     * @param {MonoPayload} param0
      */
     mono({ player, resource, resources }) {
         console.assert(resources instanceof Resources);
@@ -225,15 +259,19 @@ class Observer extends Trigger {
 
     /**
      * A trade offer or trade counter offer is made.
-     * @param {Object} param0
-     * @param {Trade} param0.offer
-     * The role of giver and take is such that the giver's cards are revealed.
-     * In a counter offer, the countering player is the giver.
      *
-     * This is different from collusion related observations where it is always
+     * This observation is for tracking only. Collusion-related observations are
+     * emitted separately.
+     * @typedef {Object} OfferPayload
+     * @property {Trade} offer
+     * The role of giver and take is such that the giver's cards are revealed:
+     * In a counter offer, the countering player is the giver.
+     * This is different from collusion-related observations where it is always
      * the giver's turn.
-     * @param {any[]} [param0.targets=[]] Currently unused
-     * @param {boolean} [param0.isCounter=false] Currently unused
+     * @property {any[]} [targets=[]] Currently unused
+     * @property {boolean} [isCounter=false] Currently unused
+     *
+     * @param {OfferPayload} param0
      */
     offer({ offer, targets = [], isCounter = false }) {
         console.assert(offer.giver !== null);
@@ -251,9 +289,12 @@ class Observer extends Trigger {
     }
 
     /**
-     * @param {Object} param0
-     * @param {Player} param0.player Rolling player
-     * @param {Number} param0.number Rolled number (2-12)
+     * A player rolls a number. Used for dice stats.
+     * @typedef {Object} RollPayload
+     * @property {Player} player Rolling player
+     * @property {Number} number Rolled number (2-12)
+     *
+     * @param {RollPayload} param0
      */
     roll({ player, number }) {
         console.assert(2 <= number && number <= 12);
@@ -268,10 +309,16 @@ class Observer extends Trigger {
     }
 
     /**
-     * Start a game between the provided players.
-     * @param {Object} param0
-     * @param {Player} param0.us
-     * @param {Players} param0.players The 'Players' object to be used
+     * Start a game between the provided players. Start with 0 resources for
+     * each player.
+     *
+     * (!) Must be the first observation, emitted only once.
+     *
+     * @typedef {Object} StartPayload
+     * @property {Player} us The player belonging to the user
+     * @property {Players} players The 'Players' object to be used
+     *
+     * @param {StartPayload} param0
      */
     start({ us, players }) {
         console.assert(players.size() === 4,
@@ -290,12 +337,17 @@ class Observer extends Trigger {
     }
 
     /**
-     * One player steals resources from another player
-     * @param {Object} param0
-     * @param {Player} thief
-     * @param {Player} victim
-     * @param {string} [param0.resource=null]
-     * Name of stolen resource. If 'null', the steal is interpreted as unknown.
+     * One player steals resources from another player. Used for cards tracking
+     * and rob stats.
+     *
+     * @typedef {Object} StealPayload
+     * @property {Player} thief
+     * @property {Player} victim
+     * @property {string} [resource=null]
+     * Name of stolen resource. If 'null', the steal is interpreted as uniform
+     * random.
+     *
+     * @param {StealPayload} param0
      */
     steal({ thief = null, victim = null, resource = null }) {
         // Can leave out one of them, but not both.
@@ -317,7 +369,12 @@ class Observer extends Trigger {
     }
 
     /**
-     * @param {Trade} trade
+     * A resource trade between players or with the bank. Used for both resource
+     * tracking and collusion updates.
+     * @typedef {Object} TradePayload
+     * @property {Trade} trade
+     *
+     * @param {TradePayload} param0
      */
     trade(trade) {
         const observation = {
@@ -328,26 +385,32 @@ class Observer extends Trigger {
     }
 
     /**
-     * Currently only emitter when it is our turn in the main phase
-     * @param {Object} param0
-     * @param {Player} param0.player Player who's turn it is
-     * @param {Phase} param0.phase Phase of the game
+     * Emitted on a specific phase of a turn. Used to identify moments of action
+     * for collusion, and to reset stateful components.
+     * @typedef {Object} TurnPayload
+     * @property {Player} player Player who's turn it is
+     * @property {Phase} phase Phase of the game
+     *
+     * @param {TurnPayload} param0
      */
     turn({ player, phase }) {
         const observation = {
             type: "turn",
             payload: {
                 player: player,
-                phase: Observer.property.phase(phase),
+                phase: phase,
             },
         };
         this.#observe(observation);
     }
 
     /**
-     * @param {Object} param0
-     * @param {Player} param0.player The player using the YOP
-     * @param {Resources} param0.resources The chosen resources
+     * A player uses a YOP.
+     * @typedef {Object} YopPayload
+     * @property {Player} player The player using the YOP
+     * @property {Resources} resources The chosen resources
+     *
+     * @param {YopPayload} param0
      */
     yop({ player, resources }) {
         console.assert(resources instanceof Resources);
@@ -406,22 +469,4 @@ Observer.property.transfer = function ({
     // Sanity check: transfer between different players (allow both null)
     console.assert(transfer.from !== transfer.to || transfer.from === null);
     return transfer;
-}
-
-Observer.property.trade = function ({ give = null, take = null }) {
-    const trade = {
-        give: Observer.property.transfer(give ?? {}),
-        take: Observer.property.transfer(take ?? {}),
-    };
-    return trade;
-}
-
-Observer.property.buyable = function (arg) {
-    console.assert(Observer.buyables.includes(arg));
-    return arg;
-}
-
-Observer.property.phase = function (arg) {
-    console.assert(Observer.phases.includes(arg));
-    return arg;
 }
