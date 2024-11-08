@@ -783,8 +783,10 @@ then counter-offer in the host GUI.
 Note that the `response` meaning is different in the received `tradeState`
 frames.
 
+Sending a `resposne` toggles the check box in the trade, not setting it.
+
 Decline (1) is sent automatically and immediately if the trade cannot be
-afforded. No decline is sent during an embargo against the offering player.
+afforded. No decline is sent during an embargo against the offering player (?).
 
 When making an identical counter offer both the 2 and 3 are sent, and an
 accepting message in-between. If the counter offer is novel, it is sent as

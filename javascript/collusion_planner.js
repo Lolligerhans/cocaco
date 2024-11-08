@@ -330,6 +330,14 @@ class CollusionPlanner {
         if (this.isStopped()) {
             return;
         }
+
+        if (trade.taker === "bank") {
+            // Do not immediately trade away resources the player just traded
+            // for with the bank.
+            this.#collusionTracker.goDormant();
+            return;
+        }
+
         this.#consoleLogger.log(trade.toString());
         const goDormantIfNotMatchingTemplate = (trade) => {
             let template = this.#collude.getCollusionTemplate(

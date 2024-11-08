@@ -387,6 +387,8 @@ State.implementor.trade = function (trade) {
     const giveSlice = Multiverse.asSlice(give);
     const takeSlice = Multiverse.asSlice(take);
 
+    this.collusionPlanner.updateTradeResources(trade);
+
     // ── Trade with the bank ────────────────────────────────
     if (trade.taker === "bank") {
         this.multiverse.transformSpawn(
@@ -404,8 +406,6 @@ State.implementor.trade = function (trade) {
         give,
         take,
     );
-
-    this.collusionPlanner.updateTradeResources(trade);
 }
 
 State.implementor.turn = function ({ player, phase }) {
