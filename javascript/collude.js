@@ -102,7 +102,10 @@ class Collude {
     static #logger = new ConsoleLog("Collude", "🤝");
 
     /**
-     * Maximum amount of resources templates should have for each player
+     * Maximum amount of resources templates should have for each player.
+     *
+     * Small numbers (especially 1) may prevent balancing asymmetric amounts of
+     * owed resources between players.
      * @type {Number}
      */
     static #maxPerPlayer = cocaco_config.collude.maxOfferPerSide; // const
@@ -249,7 +252,15 @@ class Collude {
     static #reducePositive(template) {
         let sumPositive = template.sumPositive();
         for (; sumPositive > Collude.#maxPerPlayer; --sumPositive) {
-            const [maxKey, _] = template.max();
+            // We avoid sending the max trade. We could do so by
+            // deterministically removing resources from the template.
+            // Choosing deterministically has two drawbacks:
+            //  - For unilateral collusion (with bots), collusion offers are
+            //    biased towards trading certain resources over others
+            //  - For bilateral collusion (with other cocaco players), there is
+            //    still a bias when players owe different amounts of resources.
+            // Picking randomly avoids these biases.
+            const [maxKey, _] = pickUniform(template.maxAll());
             --template[maxKey];
         }
     }
@@ -257,14 +268,16 @@ class Collude {
     static #reduceNegative(template) {
         let sumNegative = template.sumNegative();
         for (; sumNegative < -Collude.#maxPerPlayer; ++sumNegative) {
-            const [minKey, _] = template.min();
+            // See note in #reducePositive() for why we pick uniformly at random
+            const [minKey, _] = pickUniform(template.minAll());
             ++template[minKey];
         }
     }
 
     /**
-     * @return {Resources} Target resource count of every player. The target is
-     *                     the same for every player.
+     * @return {Resources}
+     * Target resource counts for all players. The target is the same for every
+     * player.
      */
     #target() {
         let target = new Resources(this.#groupTotal);

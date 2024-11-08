@@ -230,7 +230,7 @@ class Resources {
     }
 
     /**
-     * Find largest value and the associated key.
+     * Find a largest value and the associated key. Ties are broken arbitrarily.
      * @return {[Number, Number]} Array [maxKey, maxValue]
      */
     max() {
@@ -242,7 +242,33 @@ class Resources {
     }
 
     /**
-     * Find smallest value and the associated key.
+     * Find all largest values and the associated keys
+     * @return {[Number, Number][]} Array of pairs [maxKey, maxValue]
+     */
+    maxAll() {
+        let ret = [];
+        const reduction = (current, [k, v]) => {
+            if (v < current[1]) {
+                return current;
+            }
+            if (v > current[1]) {
+                // All previous are too small
+                ret = [];
+            }
+            ret.push([k, v]);
+            return [k, v];
+        };
+        Object.entries(this).reduce(
+            reduction,
+            [null, Number.NEGATIVE_INFINITY],
+        );
+        console.assert(ret.length >= 1);
+        return ret;
+    }
+
+    /**
+     * Find a smallest value and the associated key. Ties are broken
+     * arbitrarily.
      * @return {[Number, Number]} Array [minKey, minValue]
      */
     min() {
@@ -251,6 +277,31 @@ class Resources {
             [null, Number.POSITIVE_INFINITY],
         );
         return min;
+    }
+
+    /**
+     * Find all smallest values and the associated keys
+     * @return {[Number, Number][]} Array of pairs [minKey, minValue]
+     */
+    minAll() {
+        let ret = [];
+        const reduction = (current, [k, v]) => {
+            if (v > current[1]) {
+                return current;
+            }
+            if (v < current[1]) {
+                // All previous are too large
+                ret = [];
+            }
+            ret.push([k, v]);
+            return [k, v];
+        };
+        Object.entries(this).reduce(
+            reduction,
+            [null, Number.POSITIVE_INFINITY],
+        );
+        console.assert(ret.length >= 1);
+        return ret;
     }
 
     /**

@@ -96,6 +96,17 @@ function mapObject(object, func) {
 }
 
 /**
+ * Pick random element from an array.
+ * @param {*[]} arr Array of length >= 1
+ * @return {*} Element from arr chosen uniformly at random
+ */
+function pickUniform(arr) {
+    console.assert(arr.length >= 1);
+    const index = Math.floor(Math.random() * arr.length);
+    return arr[index];
+}
+
+/**
  * Create a string of UTF-8 symbols.
  * Format:
  *  - Symbols of the same kind are repeated without spaces

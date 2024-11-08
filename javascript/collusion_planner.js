@@ -245,8 +245,7 @@ class CollusionPlanner {
     /**
      * Begin colluding as the provided group.
      * @param {Player[]} players
-     * Collusion participants. Must include the 'us' player used during
-     * construction.
+     * Collusion participants. Must include 'this.#us'.
      */
     start(players) {
         // Resets all state and start colluding.
@@ -348,6 +347,12 @@ class CollusionPlanner {
             }
             return;
         }
+        // TODO: Do not go dormant on trades matching the collusion template.
+        //       The tracker is meant to allow trading against the collusion
+        //       template. When a trade is not against the template, we can
+        //       continue. This goes for unilateral collusion (bot games) or
+        //       when we do not generate collusion trades due to uncertainty in
+        //       the cards. This would make tracking past suggestions obsolete.
         this.#collusionTracker.updateTrade(trade);
     }
 
