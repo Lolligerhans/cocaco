@@ -261,6 +261,35 @@ class RenderCards {
     }
 
     /**
+     * Update the steal chances of a resourceEntry element
+     * @param {HTMLElement} entry
+     * The resource entry element to be updated. See the template for its
+     * structure.
+     * @param {*} stealProbability
+     * Multiverse stealProbability object to obtain data from
+     */
+    #updateEntrySteals(entry, stealProbability) {
+        let resourceCards = entry.childNodes[2].childNodes;
+        const cardCount = resourceCards.length;
+        console.assert(cardCount === 5);
+        const updateCard = (index, value) => {
+            const card = resourceCards[index];
+            if (value === 0) {
+                card.style.visibility = "hidden";
+            }
+            else {
+                card.style.visibility = "visible";
+                card.style["outline-color"] = colourInterpolate(value);
+            }
+        };
+        updateCard(0, stealProbability["wood"]);
+        updateCard(1, stealProbability["brick"]);
+        updateCard(2, stealProbability["sheep"]);
+        updateCard(3, stealProbability["wheat"]);
+        updateCard(4, stealProbability["ore"]);
+    }
+
+    /**
      * Update the data shown in the existing sidebar element
      */
     #updateSidebar() {
@@ -272,12 +301,17 @@ class RenderCards {
         this.#multiverse.updateStats();
         const distribution = this.#multiverse.marginalDistribution;
         const guessAndRange = this.#multiverse.guessAndRange;
+        const stealProbabilitiy = this.#multiverse.stealProbability;
         let entries = this.#sidebar.firstElementChild.childNodes;
         Object.entries(this.#playerNames).forEach(([index, playerName]) => {
             this.#updateEntry(
                 entries[index],
                 guessAndRange[playerName],
                 distribution[playerName],
+            );
+            this.#updateEntrySteals(
+                entries[index],
+                stealProbabilitiy[playerName],
             );
         });
     }
@@ -335,6 +369,10 @@ function generateTemplates(templates) {
     templates.resourceCards = document.createElement("div");
     templates.resourceCards.classList.add("cocaco", "resourceCards")
 
+    // The 5 cards to indicate steal chance for a single palyer
+    templates.resourceCardsSingle = document.createElement("div");
+    templates.resourceCardsSingle.classList.add("cocaco", "resourceCards")
+
     // Construct filled resource row
     const insertResourceCardIntoDiv = (div, typeString) => {
         const image = templates[typeString].cloneNode(true);
@@ -352,15 +390,25 @@ function generateTemplates(templates) {
         }
     }
 
+    // Construct filled resource row for the steal chance
+    for (const resource of RenderCards.resourceTypes) {
+        const onlyCard = templates.cardFirst.cloneNode(true);
+        insertResourceCardIntoDiv(onlyCard, resource);
+        templates.resourceCardsSingle.appendChild(onlyCard);
+    }
+
     // 'resourceEntry' is the whole row, including name and the resource cards
     templates.resourceEntry = document.createElement("div");
     templates.resourceEntry.classList.add("cocaco", "resourceEntry");
     templates.resourceEntry.appendChild(
         templates.playerName.cloneNode(true),
     );
-    templates.resourceEntry.appendChild(
-        templates.resourceCards.cloneNode(true),
-    );
+    let haveResoruceCards = templates.resourceCards.cloneNode(true);
+    haveResoruceCards.classList.add("hide-on-hover");
+    templates.resourceEntry.appendChild(haveResoruceCards);
+    let stealResourceChance = templates.resourceCardsSingle.cloneNode(true);
+    stealResourceChance.classList.add("show-on-hover");
+    templates.resourceEntry.appendChild(stealResourceChance);
 
     // Construct empty resources. Append copies of the filled resource entry into
     // it on construction.

@@ -1,9 +1,11 @@
 # Instructions
 
+Follow [#Installation](../README.md#installation).
+
 > [!NOTE]
 > Version 3 instructions are [here](https://github.com/Lolligerhans/cocaco/blob/v3.4.6/doc/usage.md)
 
-Follow [#Installation](../README.md#installation). Then:
+## Starting
 
 1. Visit [Colonist][Colonist]
 1. Open the 🧩 Extensions pop-up menu. It is located at the top right.
@@ -66,7 +68,7 @@ These are sensitive to:
 
 ![Screenshot](/assets/screenshots/table.png)
 
-A table based display can be [configured](./config.md). It does not look as
+A table based display can be [configured](#configuration). It does not look as
 nice, but shows more information.
 
 ### Interaction
@@ -107,9 +109,25 @@ nice, but shows more information.
 more) with 11 Bernoulli trials. This puts blue into perspective of 11
 opportunities.
 - blue/red lines: Progression of highest blue/red dot.
-- bars: `luck/n) := 1 / rarity(n) * (n - E[N])`. Colour codes adjusted rarity in
+- bars: `luck(n) := 1 / rarity(n) * (n - E[N])`. Colour codes adjusted rarity in
 green, yellow, red.
 - purple line: KL-Divergence to expectation
+
+## Configuration
+
+No configuration is needed for regular use.
+
+Cocaco can be configured by replacing values in the configuration object
+`cocaco_config` in [config.js](../javascript/config.js). These options may be
+useful for some users:
+
+<!--markdownlint-disable MD013-->
+| Option | Use case |
+|-|-|
+| `collude.autocollude` | Set to `true` to [collude](instructions.md#collusion) with all players from the start. Fun for bot games. |
+| `pipeline` | Set to `"Colony"` to switch to the code used by version 3. More robust than the default. |
+| `render.type` | Set to `"table"` to use a numerical resource display. |
+| `fixedPlayerName`, `playerName` | See Issue #2 [here](https://github.com/Lolligerhans/cocaco/issues/2). |
 
 <!--
  !  ╭─────────────────────────────────────────────────────────────────────────╮

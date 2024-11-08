@@ -128,8 +128,9 @@ class Resources {
     }
 
     /**
-     * Modifies the object in-place, dividing element-wise by 'divisor'.
-     * @param {Resources} divisor
+     * Modifies the object in-place, dividing element-wise using integer
+     * division (truncate towards 0).
+     * @param {Number} divisor Divisor for integer division
      */
     divide(divisor) {
         mapObject(this, x => Math.trunc(x / divisor));
@@ -199,11 +200,11 @@ class Resources {
     }
 
     /**
-     * Modifies the object in-place, dividing element-wise by 2.
+     * Modifies the object in-place, dividing element-wise by 2 using integer
+     * division (truncate towards 0).
      */
     halve() {
-        // Normal integer division; truncating towards 0
-        mapObject(this, x => Math.trunc(x / 2));
+        this.divide(2);
     }
 
     /**

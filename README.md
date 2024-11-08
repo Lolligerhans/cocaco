@@ -62,6 +62,7 @@ Install as [temporary extension](https://extensionworkshop.com/documentation/dev
 - Temporary Extensions
 - Load Temporary Add-on...
 - Select _cocaco/manifest.json_
+
 <!--Chrome worked in the Game Log version, but socket is FF only.-->
 <!-- - [Chrome](https://www.cnet.com/tech/services-and-software/how-to-install-chrome-extensions-manually/ "Tutorial") -->
 <!--   - Visit URL [chrome://extensions/](chrome://extensions/) -->
@@ -72,6 +73,7 @@ Install as [temporary extension](https://extensionworkshop.com/documentation/dev
 > [!TIP]
 > Bookmark the URL to repeat these steps more easily after restarting the
 > browser.
+
 <!-- > Firefox does not allow permanent installation of local extensions -->
 <!-- > (developer versions may allow it). -->
 

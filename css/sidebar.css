@@ -4,7 +4,7 @@
  * ╰───────────────────────────────────────────────────────────╯
 */
 
-.cocaco{
+.cocaco {
 
   white-space-collapse: discard;
 
@@ -33,11 +33,19 @@
  * ╰───────────────────────────────────────────────────────────╯
 */
 
+&#cocaco-sidebar:hover .hide-on-hover {
+  display: none;
+}
+
+&#cocaco-sidebar:not(:hover) .show-on-hover {
+  display: none;
+}
+
 &.resources {
   box-sizing: border-box;
 }
 
-&.resourceCards{
+&.resourceCards {
   box-sizing: border-box;
   display: flex;
   height: 2cm;
@@ -46,7 +54,7 @@
   width: fit-content;
 }
 
-&.resourceCards *{
+&.resourceCards * {
     border-radius: 5%;
 }
 
@@ -56,7 +64,7 @@
   pointer-events: none;
 }
 
-&img:hover{
+&img:hover {
   filter: grayscale(0); /* Otherwise z-index does nothing */
   outline: red dotted 5px;
   z-index: 9991;
@@ -69,18 +77,18 @@
   width: max-content;
 }
 
-&.cardFirst{
+&.cardFirst {
   /* outline: 3px dashed white; */
   /* outline-offset: -3px; */
 }
 
-&.cardNotFirst{
+&.cardNotFirst {
   color: green;
   margin-left: -1cm;
   position: relative;
 }
 
-&.cardUnused{
+&.cardUnused {
   display: none;
 }
 
