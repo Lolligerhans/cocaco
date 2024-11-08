@@ -80,7 +80,7 @@ class CollusionPlanner {
      */
     constructor(us, outputElement) {
         this.#us = us;
-        this.#collusionTracker = new CollusionTracker(us);
+        this.#collusionTracker = new CollusionTracker();
         this.#logger = new MessageLog(outputElement);
         this.#consoleLogger.log("Created for", us.name);
     }
@@ -171,19 +171,18 @@ class CollusionPlanner {
         }
         trades = trades.filter(trade => trade !== null);
 
-        /**
-         * Update #collusionTracker with the newly generated trades
-         * @param {Trade} trade
-         */
-        const updateCollusionTracker = trade => {
-            this.#collusionTracker.updateSuggestion(trade);
+        // We generate trades that any player can accept. So output each trade
+        // only once.
+        let set = new TradeResourcesSet();
+        const hasUniqueResourceMovement = (trade) => {
+            const keep = set.addTrade(trade);
+            return keep;
         }
-        trades.forEach(updateCollusionTracker);
+        trades = trades.filter(hasUniqueResourceMovement);
 
         if (trades.length === 0) {
             this.#consoleLogger.log("No collusion trades available");
         }
-
         return trades;
     }
 
@@ -332,7 +331,7 @@ class CollusionPlanner {
             return;
         }
         this.#consoleLogger.log(trade.toString());
-        const goDormatIfNotMatchingTemplate = (trade) => {
+        const goDormantIfNotMatchingTemplate = (trade) => {
             let template = this.#collude.getCollusionTemplate(
                 trade.giver,
                 trade.taker,
@@ -351,7 +350,7 @@ class CollusionPlanner {
         if (isFromUs && !playersAreColluding) {
             this.#collusionTracker.goDormant();
         } else if (isFromUs && playersAreColluding) {
-            goDormatIfNotMatchingTemplate(trade);
+            goDormantIfNotMatchingTemplate(trade);
         }
         // Update #collude last so we can use it for template generation above
         this.#collude.updateTradeResources(trade);
@@ -367,8 +366,8 @@ class CollusionPlanner {
         // should leave the dormant state independent of the #collude module.
         // The only consequence is that we may remain dormant when stopping and
         // starting collusion in the same turn. But since collusion starts with
-        // zero balances, this has no effect. If we started with nonzero
-        // balance, we would only have to wait a single turn to sync.
+        // zero balances, this has little consequences. Even if we started with
+        // nonzero balance, we would only have to wait a single turn to sync.
         this.#collusionTracker.updateTurn(player);
 
     }

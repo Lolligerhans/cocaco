@@ -44,6 +44,17 @@ class Trade {
     }
 
     /**
+     * Compare the resources between two trades
+     * @param {Trade} other Another Trade instance to compare to
+     * @return {boolean}
+     * true if the resources of both trades are equal, else false.
+     */
+    equalResources(other) {
+        console.assert(this.resources && other.resources);
+        return this.resources.equals(other.resources);
+    }
+
+    /**
      * Compare two fully specified trades for equality
      * @param {Trade} other Another Trade instance to compare to
      * @return {boolean} true if the trades are equal, else false
