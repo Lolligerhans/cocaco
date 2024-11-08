@@ -322,38 +322,39 @@ class CollusionPlanner {
 
     /**
      * Call when a trade is observed.
-     * Delegates to Collude.updateTradeResources, and updates
-     * #waitUntilNextTurn.
+     * Delegates to Collude.updateTradeResources and update #collusiontracker.
      * @param {Trade} trade
      */
     updateTradeResources(trade) {
+        // Here we do not use isStoppedOrDormant() because we need to update
+        // this.#collude.
         if (this.isStopped()) {
             return;
         }
-        this.#consoleLogger.log(
-            trade.giver.name, trade.resources.toSymbols(), trade.taker.name,
-        );
-        this.#collude.updateTradeResources(trade);
-
+        this.#consoleLogger.log(trade.toString());
+        const goDormatIfNotMatchingTemplate = (trade) => {
+            let template = this.#collude.getCollusionTemplate(
+                trade.giver,
+                trade.taker,
+            );
+            console.assert(template !== null, "Sanity check");
+            if (!this.tradeMatchesTemplate(template, trade)) {
+                this.#collusionTracker.goDormant();
+            }
+        }
+        const isFromUs = trade.giver.equals(this.#us);
         const playersAreColluding = this.#collude.hasColluders(
             trade.giver,
             trade.taker,
         );
-        if (!playersAreColluding) {
-            // When we collude with only some players, trading with the others
-            // starts dormant mode.
-            if (trade.giver.equals(this.#us)) {
-                this.#collusionTracker.goDormant();
-            }
-            return;
+        // Go dormant when observing our trades that are not collusion abiding
+        if (isFromUs && !playersAreColluding) {
+            this.#collusionTracker.goDormant();
+        } else if (isFromUs && playersAreColluding) {
+            goDormatIfNotMatchingTemplate(trade);
         }
-        // TODO: Do not go dormant on trades matching the collusion template.
-        //       The tracker is meant to allow trading against the collusion
-        //       template. When a trade is not against the template, we can
-        //       continue. This goes for unilateral collusion (bot games) or
-        //       when we do not generate collusion trades due to uncertainty in
-        //       the cards. This would make tracking past suggestions obsolete.
-        this.#collusionTracker.updateTrade(trade);
+        // Update #collude last so we can use it for template generation above
+        this.#collude.updateTradeResources(trade);
     }
 
     /**

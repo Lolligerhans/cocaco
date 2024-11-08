@@ -8,15 +8,13 @@
 /**
  * Helper used by CollusionPlanner.
  *
- * When colluding, we want to stop suggesting trades after the user makes the
- * first manual trade. CollusionTracker implements this behaviour.
+ * When colluding, we want to stop suggesting trades ("going dormant") after the
+ * user makes the first manual trade. CollusionTracker implements this
+ * behaviour.
  *
  * Maintains a set of suggested trades (TradeSet). Once trade is finalised that
  * is not in the set, that must be the first user generated trade. If
  * a suggested trade is executed, we remove the trade from the set.
- *
- * Additionally, implements to dormant flag to indicate when collusion should
- * wait until the end of the turn.
  */
 class CollusionTracker {
 
@@ -106,7 +104,7 @@ class CollusionTracker {
     }
 
     /**
-     * Update for a new collusion-related trades.
+     * Update for a new collusion-related trade.
      * If the trade is not by us this function does nothing. If the trade is by
      * us:
      *  - remove the stored suggestion matching this trade
@@ -116,6 +114,10 @@ class CollusionTracker {
      * A collusion-related trade that was executed in game. Collusion-related
      * trades are trades where both participants are part of the collusion
      * group. The CollusionTracker does not verify the collusion group.
+     *
+     * TODO: This is currently no longer used, but we may want to use the
+     *       associated code later, to deduplicate collusion offers. So keep it
+     *       here for now.
      */
     updateTrade(trade) {
         if (!this.#isTradeByUs(trade)) {
