@@ -8,8 +8,8 @@
 /**
  * Keep track of the Colonist trade state by updating a tradeState object on new
  * frames. The trade state is mostly about trade offers. When a "trade" is
- * mentioned in this class, that refers to the description of offered trades as
- * represented in the Data frames.
+ * mentioned in this class, that refers to this description of offered trades as
+ * represented in the tradeState within the Data frames.
  */
 class ColonistTrade {
     /**
@@ -41,8 +41,8 @@ class ColonistTrade {
      */
     #logger = new ConsoleLog("ColonistTrade", "💬");
 
-    // Test if trade IDs repeat. If this doesnt fire once we test a game or two
-    // remove it.
+    // Test if trade IDs repeat. If this does not fire once we test a game or
+    // two remove it.
     testRepetition = new Set();
 
     // Used to filter 'tradeState' Source packets to keep only new, "active"
@@ -155,6 +155,32 @@ class ColonistTrade {
     }
 
     /**
+     * Generate all active embargoes. The observer can uses this to overwrite
+     * the active embargoes.
+     * @return {[Id,Id][]}
+     * List of embargoes. @see Id
+     */
+    #getEmbargoes() {
+        if (!Object.hasOwn(this.#tradeState, "embargoState")) {
+            return [];
+        }
+        let ret = [];
+        /**
+         * @param {Id} playerId
+         * @param {Number[]} embargoList
+         */
+        const generateEmbargoes = ([playerId, playerEmbargoState]) => {
+            playerEmbargoState.activeEmbargosAgainst.forEach(
+                v => ret.push([Number.parseInt(playerId), v]),
+            );
+        };
+        Object.entries(this.#tradeState.embargoState).forEach(
+            generateEmbargoes,
+        );
+        return ret;
+    }
+
+    /**
      * Get trades added by the last call to 'update()'
      * @return {Object<string,Object>} @see TradeId -> trade
      */
@@ -180,10 +206,12 @@ class ColonistTrade {
     /**
      * Replace current trade state
      * @param {Object} tradeState 'tradeState' object as given in Source packets
-     * @return {Object<string,Object>}
-     * Object of newly active offers as represented in source packets, see
-     * '#getNewTrades()'.
-     *
+     * @return {[Object<string,Object>,[Player,Player][]]}
+     * List of
+     *  - Active offers as Object of trades as represented in source packets,
+     *    see '#getNewTrades()'.
+     *  - Active embargoes (array of player pairs, represented by their IDs).
+     *    When returning null there are no changes.
      */
     reset(tradeState) {
         this.#newTrades.clear();
@@ -192,7 +220,10 @@ class ColonistTrade {
         );
         this.#tradeState = structuredClone(tradeState);
         this.#cleanup();
-        return this.#getNewTrades();
+        // Only add embargoes if the input object contained them
+        const embargoes = Object.hasOwn(tradeState, "embargoState") ?
+            this.#getEmbargoes() : [];
+        return [this.#getNewTrades(), embargoes];
     }
 
     /**
@@ -258,9 +289,12 @@ class ColonistTrade {
      * Update the tradeState object from the given update object
      * @param {Object} tradeState
      * Update object for a 'tradeState' object as present in frames.
-     * @return {Object<string,Object>}
-     * Object of newly active offers as represented in source packets, see
-     * '#getNewTrades()'.
+     * @return {[Object<string,Object>, null|[Id,Id][]]}
+     * List of
+     *  - Newly active offers as Object of trades as represented in source
+     *    packets, see '#getNewTrades()'.
+     *  - Active embargoes (array of player pairs, represented by their IDs).
+     *    When returning null there are no changes.
      */
     update(tradeState) {
         this.#newTrades.clear();
@@ -272,9 +306,13 @@ class ColonistTrade {
         const newTrades = this.#getNewTrades();
 
         if (Object.values(newTrades).includes(undefined)) {
-            // Bug when a trade is 'undefiend'?
+            // Bug when a trade is 'undefined'?
             debugger; // FIXME: Bug?
         }
+
+        // Only add embargoes if the input object contained them
+        const embargoes = Object.hasOwn(tradeState, "embargoState") ?
+            this.#getEmbargoes() : null;
 
         this.#logger.log(
             `Trade: new=${Object.keys(newTrades).length},`,
@@ -282,7 +320,7 @@ class ColonistTrade {
             `closed=${this.countClosedTrades()},`,
             `old=${this.countOldTrades()}`,
         );
-        return newTrades;
+        return [newTrades, embargoes];
     }
 
     /**

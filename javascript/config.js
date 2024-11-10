@@ -90,6 +90,7 @@ cocaco_config = {
         CollusionPlanner: false,
         CollusionTracker: false,
         ColonistTrade: false,
+        EmbargoTracker: false,
         frameInjection: false,
         Observer: false,
         RenderCards: true,

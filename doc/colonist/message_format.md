@@ -454,8 +454,6 @@ player index/enum in the other objects.
 
 #### tradeState
 
-General format:
-
 ```JSON
 "tradeState": {
   "activeOffers": {},

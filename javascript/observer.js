@@ -214,6 +214,25 @@ class Observer extends Trigger {
     }
 
     /**
+     * The embargo state is reset. Embargoes stop collusion activity.
+     * @typedef {Object} EmbargoPayload
+     * @property {[Player,Player][]} embargoes
+     * Array of embargo pairs. The players in each embargo pair may not trade
+     * with each other.
+     *
+     * @param {EmbargoPayload} embargoPayload
+     */
+    embargo(embargoPayload) {
+        let observation = {
+            type: "embargo",
+            payload: {
+                embargoes: embargoPayload,
+            }
+        };
+        this.#observe(observation);
+    }
+
+    /**
      * A player got resources from rolling
      *
      * @typedef {Object} GotPayload

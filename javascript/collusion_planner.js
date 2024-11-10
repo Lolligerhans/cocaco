@@ -1,6 +1,10 @@
 "use strict";
 
-// CollusionPlanner provides resources balancing between colluding players.
+// CollusionPlanner is the top level module implementing resource balancing
+// between colluding players.
+//
+// Collusion planner implements some aspects, but mostly it wraps the set of
+// classes implementing independent aspects.
 
 // ── Interface ──────────────────────────────────────────────
 //  - The colluding parties are provided by name
@@ -34,6 +38,9 @@
 //  - Basic operations
 //      - 'Observer' property converter
 //      - 'Resources'
+//  - CollusionPlanner
+//  - CollusionTracker
+//  - EmbargoTracker
 
 // ── Implementation ─────────────────────────────────────────
 //  - The card counting is done by the instantiated 'Collude' class
@@ -62,6 +69,8 @@ class CollusionPlanner {
      * @type {ConsoleLog}
      */
     #consoleLogger = new ConsoleLog("CollusionPlanner", "🪠");
+
+    #embargoTracker = new EmbargoTracker();
 
     /**
      * The object corresponding to the user
@@ -108,6 +117,16 @@ class CollusionPlanner {
             this.#consoleLogger.log("Do not accept (not our offer)");
             return false;
         }
+        if (this.#embargoTracker.isEmbargoed(trade.giver, trade.taker)) {
+            // This probably cannot happen since one can not accept trades
+            // during an embargo. We leave this here anyway, to be less
+            // confusing. Any maybe catch some unexpected acceptances sneakign
+            // through.
+            this.#consoleLogger.log(
+                `Do not accept (${trade.taker.name} embargoed)`,
+            );
+            return false;
+        }
         let newTemplate = this.#collude.getCollusionTemplate(
             trade.giver,
             trade.taker,
@@ -134,8 +153,11 @@ class CollusionPlanner {
         }
         console.assert(trade.giver !== null);
         console.assert(trade.taker !== null);
-        if (trade.giver.equals(this.#us)) {
-            this.#consoleLogger.log("Offer ignored (ours)");
+        console.assert(!trade.giver.equals(this.#us));
+        if (this.#embargoTracker.isEmbargoed(trade.giver, trade.taker)) {
+            this.#consoleLogger.log(
+                `Reject offer (${trade.giver.name} embargoed)`,
+            );
             return false;
         }
         // this.#consoleLogger.log("Evaluating", trade.give.from.name, "offer");
@@ -144,7 +166,7 @@ class CollusionPlanner {
             trade.taker,
         );
         if (newTemplate === null) {
-            this.#consoleLogger.log("Offer ignored (not colluder)");
+            this.#consoleLogger.log("Reject offer (not colluder)");
             return false;
         }
         // Assume existing trades are valid for giver
@@ -167,6 +189,12 @@ class CollusionPlanner {
             if (player.equals(this.#us)) {
                 continue;
             }
+            if (this.#embargoTracker.isEmbargoed(this.#us, player)) {
+                this.#consoleLogger.log(
+                    `Skip generation (${player.name} embargoed)`,
+                );
+                continue;
+            }
             trades.push(this.#generateOurTrade(player, guessAndRange));
         }
         trades = trades.filter(trade => trade !== null);
@@ -187,7 +215,9 @@ class CollusionPlanner {
     }
 
     /**
-     * Generate the trade we should offer to another player
+     * Generate the trade we should offer to another player. This function does
+     * not make any addition checks on whether we should suggest the trade
+     * (dormant, active, embargoes, ...).
      * @param {Player} otherPlayer Other player to generate trades for
      * @param guessAndRange Multiverse guess and range object
      * @return {Trade|null} Suggested trade or 'null' to not suggest any trade
@@ -214,6 +244,15 @@ class CollusionPlanner {
             trade.toString(originalTemplate, true),
         )
         return trade;
+    }
+
+    /**
+     * Test whether there is an active embargo preventing a given trade.
+     * @param {Trade} trade
+     * @return {boolean}
+     */
+    isEmbargoedTrade(trade) {
+        return this.#embargoTracker.isEmbargoed(trade.giver, trade.taker);
     }
 
     /**
@@ -309,6 +348,15 @@ class CollusionPlanner {
     }
 
     /**
+     * Call this function when embargoes are updated. Collusion planner will not
+     * suggest trade or accept actions towards embargoed or embargoing players.
+     * @param {[Player,Player][]} embargoes
+     */
+    updateEmbargoes(embargoes) {
+        this.#embargoTracker.setActiveEmbargoes(embargoes);
+    }
+
+    /**
      * Call when any player got resources.
      * Delegates to Collude.updateGotResources.
      */
@@ -321,7 +369,7 @@ class CollusionPlanner {
 
     /**
      * Call when a trade is observed.
-     * Delegates to Collude.updateTradeResources and update #collusiontracker.
+     * Delegates to Collude.updateTradeResources and update #collusionTracker.
      * @param {Trade} trade
      */
     updateTradeResources(trade) {
@@ -334,7 +382,10 @@ class CollusionPlanner {
         if (trade.taker === "bank") {
             // Do not immediately trade away resources the player just traded
             // for with the bank.
-            this.#collusionTracker.goDormant();
+            if (trade.giver.equals(this.#us)) {
+                this.#collusionTracker.goDormant();
+            }
+            // Do not update #collude from bank trades
             return;
         }
 
@@ -377,7 +428,6 @@ class CollusionPlanner {
         // zero balances, this has little consequences. Even if we started with
         // nonzero balance, we would only have to wait a single turn to sync.
         this.#collusionTracker.updateTurn(player);
-
     }
 
     /**

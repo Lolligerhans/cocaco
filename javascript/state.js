@@ -191,6 +191,7 @@ State.implementor.collusionStop = function ({ player }) {
 
 State.implementor.collusionOffer = function ({ player, trade, accept }) {
     player; // Unused
+    console.assert(player.equals(trade.giver));
     if (!this.collusionPlanner.isStarted()) {
         return;
     }
@@ -202,13 +203,18 @@ State.implementor.collusionOffer = function ({ player, trade, accept }) {
     if (plannerResult === true) {
         accept();
     } else {
-        // Do not interfere with auto-decline
-        if (CollusionPlanner.takerHasEnough(trade, guessAndRange)) {
+        const hasEnough = CollusionPlanner.takerHasEnough(trade, guessAndRange);
+        const isEmbargoed = this.collusionPlanner.isEmbargoedTrade(trade);
+        // When we do not have enough, or are embargoed, the host already sends
+        // a response.
+        const maySendResponse = hasEnough && !isEmbargoed;
+        if (maySendResponse) {
             // console.debug("State: Rejecting offer (can afford)");
-            // TODO: Don't send if embargo in either direction
             accept(false);
         } else {
-            // console.debug("State: Ignoring offer (can not afford)");
+            // Do not interfere with the auto-decline that happens when we
+            //  - cannot afford the trade
+            //  - have an embargo
         }
     }
 }
@@ -254,6 +260,10 @@ State.implementor.discard = function ({ player, resources }) {
         name,
         Multiverse.sliceNegate(slice),
     );
+}
+
+State.implementor.embargo = function ({ embargoes }) {
+    this.collusionPlanner.updateEmbargoes(embargoes);
 }
 
 State.implementor.got = function ({ player, resources }) {

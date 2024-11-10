@@ -528,16 +528,23 @@ ColonistObserver.sourceObserver.tradeState = function (packetData, isUpdate) {
     // appears, generate a 'collusionOffer' observation. When we find accepted
     // trades by other players,
 
-    let newTrades;
+    let newTrades, activeEmbargoes;
     if (isUpdate) {
-        newTrades = this.storage.trade.update(packetData);
+        [newTrades, activeEmbargoes] = this.storage.trade.update(packetData);
     } else {
-        newTrades = this.storage.trade.reset(packetData);
+        [newTrades, activeEmbargoes] = this.storage.trade.reset(packetData);
     }
-    // console.debug(
-    //     Object.keys(newTrades).length, "newTrades,",
-    //     newTrades,
-    // );
+
+    // ── Embargoes ──────────────────────────────────────────────
+    if (activeEmbargoes !== null) {
+        /**
+         * @param {Id[]} playerIdArray
+         */
+        const mapEmbargoPair = playerIdArray => playerIdArray.map(
+            id => this.storage.players.id(id),
+        );
+        this.embargo(activeEmbargoes.map(mapEmbargoPair));
+    }
 
     /**
      * @return {Player} The player who is given as "creator" in the trade soruce
