@@ -13,11 +13,11 @@
 }
 
 &#cocaco-sidebar {
-  background: #fff8;
   z-index: 9990;
   position: fixed;
   top: 0;
   left: 0;
+  display: flex;
 }
 
 &.playerName {
@@ -33,16 +33,32 @@
  * ╰───────────────────────────────────────────────────────────╯
 */
 
-&#cocaco-sidebar:hover .hide-on-hover {
+&.resources:hover .hide-on-hover {
   display: none;
 }
 
-&#cocaco-sidebar:not(:hover) .show-on-hover {
+&.resources:not(:hover) .show-on-hover {
   display: none;
 }
 
 &.resources {
-  box-sizing: border-box;
+  background: #fff8;
+}
+
+&.resourceWorlds {
+  background: #8888;
+  max-height: 100vh;
+  overflow: auto;
+}
+
+&.resourceWorlds {
+  bottom: 0px;
+  left: 0px;
+}
+
+&.resourceWorlds > .resourceCards {
+  outline-offset: -2mm;
+  outline: 2mm solid #c00;
 }
 
 &.resourceCards {
@@ -85,7 +101,6 @@
 &.cardNotFirst {
   color: green;
   margin-left: -1cm;
-  position: relative;
 }
 
 &.cardUnused {

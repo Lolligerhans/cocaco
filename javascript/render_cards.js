@@ -55,56 +55,25 @@ class RenderCards {
 
     /**
      * Generate a new resource entry element by cloning the template
+     * @param {string} playerName
+     * @param {string} playerColour CSS colour string
      * @return {HTMLElement}
      */
-    #cloneSidebarResourceEntry(playerName, playerColor) {
+    #cloneSidebarResourceEntry(playerName, playerColour) {
         let entry = RenderCards.templates.resourceEntry.cloneNode(true);
         let nameEntry = entry.querySelector(".playerName");
         nameEntry.textContent = playerName;
-        nameEntry.style.color = playerColor;
+        nameEntry.style.color = playerColour;
         entry.querySelectorAll("img").forEach(node => {
             const newSrc = this.#assets[node.alt];
             // console.debug("Replacing", node.src, "with", newSrc);
             node.src = newSrc;
         });
         // console.debug("Returning entry:", entry);
+        entry.addEventListener("mouseenter", _event =>
+            this.#setResourceWorlds(playerName)
+        );
         return entry;
-    }
-
-    /**
-     * Default asset map that uses Colonist assets
-     * @param {string} _path Ignored
-     * @param {string} resource Name of the resource to map
-     * @return {string} New path to be used as "src" in <img> tags
-     */
-    static colonistAssetMap = (_path, resource) => {
-        const newPath = `dist/images/${Colony.imageNameSnippets[resource]}.svg`;
-        return newPath;
-    };
-
-    /**
-     * @param {Multiverse} multiverse
-     * @param {Track} track
-     * @param {string[]} playerNames
-     * @param {Object.<string,string>} colour_map
-     * @param {(_path: string, resource: string) => string} [assetMap=RenderCards.colonistAssetMap]
-     */
-    constructor(
-        multiverse,
-        track,
-        playerNames,
-        colour_map,
-        assetMap = RenderCards.colonistAssetMap,
-    ) {
-        this.#multiverse = multiverse;
-        track; // Unused
-        this.#playerNames = playerNames;
-        this.#colour_map = colour_map;
-        this.#assets = RenderCards.assets;
-        if (cocaco_config.ownIcons === false && assetMap !== null) {
-            mapObject(this.#assets, assetMap);
-            // console.debug("Assets:", this.#assets);
-        }
     }
 
     /**
@@ -126,24 +95,22 @@ class RenderCards {
     }
 
     /**
-     * Show the current game state in the sidebar element. Generates a new
-     * sidebar if necessary.
+     * Generate new division holding the granular display of all possible hands
+     * for some player.
+     * @param {string} playerName
+     * @param {string} playerColour
+     * @return {HTMLElement}
      */
-    render() {
-        this.#ensureSidebar();
-        this.#updateSidebar();
-    }
-
-    toggle() {
-        if (this.#toggle.toggle("cards")) {
-            // Render into the hidden sidebar. Prevents potentially showing the
-            // old data first. Not sure if the actual render engine would wait
-            // for our JS to finish or not.
-            this.render();
-            unhide(this.#sidebar);
-        } else {
-            hide(this.#sidebar);
-        }
+    #generateNewResourceWorlds(playerName, playerColour) {
+        let resourceWorlds = RenderCards.templates.resourceWorlds.cloneNode(true);
+        // // For testing, just append to body
+        // document.body.appendChild(resourceWorlds);
+        let nameEntry = resourceWorlds.querySelector(".playerName");
+        nameEntry.textContent = playerName;
+        nameEntry.style.color = playerColour;
+        const cardElements = this.#generateResourceWorldCards(playerName);
+        cardElements.forEach(card => resourceWorlds.appendChild(card));
+        return resourceWorlds;
     }
 
     /**
@@ -166,14 +133,58 @@ class RenderCards {
     }
 
     /**
-     * Remove the display DOM element
+     * Generate an array of HTMLElements for every possible resource combination
+     * of the given player. The returned elements are meant to be added as child
+     * nodes to the 'resourceEntry' element in the 'resourceWorlds' elemnet.
+     * @param {string} playerName
+     * @return {HTMLElement[]}
+     * Array of elements derived from 'templates.resourceCards'. Each contains
+     * the cards of one world for the given player.
      */
-    unrender() {
-        if (!this.#sidebar) {
-            return;
+    #generateResourceWorldCards(playerName) {
+        const playerResources = this.#multiverse.getPlayerResources(playerName);
+        let res = [];
+        playerResources.forEach(({ chance, resources }) => {
+            let cards = RenderCards.templates.resourceCards.cloneNode(true);
+
+            // HACK: Generate a guess-and-range object like 'Multiverse' would.
+            //       Once the guess and range object has its own class use that.
+            let fakeResourceGuessAndRange = {};
+            const addFakeRange = resourceName => {
+                fakeResourceGuessAndRange[resourceName] = [
+                    // This describes a guessAndRange[player][resourceName] by
+                    // pretending that the resource count belongign to the
+                    // currently processed slice has 100% probability.
+                    resources[resourceName],
+                    1.0,
+                    resources[resourceName],
+                    resources[resourceName],
+                ];
+            };
+            Resources.names().forEach(addFakeRange);
+            let cardsElement = RenderCards.templates.resourceCards.cloneNode(true);
+            RenderCards.#updateCardsElement(cardsElement, fakeResourceGuessAndRange);
+            let outlineColour = chance >= 1 ? "#0000" : colourInterpolate(chance);
+            cardsElement.style["outline-color"] = outlineColour;
+            cardsElement.querySelectorAll("img").forEach(node => {
+                const newSrc = this.#assets[node.alt];
+                // console.debug("Replacing", node.src, "with", newSrc);
+                node.src = newSrc;
+            });
+            res.push(cardsElement);
+        });
+        return res;
+    }
+
+    /**
+     * Remove the resource worlds element
+     * TODO: Use hide/unhide instead or removing the element constantly
+     */
+    #resetResourceWorlds() {
+        let oldElement = document.querySelector(".cocaco.resourceWorlds");
+        if (oldElement) {
+            oldElement.remove();
         }
-        this.#sidebar.remove();
-        this.#sidebar = null;
     }
 
     /**
@@ -290,6 +301,25 @@ class RenderCards {
     }
 
     /**
+     * Generate the contents for the resourceWorlds element. Overwrite if the
+     * element already exists.
+     * @param {string} playerName
+     * The player whos data should fill the resourceWorlds element
+     */
+    #setResourceWorlds(playerName) {
+        if (this.#sidebar === null) {
+            return;
+        }
+        this.#resetResourceWorlds();
+        const playerColour = this.#colour_map[playerName];
+        const newElement = this.#generateNewResourceWorlds(
+            playerName,
+            playerColour,
+        );
+        this.#sidebar.appendChild(newElement);
+    }
+
+    /**
      * Update the data shown in the existing sidebar element
      */
     #updateSidebar() {
@@ -297,6 +327,7 @@ class RenderCards {
             // Save the cycles when nothing has to be shown anyway
             return;
         }
+        this.#resetResourceWorlds();
         // this.#logger.log("Updating sidebar");
         this.#multiverse.updateStats();
         const distribution = this.#multiverse.marginalDistribution;
@@ -314,6 +345,124 @@ class RenderCards {
                 stealProbabilitiy[playerName],
             );
         });
+    }
+
+    /**
+     * Update a 'resourceCards' element from a guess and range object.
+     * NOTE: Currently only for such guess and range objects that have certainly
+     *       (and therefore only used for the possible worlds popup). In the
+     *       future, use this function in the update the the regular
+     *       resourceEntry as well.
+     *
+     * @param {HTMLElement} cardsElement 'resourceCards' element
+     * @param {Object} guessAndRange Guess-and-range subobject for a specific
+     *                               player.
+     */
+    static #updateCardsElement(cardsElement, guessAndRange) {
+        const cards = cardsElement.childNodes;
+        console.assert(cards.length === 19 * 5, "Sanity check");
+        const indexMap = { wood: 0, brick: 1, sheep: 2, wheat: 3, ore: 4 };
+        const updateAs = (resourceName, subResourceIndex, isShown) => {
+            const cardIndex = 19 * indexMap[resourceName] + subResourceIndex;
+            const card = cards[cardIndex];
+            console.assert(card.firstElementChild.alt === resourceName, "Santiy check");
+            if (isShown) {
+                card.style.display = "flex";
+            } else {
+                card.style.display = "none";
+            }
+            card.style["outline-color"] = "#0000";
+        };
+        const updateFromRange = (resourceName, guessAndRange) => {
+            console.assert(
+                guessAndRange[0] === guessAndRange[3],
+                "Min should be equal to max for now",
+            );
+            for (let i = 1; i <= 19; ++i) {
+                updateAs(
+                    resourceName,
+                    i - 1,
+                    i <= guessAndRange[0],
+                );
+            }
+        };
+        RenderCards.resourceTypes.forEach(resourceName => {
+            updateFromRange(resourceName, guessAndRange[resourceName]);
+        });
+    }
+
+    /**
+     * Default asset map that uses Colonist assets
+     * @param {string} _path Ignored
+     * @param {string} resource Name of the resource to map
+     * @return {string} New path to be used as "src" in <img> tags
+     */
+    static colonistAssetMap = (_path, resource) => {
+        const newPath = `dist/images/${Colony.imageNameSnippets[resource]}.svg`;
+        return newPath;
+    };
+
+    /**
+     * @param {Multiverse} multiverse
+     * @param {Track} track
+     * @param {string[]} playerNames
+     * @param {Object.<string,string>} colour_map
+     * @param {(_path: string, resource: string) => string} [assetMap=RenderCards.colonistAssetMap]
+     */
+    constructor(
+        multiverse,
+        track,
+        playerNames,
+        colour_map,
+        assetMap = RenderCards.colonistAssetMap,
+    ) {
+        this.#multiverse = multiverse;
+        track; // Unused
+        this.#playerNames = playerNames;
+        this.#colour_map = colour_map;
+        this.#assets = RenderCards.assets;
+        if (cocaco_config.ownIcons === false && assetMap !== null) {
+            mapObject(this.#assets, assetMap);
+            // console.debug("Assets:", this.#assets);
+        }
+    }
+
+    /**
+     * Show the current game state in the sidebar element. Generates a new
+     * sidebar if necessary.
+     * @return {void}
+     */
+    render() {
+        this.#ensureSidebar();
+        this.#updateSidebar();
+    }
+
+    /**
+     * Hide/unhide the sidebar
+     * @return {void}
+     */
+    toggle() {
+        if (this.#toggle.toggle("cards")) {
+            // Render into the hidden sidebar. Prevents potentially showing the
+            // old data first. Not sure if the actual render engine would wait
+            // for our JS to finish or not.
+            this.render();
+            unhide(this.#sidebar);
+        } else {
+            hide(this.#sidebar);
+        }
+    }
+
+    /**
+     * Remove the display DOM element
+     * @return {void}
+     */
+    unrender() {
+        if (!this.#sidebar) {
+            return;
+        }
+        this.#sidebar.remove();
+        this.#sidebar = null;
     }
 
 }
@@ -403,12 +552,21 @@ function generateTemplates(templates) {
     templates.resourceEntry.appendChild(
         templates.playerName.cloneNode(true),
     );
-    let haveResoruceCards = templates.resourceCards.cloneNode(true);
-    haveResoruceCards.classList.add("hide-on-hover");
-    templates.resourceEntry.appendChild(haveResoruceCards);
+    let haveResourceCards = templates.resourceCards.cloneNode(true);
+    haveResourceCards.classList.add("hide-on-hover");
+    templates.resourceEntry.appendChild(haveResourceCards);
     let stealResourceChance = templates.resourceCardsSingle.cloneNode(true);
     stealResourceChance.classList.add("show-on-hover");
     templates.resourceEntry.appendChild(stealResourceChance);
+
+    // 'resourceWorlds' is the extra panel showing all possible hands of some
+    // player on hover. On construction, append a 'templates.resourceCards'
+    // element for each possible world.
+    templates.resourceWorlds = document.createElement("div");
+    templates.resourceWorlds.classList.add("cocaco", "resourceWorlds");
+    templates.resourceWorlds.appendChild(
+        templates.playerName.cloneNode(true),
+    );
 
     // Construct empty resources. Append copies of the filled resource entry into
     // it on construction.
