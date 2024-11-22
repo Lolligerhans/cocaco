@@ -49,11 +49,17 @@ const alternativeAssets = {
  * @return {string} Colour string "rgb(...)"
  */
 function colourInterpolate(zeroToOne) {
+    // Clamp to hedge against inaccurate floats
+    zeroToOne = clampProbability(zeroToOne);
     if (zeroToOne < 0.5) {
-        return `rgb(255, ${255 * (zeroToOne * 2)}, 0)`;
-    }
-    else {
-        return `rgb(${255 - 128 * (zeroToOne * 2 - 1)}, 255, 0)`;
+        const green = Math.trunc(255 * (zeroToOne * 2));
+        return `rgb(255, ${green}, 0)`;
+    } else {
+        // Use #80ff00 as most-green value. On the yes-no spectrum this colour
+        // already looks like a "yes". The remaining range to #00ff00 only looks
+        // like different alternatives that could all mean "yes".
+        const red = Math.trunc(255 - 128 * (zeroToOne * 2 - 1));
+        return `rgb(${red}, 255, 0)`;
     }
 }
 
@@ -184,9 +190,18 @@ function executeWithRetries(tasks, retryTime = 3000) {
 }
 
 function clamp(x, minimum, maximum) {
-    // TODO: Use this to replace the duplicate clampProb
     const ret = Math.min(Math.max(x, minimum), maximum);
     return ret;
+}
+
+/**
+ * Clamp x into the range allowed for probabilities.
+ * @param {Number} x
+ * @return {Number} Input clamped into inclusive interval [0,1]
+ */
+function clampProbability(x) {
+    // TODO: Use this to replace the duplicate clampProb
+    return clamp(x, 0, 1);
 }
 
 function resize(element, w = 1000, h = 800) {
