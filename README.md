@@ -80,8 +80,8 @@ Install as [temporary extension](https://extensionworkshop.com/documentation/dev
 ## Instructions
 
 See [doc/instructions.md](doc/instructions.md) for instructions. Use
-[Issues](https://github.com/Lolligerhans/cocaco/issues?q=is%3Aissue) for
-troubleshooting.
+[Q&A](https://github.com/Lolligerhans/cocaco/discussions/categories/q-a?discussions_q=)
+for help.
 
 ## Attribution
 

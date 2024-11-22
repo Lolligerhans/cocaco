@@ -35,6 +35,11 @@ Uncertain cards have a coloured outline:
 |     🟨 | Possible |
 |     🟩 | Likely   |
 
+Move the mouse over the card display to show:
+
+- the chance to steal each resource type
+- all possible player hands
+
 ## Collusion
 
 > [!CAUTION]
