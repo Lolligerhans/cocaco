@@ -459,6 +459,50 @@ class Multiverse {
     }
 
     /**
+     * Generate array of resources the given player may have.
+     * @param {string} playerName
+     * @return {{chance: Number, resources: Resources}[]}
+     */
+    getPlayerResources(playerName) {
+        const playerIdx = this.#getPlayerIndex(playerName);
+        let playerSlices = this.#getPlayerSlices(playerIdx);
+        // Return as Resources to keep implementation encapsulated
+        const res = playerSlices.map(({ chance, slice }) => {
+            const ret = {
+                chance: chance,
+                resources: Multiverse.sliceToResources(slice),
+            };
+            return ret;
+        });
+        return res;
+    }
+
+    /**
+     * Generate the different slices individual players may have. This differs
+     * from simply cutting a slice from each world because different worlds may
+     * contain the same slice for individual players.
+     * @return {{chance: Number, slice: Slice}[]}
+     */
+    #getPlayerSlices(playerIndex) {
+        let res = [];
+        const addSlice = (slice, chance) => {
+            let index = res.findIndex(x => Multiverse.sliceEquals(x.slice, slice));
+            if (index === -1) {
+                res.push({ chance: chance, slice: slice });
+            } else {
+                res[index].chance += chance;
+            }
+        };
+        this.#worlds.forEach(
+            world => addSlice(world[playerIndex], world.chance)
+        );
+        const chanceSum = res.reduce((sum, x) => sum + x.chance, 0);
+        const normalize = x => x.chance / chanceSum;
+        res.forEach(normalize);
+        return res;
+    }
+
+    /**
      * Return worlds in human readable notation instead of slices. For export,
      * print, etc.
      */
@@ -753,6 +797,9 @@ class Multiverse {
         return result;
     }
 
+    /**
+     * @return {boolean}
+     */
     static sliceEquals(s1, s2) {
         return s1.every((x, i) => x === s2[i]);
     }
