@@ -20,13 +20,6 @@ A successful start is indicated by a coconut icon in the background:
 
 ![Screenshot](/assets/screenshots/cards.png)
 
-The display can be toggled by clicking the 🥥 icon in the URL bar.
-
-| Action | Effect |
-|-:|:-|
-| 🥥 (URL bar) | Hide/show |
-| `Ctrl` `+`, `Ctrl` `-` | Resize |
-
 Uncertain cards have a coloured outline:
 
 | Colour | Meaning  |
@@ -39,6 +32,16 @@ Move the mouse over the card display to show:
 
 - the chance to steal each resource type
 - all possible player hands
+
+The display can be toggled by clicking the 🥥 icon in the URL bar. Individual
+panels are controlled by the 🂠 📊 buttons at the top.
+
+| Action | Effect |
+|-:|:-|
+| `Ctrl` `+`, `Ctrl` `-` | Resize |
+| URL bar 🥥 | Hide/show display |
+| 🂠 | Hide/show resource cards |
+| 📊 | Hide/show [rolls plot](#rolls-plot) |
 
 ## Collusion
 
@@ -91,7 +94,7 @@ nice, but shows more information.
   - reset card counts: click resource card icon
   - reset player names: click 🌎 icon, later reset card counts
 
-### Understanding resource table
+### Resource table
 
 - `4 / 80%` means:
   - count is 4
@@ -105,7 +108,7 @@ nice, but shows more information.
 - Building columns: Probability the player can afford at least 1. Colour coded.
 - Number of possible states: top left table cell. `1 🌎` indicates 100% certainty.
 
-### Understanding rolls plot
+### Rolls plot
 
 - orange blocks: lighter = newer
 - green line: expectation
