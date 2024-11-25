@@ -95,9 +95,11 @@ class Toggle {
     has(...which) {
         console.assert(which.length >= 1);
         const ret = which.every(w => Object.hasOwn(this.#flags, w));
-        if (!ret) {
-            debugger;
-        }
+        // Currently we do not expect to ever not have a requested property. If
+        // a property does not exist previously, setting it may silently add it.
+        // Here in 'has()', it would be fine to not have it once we actually
+        // intend for this to happen.
+        console.assert(ret, "The toggle object does not have:", which);
         return ret;
     }
 

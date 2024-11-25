@@ -99,7 +99,7 @@ class Render {
      * Enable/disable panels. Updates with 'render()' afterwards.
      * @param {string|Number} [which=null]
      * If set, toggle the corresponding panel. If not set, toggle all panels.
-     * @param {boolean} [value=null] 
+     * @param {boolean} [value=null]
      * If 'null', toggle. If 'true'/'false', set.
      */
     toggle(which = null, value = null) {

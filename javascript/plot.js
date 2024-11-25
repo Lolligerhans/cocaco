@@ -934,6 +934,10 @@ function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map) {
  */
 function plotRollsAsHistogram(trackerObject, idToPlotInto) {
     // Preparation
+    const N = trackerObject.rolls.length;
+    if (N === 0) {
+        return;
+    }
     const c = [255, 102, 51]; // Base colour
     const colo = trackerObject.rolls.map((_, i) => {
         // Linearly interpolate towards base colour starting at black during
@@ -941,8 +945,6 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
         const f = i / trackerObject.rolls.length;
         return `rgb(${Math.ceil(c[0] * f)},${Math.ceil(c[1] * f)},${Math.ceil(c[2] * f)})`;
     });
-    const N = trackerObject.rolls.length;
-    console.assert(N > 0, "Can not plot rolls before any rolls are available");
     const n = trackerObject.rolls.length / 36;
     // Pad by 1 value front + back back
     const probability36 = [1, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 1];
