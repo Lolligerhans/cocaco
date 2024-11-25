@@ -2,7 +2,7 @@
  * ╭───────────────────────────────────────────────────────────╮
  * │ Sidebar general                                           │
  * ╰───────────────────────────────────────────────────────────╯
-*/
+ */
 
 .cocaco {
 
@@ -23,8 +23,9 @@
 &.playerName {
   font-weight: bold;
   color: red;
-  font-size: x-large;
+  font-size: large;
   text-shadow: -1px 1px black,-1px 1px 2px white;
+  margin-left: 3px;
 }
 
 /*
@@ -57,14 +58,14 @@
 }
 
 &.resourceWorlds > .resourceCards {
-  outline-offset: -2mm;
-  outline: 2mm solid #c00;
+  outline-offset: -1.4mm;
+  outline: 1.5mm solid #c00;
 }
 
 &.resourceCards {
   box-sizing: border-box;
   display: flex;
-  height: 2cm;
+  height: 1.5cm;
   max-width: 100%;
   overflow: clip;
   width: fit-content;
@@ -88,8 +89,8 @@
 
 &.card {
   height: 100%;
-  outline-offset: -2mm;
-  outline: 2mm solid #c00;
+  outline-offset: -1.4mm;
+  outline: 1.5mm solid #c00;
   width: max-content;
 }
 
@@ -100,7 +101,7 @@
 
 &.cardNotFirst {
   color: green;
-  margin-left: -1cm;
+  margin-left: -0.75cm;
 }
 
 &.cardUnused {
