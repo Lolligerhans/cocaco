@@ -41,7 +41,21 @@ class RenderCards {
      */
     #sidebar = null;
 
-    #toggle = new Toggle("cards").enable();
+    /**
+     * Keep track of the toggle state of each panel. The strings used by
+     * '#toggle' match the CSS class assigned to the element. That way we can
+     * querySelector the elements easily. Toggling an element off sets the CSS
+     * visibility styling.
+     * @type {Toggle}
+     */
+    #toggle = new Toggle("resourcesPanel", "rollsPlot")
+        .enable("resourcesPanel");
+
+    /**
+     * The 'Track' object used to get rolls data from. This object is only read.
+     * @type {Track}
+     */
+    #track = null;
 
     /**
      * Generate a new sidebar element by cloning the template
@@ -77,9 +91,9 @@ class RenderCards {
     }
 
     /**
-     * Ensures that the sidebar element is shown. Generates a new element if
-     * needed. After this function was called, this.#sidebar will be the current
-     * sidebar element.
+     * Ensures that the sidebar element exists. Generates a new element if
+     * needed. After this function was called, 'this.#sidebar' will be the
+     * current sidebar element.
      * @return {void}
      */
     #ensureSidebar() {
@@ -121,6 +135,25 @@ class RenderCards {
     #generateNewSidebar() {
         this.#logger.log("Generating sidebar")
         let sidebar = this.#cloneSidebar();
+        /**
+         * @param {string} name
+         * The name must match the string used for 'this.toggle()'. They match the
+         * CSS class name used by the panel to be toggled. They are the same as the
+         * property name in '#templates').
+         * @param {string} symbol
+         * Text content of the button. We want buttons to be small and just use
+         * UTF8 symbols for display.
+         */
+        const addButton = (name, symbol = null) => {
+            let newButton = RenderCards.templates.button.cloneNode(true);
+            newButton.textContent = symbol ?? newButton.textContent;
+            newButton.addEventListener("click", _event => {
+                this.toggle(name);
+            });
+            sidebar.querySelector(".buttons").appendChild(newButton);
+        };
+        addButton("resourcesPanel", " 🂠");
+        addButton("rollsPlot", " 📊");
         for (const player of this.#playerNames) {
             sidebar.querySelector(".resources").appendChild(
                 this.#cloneSidebarResourceEntry(
@@ -246,7 +279,7 @@ class RenderCards {
             );
             const r = guessAndRange[resourceType];
             const d = distribution[resourceType];
-            console.assert(d.length === 20);
+            console.assert(d.length === 20, "Expect 20 entries for a card distribution", d);
 
             // Guaranteed cards: show them
             for (; i <= r[0]; increment()) {
@@ -316,24 +349,44 @@ class RenderCards {
             playerName,
             playerColour,
         );
-        this.#sidebar.appendChild(newElement);
+        this.#sidebar.querySelector(".resourcesPanel").appendChild(newElement);
     }
 
     /**
-     * Update the data shown in the existing sidebar element
+     * Update the data shown in the rolls plot element
      */
-    #updateSidebar() {
-        if (!this.#toggle.isToggled("cards")) {
+    #updateRollsPlot() {
+        let rollsPlotDiv = this.#sidebar.querySelector(".rollsPlot");
+        if (!this.#toggle.isToggled("rollsPlot")) {
             // Save the cycles when nothing has to be shown anyway
+            hide(rollsPlotDiv);
             return;
         }
+        this.#track.updateRollsData();
+        plotRollsAsHistogram(
+            this.#track,
+            rollsPlotDiv,
+        );
+        unhide(rollsPlotDiv);
+    }
+
+    /**
+     * Update the data shown in the existing 'resources' element
+     */
+    #updateResources() {
+        let resourcesDiv = this.#sidebar.querySelector(".resources");
         this.#resetResourceWorlds();
+        if (!this.#toggle.isToggled("resourcesPanel")) {
+            // Save the cycles when nothing has to be shown anyway
+            hide(resourcesDiv);
+            return;
+        }
         // this.#logger.log("Updating sidebar");
         this.#multiverse.updateStats();
         const distribution = this.#multiverse.marginalDistribution;
         const guessAndRange = this.#multiverse.guessAndRange;
         const stealProbabilitiy = this.#multiverse.stealProbability;
-        let entries = this.#sidebar.firstElementChild.childNodes;
+        let entries = resourcesDiv.childNodes;
         Object.entries(this.#playerNames).forEach(([index, playerName]) => {
             this.#updateEntry(
                 entries[index],
@@ -345,6 +398,7 @@ class RenderCards {
                 stealProbabilitiy[playerName],
             );
         });
+        unhide(resourcesDiv);
     }
 
     /**
@@ -417,7 +471,7 @@ class RenderCards {
         assetMap = RenderCards.colonistAssetMap,
     ) {
         this.#multiverse = multiverse;
-        track; // Unused
+        this.#track = track;
         this.#playerNames = playerNames;
         this.#colour_map = colour_map;
         this.#assets = RenderCards.assets;
@@ -434,23 +488,17 @@ class RenderCards {
      */
     render() {
         this.#ensureSidebar();
-        this.#updateSidebar();
+        this.#updateResources();
+        this.#updateRollsPlot();
     }
 
     /**
      * Hide/unhide the sidebar
      * @return {void}
      */
-    toggle() {
-        if (this.#toggle.toggle("cards")) {
-            // Render into the hidden sidebar. Prevents potentially showing the
-            // old data first. Not sure if the actual render engine would wait
-            // for our JS to finish or not.
-            this.render();
-            unhide(this.#sidebar);
-        } else {
-            hide(this.#sidebar);
-        }
+    toggle(which = "global") {
+        this.#toggle.toggle(which);
+        this.render();
     }
 
     /**
@@ -479,48 +527,64 @@ class RenderCards {
  */
 function generateTemplates(templates) {
 
-    templates.wood = document.createElement("img");
-    templates.wood.src = RenderCards.assets.wood;
-    templates.wood.classList.add("cocaco")
-    templates.wood.alt = "wood";
+    // A template for each resource type
+    {
+        templates.wood = document.createElement("img");
+        templates.wood.src = RenderCards.assets.wood;
+        templates.wood.classList.add("cocaco")
+        templates.wood.alt = "wood";
 
-    templates.brick = document.createElement("img");
-    templates.brick.src = RenderCards.assets.brick;
-    templates.brick.classList.add("cocaco");
-    templates.brick.alt = "brick";
+        templates.brick = document.createElement("img");
+        templates.brick.src = RenderCards.assets.brick;
+        templates.brick.classList.add("cocaco");
+        templates.brick.alt = "brick";
 
-    templates.sheep = document.createElement("img");
-    templates.sheep.src = RenderCards.assets.sheep;
-    templates.sheep.classList.add("cocaco");
-    templates.sheep.alt = "sheep";
+        templates.sheep = document.createElement("img");
+        templates.sheep.src = RenderCards.assets.sheep;
+        templates.sheep.classList.add("cocaco");
+        templates.sheep.alt = "sheep";
 
-    templates.wheat = document.createElement("img");
-    templates.wheat.src = RenderCards.assets.wheat;
-    templates.wheat.classList.add("cocaco");
-    templates.wheat.alt = "wheat";
+        templates.wheat = document.createElement("img");
+        templates.wheat.src = RenderCards.assets.wheat;
+        templates.wheat.classList.add("cocaco");
+        templates.wheat.alt = "wheat";
 
-    templates.ore = document.createElement("img");
-    templates.ore.src = RenderCards.assets.ore;
-    templates.ore.classList.add("cocaco");
-    templates.ore.alt = "ore";
+        templates.ore = document.createElement("img");
+        templates.ore.src = RenderCards.assets.ore;
+        templates.ore.classList.add("cocaco");
+        templates.ore.alt = "ore";
+    }
 
-    templates.playerName = document.createElement("div");
-    templates.playerName.classList.add("cocaco", "playerName", "oneline");
-    templates.playerName.textContent = "John#1234";
+    // The 'palyerName' element shows a name in the player color
+    {
+        templates.playerName = document.createElement("div");
+        templates.playerName.classList.add("cocaco", "playerName", "oneline");
+        templates.playerName.textContent = "John#1234";
+    }
 
-    templates.cardFirst = document.createElement("div");
-    templates.cardFirst.classList.add("cocaco", "card", "cardFirst")
+    // Containers containing exactly one resource image each. We distinguish
+    // first from non-first cards for styling. 'cardNotFirst' has x offset to
+    // make it cover the previous card.
+    {
+        templates.cardFirst = document.createElement("div");
+        templates.cardFirst.classList.add("cocaco", "card", "cardFirst")
 
-    templates.cardNotFirst = document.createElement("div");
-    templates.cardNotFirst.classList.add("cocaco", "card", "cardNotFirst");
+        templates.cardNotFirst = document.createElement("div");
+        templates.cardNotFirst.classList.add("cocaco", "card", "cardNotFirst");
+    }
 
     // The 95 cards for a single player go in 'resourceCards'
-    templates.resourceCards = document.createElement("div");
-    templates.resourceCards.classList.add("cocaco", "resourceCards")
+    {
+        templates.resourceCards = document.createElement("div");
+        templates.resourceCards.classList.add("cocaco", "resourceCards")
+    }
 
-    // The 5 cards to indicate steal chance for a single palyer
-    templates.resourceCardsSingle = document.createElement("div");
-    templates.resourceCardsSingle.classList.add("cocaco", "resourceCards")
+    // The 5 cards to indicate steal chance for a single palyer go in
+    // 'resourceCardsSingle'
+    {
+        templates.resourceCardsSingle = document.createElement("div");
+        templates.resourceCardsSingle.classList.add("cocaco", "resourceCards")
+    }
 
     // Construct filled resource row
     const insertResourceCardIntoDiv = (div, typeString) => {
@@ -546,39 +610,87 @@ function generateTemplates(templates) {
         templates.resourceCardsSingle.appendChild(onlyCard);
     }
 
-    // 'resourceEntry' is the whole row, including name and the resource cards
-    templates.resourceEntry = document.createElement("div");
-    templates.resourceEntry.classList.add("cocaco", "resourceEntry");
-    templates.resourceEntry.appendChild(
-        templates.playerName.cloneNode(true),
-    );
-    let haveResourceCards = templates.resourceCards.cloneNode(true);
-    haveResourceCards.classList.add("hide-on-hover");
-    templates.resourceEntry.appendChild(haveResourceCards);
-    let stealResourceChance = templates.resourceCardsSingle.cloneNode(true);
-    stealResourceChance.classList.add("show-on-hover");
-    templates.resourceEntry.appendChild(stealResourceChance);
+    // 'resourceEntry' is one row in the resources panel, including name and the
+    // resource cards
+    {
+        templates.resourceEntry = document.createElement("div");
+        templates.resourceEntry.classList.add("cocaco", "resourceEntry");
+        templates.resourceEntry.appendChild(
+            templates.playerName.cloneNode(true),
+        );
+        let haveResourceCards = templates.resourceCards.cloneNode(true);
+        haveResourceCards.classList.add("hide-on-hover");
+        templates.resourceEntry.appendChild(haveResourceCards);
+        let stealResourceChance = templates.resourceCardsSingle.cloneNode(true);
+        stealResourceChance.classList.add("show-on-hover");
+        templates.resourceEntry.appendChild(stealResourceChance);
+    }
 
-    // 'resourceWorlds' is the extra panel showing all possible hands of some
+    // 'resourceWorlds' is the popout panel showing all possible hands of some
     // player on hover. On construction, append a 'templates.resourceCards'
     // element for each possible world.
-    templates.resourceWorlds = document.createElement("div");
-    templates.resourceWorlds.classList.add("cocaco", "resourceWorlds");
-    templates.resourceWorlds.appendChild(
-        templates.playerName.cloneNode(true),
-    );
+    {
+        templates.resourceWorlds = document.createElement("div");
+        templates.resourceWorlds.classList.add("cocaco", "resourceWorlds");
+        templates.resourceWorlds.appendChild(
+            templates.playerName.cloneNode(true),
+        );
+    }
 
-    // Construct empty resources. Append copies of the filled resource entry into
-    // it on construction.
-    templates.resources = document.createElement("div");
-    templates.resources.classList.add("cocaco", "resources");
+    // Construct empty resources. Append copies of the filled 'resourceEntry'
+    // into it on construction.
+    {
+        templates.resources = document.createElement("div");
+        templates.resources.classList.add("cocaco", "resources");
+    }
 
-    templates.sidebar = document.createElement("div");
-    templates.sidebar.id = "cocaco-sidebar";
-    templates.sidebar.classList.add("cocaco");
-    templates.sidebar.appendChild(
-        templates.resources.cloneNode(true),
-    );
+    // The resourcesPanel is the element cintaining the whole unit of resources
+    // and resource worlds popout. It is toggled as a unit.
+    {
+        templates.resourcesPanel = document.createElement("div");
+        templates.resourcesPanel.classList.add("cocaco", "resourcesPanel");
+        templates.resourcesPanel.appendChild(
+            templates.resources.cloneNode(true),
+        );
+    }
+
+    // A div element for the plotting code to plot into
+    {
+        templates.rollsPlot = document.createElement("div");
+        templates.rollsPlot.classList.add("cocaco", "rollsPlot");
+    }
+
+    // A single button used in the 'buttons' element. Add click event listener
+    // when cloning.
+    {
+        templates.button = document.createElement("span");
+        templates.button.classList.add("cocaco", "button");
+        templates.button.textContent = " 🔘";
+    }
+
+    // The buttons used to trigger other panels. You have to add buttons
+    // manually when cloning. We do this because we need the class context for
+    // the click event listener anyway.
+    {
+        templates.buttons = document.createElement("div");
+        templates.buttons.classList.add("cocaco", "buttons");
+    }
+
+    // The sidebar is the block element containing all card render things
+    {
+        templates.sidebar = document.createElement("div");
+        templates.sidebar.id = "cocaco-sidebar";
+        templates.sidebar.classList.add("cocaco");
+        templates.sidebar.appendChild(
+            templates.buttons.cloneNode(true),
+        )
+        templates.sidebar.appendChild(
+            templates.resourcesPanel.cloneNode(true),
+        );
+        templates.sidebar.appendChild(
+            templates.rollsPlot.cloneNode(true),
+        );
+    }
 
     // console.debug("generated:", templates);
 }
