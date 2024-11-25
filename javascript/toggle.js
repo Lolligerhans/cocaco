@@ -104,8 +104,23 @@ class Toggle {
     }
 
     /**
+     * Test all flags at once, disregarding the special "global" flag. The
+     * global flag is still considered as a regular flag.
+     * @param {boolean} [value=true] Value to test for. Default true.
+     * @return {boolean} The disjunction of comparisons of all flags to value
+     */
+    #isAnyFlagToggled(value = true) {
+        const allFlags = this.flags();
+        const flagMatches = flag => this.#isToggledFlag(flag, value);
+        return allFlags.some(flagMatches);
+    }
+
+    /**
      * Test all flags at once
      * @param {boolean} [value=true] Value to test for. Default true.
+     * @param {boolean} [respectGlobal=true]
+     * When the special "global" flag is not respected, it still counts as
+     * individual flag for this test.
      * @return {boolean} The disjunction of comparisons of all flags to value
      */
     isAnyToggled(value = true) {
@@ -118,7 +133,7 @@ class Toggle {
     }
 
     /**
-     * Test flags
+     * Test flags. Respects the special "global" flag.
      * @param {string|Number} [which=null]
      * Name (or index) of the flag to be tested. If not set, test if any flag is
      * set (see 'isAnyToggled()').
@@ -133,6 +148,23 @@ class Toggle {
         // Special case: Test for any flag
         if (which === null) {
             return this.isAnyToggled(value);
+        }
+        return this.#isToggledFlag(which, value);
+    }
+
+    /**
+     * Test flag disregarding the special "global" flag. We need this when
+     * "global" flag is "false" but we want to know the actual flag value.
+     * @param {string|number} [which=null]
+     * Name (or index) of the flag to be tested. If not set, test if any flag is
+     * set (see 'isAnyToggled(_, false)').
+     * @param {boolean} [value=true] Value to test for
+     * @return {boolean} true if the tested flag is equal to value
+     */
+    #isToggledFlag(which = null, value = true) {
+        // Special case: Test for any flag
+        if (which === null) {
+            return this.#isAnyFlagToggled(value);
         }
         // If a number N is given, use the N-th flag
         if (typeof which === "number") {
@@ -208,7 +240,7 @@ class Toggle {
             which = allFlags[which];
         }
         console.assert(this.has(which));
-        const newValue = value ?? !this.isToggled(which);
+        const newValue = value ?? !this.#isToggledFlag(which);
         this.#flags[which] = newValue;
 
         this.#logger.log(which, "⟶", newValue);
