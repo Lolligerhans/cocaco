@@ -133,6 +133,7 @@ if (cocaco_config.replay) {
     require(cocaco_config.log, "Collude");
     require(cocaco_config.log, "frameInjection");
     require(cocaco_config.log, "Observer");
+    require(cocaco_config, "ownIcons");
 
     // Some settings are incompatible with the replay mode. Warn and overwrite.
     if (!(cocaco_config.replayInterval > 0)) {
@@ -161,7 +162,6 @@ if (cocaco_config.replay) {
     cocaco_config.fixedPlayerName = true;
     cocaco_config.playerName = "John#1234";
     cocaco_config.logDom = false;
-    cocaco_config.ownIcons = true;
 }
 
 console.dir(cocaco_config);
