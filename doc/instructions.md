@@ -28,15 +28,22 @@ Uncertain cards have a coloured outline:
 |     🟨 | Possible |
 |     🟩 | Likely   |
 
-Move the mouse over the card display to show:
+Click on an uncertain cards to adjusts its probability.
+
+| Card action | Effect |
+|-:|:-|
+| Left click | Increase probability |
+| Right click | Reduce probability |
+
+When hovering the card display, cocaco additionally shows:
 
 - the chance to steal each resource type
 - all possible player hands
 
-The display can be toggled by clicking the 🥥 icon in the URL bar. Individual
+The display can be hidden by clicking the 🥥 icon in the URL bar. Individual
 panels are controlled by the 🂠 📊 buttons at the top.
 
-| Action | Effect |
+| Display action | Effect |
 |-:|:-|
 | `Ctrl` `+`, `Ctrl` `-` | Resize |
 | URL bar 🥥 | Hide/show display |
