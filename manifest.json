@@ -4,7 +4,7 @@
   "manifest_version": 3,
   "author": "Lolligerhans",
   "description": "Correctly correlated Catan card chance Counter",
-  "version": "4.2.1-dev",
+  "version": "4.2.1",
   "icons": {
     "32": "assets/coconut_32.png",
     "512": "assets/coconut_512.png"

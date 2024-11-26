@@ -168,7 +168,7 @@ class RenderCards {
         });
         // console.debug("Returning entry:", entry);
         entry.addEventListener("mouseenter", _event =>
-            this.#setResourceWorlds(playerName)
+            this.#updateResourceWorlds(playerName)
         );
         return entry;
     }
@@ -324,17 +324,6 @@ class RenderCards {
     }
 
     /**
-     * Remove the resource worlds element
-     * TODO: Use hide/unhide instead or removing the element constantly
-     */
-    #resetResourceWorlds() {
-        let oldElement = document.querySelector(".cocaco.resourceWorlds");
-        if (oldElement) {
-            oldElement.remove();
-        }
-    }
-
-    /**
      * Update a resource entry element
      * @param {HTMLElement} entry
      * The resource entry element to be updated. See the template for its
@@ -456,25 +445,6 @@ class RenderCards {
     }
 
     /**
-     * Generate the contents for the resourceWorlds element. Overwrite if the
-     * element already exists.
-     * @param {string} playerName
-     * The player who's data should fill the resourceWorlds element
-     */
-    #setResourceWorlds(playerName) {
-        if (this.#sidebar === null) {
-            return;
-        }
-        this.#resetResourceWorlds();
-        const playerColour = this.#colour_map[playerName];
-        const newElement = this.#generateNewResourceWorlds(
-            playerName,
-            playerColour,
-        );
-        this.#sidebar.querySelector(".resourcesPanel").appendChild(newElement);
-    }
-
-    /**
      * Update the data shown in the rolls plot element
      */
     #updateRollsPlot() {
@@ -493,12 +463,27 @@ class RenderCards {
     }
 
     /**
+     * Update the resourceWorlds name and slices
+     * @param {string} playerName Name of the players who's data is to be used
+     */
+    #updateResourceWorlds(playerName) {
+        const playerColour = this.#colour_map[playerName];
+        let resourceWorldsElem = this.#sidebar.querySelector(".resourceWorlds");
+        let nameEntry = resourceWorldsElem.querySelector(".playerName")
+        nameEntry.textContent = playerName;
+        nameEntry.style.color = playerColour;
+        let oldCards = resourceWorldsElem.querySelectorAll(".resourceCards");
+        oldCards.forEach(cards => cards.remove());
+        const cardElements = this.#generateResourceWorldCards(playerName);
+        cardElements.forEach(card => resourceWorldsElem.appendChild(card));
+    }
+
+    /**
      * Update the data shown in the existing 'resources' element
      */
     #updateResources() {
         let resourcesDiv = this.#sidebar.querySelector(".resources");
         let resourceStealChanceDiv = this.#sidebar.querySelector(".resourceStealChance");
-        this.#resetResourceWorlds();
         if (!this.#toggle.isToggled("resourcesPanel")) {
             // Save the cycles when nothing has to be shown anyway
             hide(resourcesDiv);
@@ -783,6 +768,7 @@ function generateTemplates(templates) {
     {
         templates.resourceWorlds = document.createElement("div");
         templates.resourceWorlds.classList.add("cocaco", "resourceWorlds");
+        templates.resourceWorlds.classList.add("show-on-hover");
         templates.resourceWorlds.appendChild(
             templates.playerName.cloneNode(true),
         );
@@ -798,6 +784,9 @@ function generateTemplates(templates) {
         );
         templates.resourcesPanel.appendChild(
             templates.resourceStealChance.cloneNode(true),
+        );
+        templates.resourcesPanel.appendChild(
+            templates.resourceWorlds.cloneNode(true),
         );
     }
 
