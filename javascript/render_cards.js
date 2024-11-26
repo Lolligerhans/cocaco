@@ -58,6 +58,89 @@ class RenderCards {
     #track = null;
 
     /**
+     * Adds "click" event listeners to all images in the given element. We use
+     * them to obtain user-provided guesses for the resource counts. Hence we
+     * need access to the tracking object and the player name related to the
+     * resources.
+     * @param {HTMLElement} element
+     * The 'resourceCards' element containing images to add listeners to
+     * @param {string} playerName
+     * The player name that should be passed to the 'Multiverse' guess function
+     * @param {Multiverse} multiverse
+     * The 'Multiverse' card tracking object to manipulate on click
+     */
+    #addResourceGuessEventListeners(element, playerName) {
+        /**
+         * Invoke the Multiverse guess function
+         * @param {string} type Resource type, obtained from the image alt name
+         * @param {Number} count
+         * The count used to instantiate the predicate, obtained from the index
+         * of the resource clicked on.
+         * @param {*} predicate
+         * One of the values of the global 'predicates' object. Not just any
+         * function.
+         * @return {void}
+         */
+        const guessPredicate = (type, count, predicate) => {
+            this.#multiverse.weightGuessPredicate(
+                playerName,
+                Multiverse.getResourceIndex(type),
+                predicate.f(count),
+                predicate.name(count),
+            );
+            this.render();
+        };
+        /**
+         * Add event listener to an element
+         * @param {HTMLElement} element The image element to add a listener to
+         * @param {string} type Resource type, obtained from the image alt name
+         * @param {Number} count
+         * The count used to instantiate the predicate, obtained from the index
+         * of the resource clicked on.
+         * @param {*} predicate
+         * One of the values of the global 'predicates' object. Not just any
+         * function.
+         */
+        const addListener = (element, type, count) => {
+            // Make sure the element is an "<img>" element
+            console.assert(element.tagName === "IMG");
+            // HACK: Not sure why we can not click the images directly. We
+            //       simply catch the click on the parent 'firstCard' or
+            //       'notFirstCard' element.
+            const onClick = (pred = ">=") => {
+                const predicate = predicates[pred];
+                this.#logger.log(
+                    `Guessing ${playerName}[${type}] ${predicate.name(count)}`,
+                );
+                guessPredicate(type, count, predicate);
+            };
+            element.parentNode.addEventListener("click", _event => {
+                onClick(">=");
+            });
+            element.parentNode.addEventListener("contextmenu", event => {
+                onClick("<");
+                event.preventDefault();
+            });
+        };
+        /**
+         * Add the event listeners for all images with a given alt (naming the
+         * resource type).
+         * @param {string} type Resource type, obtained from the image alt name
+         */
+        const addListenersByType = type => {
+            let typeImages = element.querySelectorAll(`img[alt="${type}"]`);
+            typeImages.forEach((imageElement, resourceImageIndex) => {
+                // typeImages[0] represents having 1 card, not 0
+                addListener(imageElement, type, resourceImageIndex + 1);
+            });
+
+        };
+        for (const type of RenderCards.resourceTypes) {
+            addListenersByType(type);
+        }
+    }
+
+    /**
      * Generate a new sidebar element by cloning the template
      * @return {HTMLElement}
      */
@@ -176,12 +259,16 @@ class RenderCards {
         let resourcesElement = sidebar.querySelector(".resources");
         let resStealChanceElem = sidebar.querySelector(".resourceStealChance");
         for (const player of this.#playerNames) {
-            resourcesElement.appendChild(
-                this.#cloneSidebarResourceEntry(
-                    player,
-                    this.#colour_map[player],
-                ),
+            let newResourcesEntry = this.#cloneSidebarResourceEntry(
+                player,
+                this.#colour_map[player],
             );
+            this.#addResourceGuessEventListeners(
+                newResourcesEntry,
+                player,
+                this.#multiverse,
+            );
+            resourcesElement.appendChild(newResourcesEntry);
             resStealChanceElem.appendChild(
                 this.#cloneSidebarResourceTypeEntry(
                     player,
