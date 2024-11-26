@@ -213,7 +213,7 @@ class RenderCards {
             const addFakeRange = resourceName => {
                 fakeResourceGuessAndRange[resourceName] = [
                     // This describes a guessAndRange[player][resourceName] by
-                    // pretending that the resource count belongign to the
+                    // pretending that the resource count belonging to the
                     // currently processed slice has 100% probability.
                     resources[resourceName],
                     1.0,
@@ -315,7 +315,15 @@ class RenderCards {
             }
             // Possible cards: update color
             for (; i <= r[3]; increment()) {
-                console.assert(0 <= probability && probability <= 1);
+                console.assert(
+                    // This may be violated when the user is unreasonably click
+                    // happy with the probability guessing. Since this is for
+                    // display only that would not be a big deal.
+                    0 <= probability && probability <= 1,
+                    "Card probabilities should be withing [0,1]. Is:",
+                    probability,
+                );
+                probability = clampProbability(probability);
                 update(true, probability);
                 probability -= d[i];
             }
@@ -364,7 +372,7 @@ class RenderCards {
      * Generate the contents for the resourceWorlds element. Overwrite if the
      * element already exists.
      * @param {string} playerName
-     * The player whos data should fill the resourceWorlds element
+     * The player who's data should fill the resourceWorlds element
      */
     #setResourceWorlds(playerName) {
         if (this.#sidebar === null) {
@@ -436,8 +444,8 @@ class RenderCards {
      * Update a 'resourceCards' element from a guess and range object.
      * NOTE: Currently only for such guess and range objects that have certainly
      *       (and therefore only used for the possible worlds popup). In the
-     *       future, use this function in the update the the regular
-     *       resourceEntry as well.
+     *       future, use this function in the update the regular resourceEntry
+     *       as well.
      *
      * @param {HTMLElement} cardsElement 'resourceCards' element
      * @param {Object} guessAndRange Guess-and-range subobject for a specific
@@ -610,7 +618,7 @@ function generateTemplates(templates) {
         templates.resourceCards.classList.add("cocaco", "resourceCards")
     }
 
-    // The 5 cards to indicate steal chance for a single palyer go in
+    // The 5 cards to indicate steal chance for a single player go in
     // 'resourceCardsSingle'
     {
         templates.resourceCardsSingle = document.createElement("div");
@@ -680,11 +688,6 @@ function generateTemplates(templates) {
         templates.resourceStealChance = document.createElement("div");
         templates.resourceStealChance.classList.add("cocaco", "resourceStealChance");
         templates.resourceStealChance.classList.add("show-on-hover");
-        // templates.resourceStealChance.appendChild(
-        //     templates.playerName.cloneNode(true),
-        // );
-        // let stealChanceResourceCards = templates.resourceCards.cloneNode(true);
-        // templates.resourceStealChance.appendChild(stealChanceResourceCards);
     }
 
     // 'resourceWorlds' is the popout panel showing all possible hands of some
@@ -698,7 +701,7 @@ function generateTemplates(templates) {
         );
     }
 
-    // The resourcesPanel is the element cintaining the whole unit of resources
+    // The resourcesPanel is the element containing the whole unit of resources
     // and resource worlds popout. It is toggled as a unit.
     {
         templates.resourcesPanel = document.createElement("div");

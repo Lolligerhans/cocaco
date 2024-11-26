@@ -49,6 +49,12 @@ const alternativeAssets = {
  * @return {string} Colour string "rgb(...)"
  */
 function colourInterpolate(zeroToOne) {
+    console.assert(
+        // Warn about invalid inputs even though we correct them. We do not mean
+        // to input invalid numbers.
+        0 <= zeroToOne && zeroToOne <= 1,
+        "Interfṕolation factor should be between 0 and 1",
+    );
     // Clamp to hedge against inaccurate floats
     zeroToOne = clampProbability(zeroToOne);
     if (zeroToOne < 0.5) {
@@ -345,6 +351,16 @@ const predicates = {
     {
         "f": (x) => { return (y) => y > x; },
         "name": (x) => `> ${x}`,
+    },
+    ">=":
+    {
+        "f": (x) => { return (y) => y >= x; },
+        "name": (x) => `>= ${x}`,
+    },
+    "<=":
+    {
+        "f": (x) => { return (y) => y <= x; },
+        "name": (x) => `<= ${x}`,
     },
     "!":
     {

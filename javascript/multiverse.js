@@ -652,8 +652,8 @@ class Multiverse {
      * to do so in the general case.
      * @param {string} playerName
      * @param {Number} resourceIndex
-     * @param {function(Number):Boolean} predicate One of the predefined predicates, or any
-     *                             other predicate.
+     * @param {function(Number):Boolean} predicate
+     * One of the predefined predicates, or any other predicate
      * @param {string} [name] Predicate name to be displayed in logging
      */
     weightGuessPredicate(
