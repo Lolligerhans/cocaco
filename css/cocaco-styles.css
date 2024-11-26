@@ -28,7 +28,7 @@
     transform: translate(-50%, -50%);
 }
 
-.hidden
+.cocaco-hidden
 {
     visibility: hidden;
 }

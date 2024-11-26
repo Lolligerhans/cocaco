@@ -217,10 +217,10 @@ const setHidden = (flag, ...rest) => {
         unhide(...rest);
 };
 const hide = (...rest) => rest.forEach(e => {
-    if (e) e.classList.add("hidden");
+    if (e) e.classList.add("cocaco-hidden");
 });
 const unhide = (...rest) => rest.forEach(e => {
-    if (e) e.classList.remove("hidden")
+    if (e) e.classList.remove("cocaco-hidden")
 });
 
 function log(...args) {

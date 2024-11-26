@@ -168,7 +168,7 @@ class RenderCards {
     /**
      * Generate an array of HTMLElements for every possible resource combination
      * of the given player. The returned elements are meant to be added as child
-     * nodes to the 'resourceEntry' element in the 'resourceWorlds' elemnet.
+     * nodes to the 'resourceEntry' element in the 'resourceWorlds' element.
      * @param {string} playerName
      * @return {HTMLElement[]}
      * Array of elements derived from 'templates.resourceCards'. Each contains
@@ -555,7 +555,7 @@ function generateTemplates(templates) {
         templates.ore.alt = "ore";
     }
 
-    // The 'palyerName' element shows a name in the player color
+    // The 'playerName' element shows a name in the player color
     {
         templates.playerName = document.createElement("div");
         templates.playerName.classList.add("cocaco", "playerName", "oneline");

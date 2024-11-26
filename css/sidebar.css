@@ -54,11 +54,11 @@
   display:flex;
 }
 
-&.resources:hover .hide-on-hover {
+&.resourcesPanel:hover .hide-on-hover {
   display: none;
 }
 
-&.resources:not(:hover) .show-on-hover {
+&.resourcesPanel:not(:hover) .show-on-hover {
   display: none;
 }
 
@@ -79,7 +79,7 @@
 
 &.resourceWorlds > .resourceCards {
   outline-offset: -1.4mm;
-  outline: 1.5mm solid #c00;
+  outline: 1.5mm solid blue;
 }
 
 &.resourceCards {
@@ -103,14 +103,14 @@
 
 &img:hover {
   filter: grayscale(0); /* Otherwise z-index does nothing */
-  outline: red dotted 5px;
+  outline: blue dotted 5px;
   z-index: 9991;
 }
 
 &.card {
   height: 100%;
   outline-offset: -1.4mm;
-  outline: 1.5mm solid #c00;
+  outline: 1.5mm solid blue;
   width: max-content;
 }
 
