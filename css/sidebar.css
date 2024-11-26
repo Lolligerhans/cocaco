@@ -66,8 +66,12 @@
   background: #fff8;
 }
 
-&.resourceWorlds {
+&.resourceStealChance {
   background: #8888;
+}
+
+&.resourceWorlds {
+  background: #fff8;
   max-height: 100vh;
   overflow: auto;
 }

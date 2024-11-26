@@ -91,6 +91,25 @@ class RenderCards {
     }
 
     /**
+     * Generate a new resourceEntry element by cloning the template
+     * @param {string} playerName
+     * @param {string} playerColour CSS colour string
+     * @returns {HTMLElement}
+     */
+    #cloneSidebarResourceTypeEntry(playerName, playerColour) {
+        let entry = RenderCards.templates.resourceTypeEntry.cloneNode(true);
+        let nameEntry = entry.querySelector(".playerName");
+        nameEntry.textContent = playerName;
+        nameEntry.style.color = playerColour;
+        entry.querySelectorAll("img").forEach(node => {
+            const newSrc = this.#assets[node.alt];
+            // console.debug("Replacing", node.src, "with", newSrc);
+            node.src = newSrc;
+        });
+        return entry;
+    }
+
+    /**
      * Ensures that the sidebar element exists. Generates a new element if
      * needed. After this function was called, 'this.#sidebar' will be the
      * current sidebar element.
@@ -154,9 +173,17 @@ class RenderCards {
         };
         addButton("resourcesPanel", " 🂠");
         addButton("rollsPlot", " 📊");
+        let resourcesElement = sidebar.querySelector(".resources");
+        let resStealChanceElem = sidebar.querySelector(".resourceStealChance");
         for (const player of this.#playerNames) {
-            sidebar.querySelector(".resources").appendChild(
+            resourcesElement.appendChild(
                 this.#cloneSidebarResourceEntry(
+                    player,
+                    this.#colour_map[player],
+                ),
+            );
+            resStealChanceElem.appendChild(
+                this.#cloneSidebarResourceTypeEntry(
                     player,
                     this.#colour_map[player],
                 ),
@@ -306,14 +333,14 @@ class RenderCards {
 
     /**
      * Update the steal chances of a resourceEntry element
-     * @param {HTMLElement} entry
+     * @param {HTMLElement} entry Clone of 'resourceTypeEntry' template
      * The resource entry element to be updated. See the template for its
      * structure.
      * @param {*} stealProbability
      * Multiverse stealProbability object to obtain data from
      */
     #updateEntrySteals(entry, stealProbability) {
-        let resourceCards = entry.childNodes[2].childNodes;
+        let resourceCards = entry.childNodes[1].childNodes;
         const cardCount = resourceCards.length;
         console.assert(cardCount === 5);
         const updateCard = (index, value) => {
@@ -375,10 +402,12 @@ class RenderCards {
      */
     #updateResources() {
         let resourcesDiv = this.#sidebar.querySelector(".resources");
+        let resourceStealChanceDiv = this.#sidebar.querySelector(".resourceStealChance");
         this.#resetResourceWorlds();
         if (!this.#toggle.isToggled("resourcesPanel")) {
             // Save the cycles when nothing has to be shown anyway
             hide(resourcesDiv);
+            hide(resourceStealChanceDiv);
             return;
         }
         // this.#logger.log("Updating sidebar");
@@ -387,14 +416,16 @@ class RenderCards {
         const guessAndRange = this.#multiverse.guessAndRange;
         const stealProbabilitiy = this.#multiverse.stealProbability;
         let entries = resourcesDiv.childNodes;
+        let stealEntries = resourceStealChanceDiv.childNodes;
         Object.entries(this.#playerNames).forEach(([index, playerName]) => {
+            const indexNumber = Number.parseInt(index);
             this.#updateEntry(
-                entries[index],
+                entries[indexNumber],
                 guessAndRange[playerName],
                 distribution[playerName],
             );
             this.#updateEntrySteals(
-                entries[index],
+                stealEntries[indexNumber],
                 stealProbabilitiy[playerName],
             );
         });
@@ -611,19 +642,49 @@ function generateTemplates(templates) {
     }
 
     // 'resourceEntry' is one row in the resources panel, including name and the
-    // resource cards
+    // resource cards.
     {
         templates.resourceEntry = document.createElement("div");
         templates.resourceEntry.classList.add("cocaco", "resourceEntry");
         templates.resourceEntry.appendChild(
             templates.playerName.cloneNode(true),
         );
-        let haveResourceCards = templates.resourceCards.cloneNode(true);
-        haveResourceCards.classList.add("hide-on-hover");
-        templates.resourceEntry.appendChild(haveResourceCards);
-        let stealResourceChance = templates.resourceCardsSingle.cloneNode(true);
-        stealResourceChance.classList.add("show-on-hover");
-        templates.resourceEntry.appendChild(stealResourceChance);
+        let currentResourceCards = templates.resourceCards.cloneNode(true);
+        templates.resourceEntry.appendChild(currentResourceCards);
+    }
+
+    // 'resourceTypeEntry' is one row in the resourceStealChance panel,
+    // including name and the resource types.
+    {
+        templates.resourceTypeEntry = document.createElement("div");
+        templates.resourceTypeEntry.classList.add("cocaco", "resourceTypeEntry");
+        templates.resourceTypeEntry.appendChild(
+            templates.playerName.cloneNode(true),
+        );
+        let currentResourceChance = templates.resourceCardsSingle.cloneNode(true);
+        currentResourceChance.classList.add("show-on-hover");
+        templates.resourceTypeEntry.appendChild(currentResourceChance);
+    }
+
+    // Construct empty resources. Append copies of the filled 'resourceEntry'
+    // into it on construction.
+    {
+        templates.resources = document.createElement("div");
+        templates.resources.classList.add("cocaco", "resources");
+    }
+
+    // 'resourceSummary' is the popout panel showing the steal chance for each
+    // resource type. Append copies of the filled 'resourceTypeEntry' on
+    // construction.
+    {
+        templates.resourceStealChance = document.createElement("div");
+        templates.resourceStealChance.classList.add("cocaco", "resourceStealChance");
+        templates.resourceStealChance.classList.add("show-on-hover");
+        // templates.resourceStealChance.appendChild(
+        //     templates.playerName.cloneNode(true),
+        // );
+        // let stealChanceResourceCards = templates.resourceCards.cloneNode(true);
+        // templates.resourceStealChance.appendChild(stealChanceResourceCards);
     }
 
     // 'resourceWorlds' is the popout panel showing all possible hands of some
@@ -637,13 +698,6 @@ function generateTemplates(templates) {
         );
     }
 
-    // Construct empty resources. Append copies of the filled 'resourceEntry'
-    // into it on construction.
-    {
-        templates.resources = document.createElement("div");
-        templates.resources.classList.add("cocaco", "resources");
-    }
-
     // The resourcesPanel is the element cintaining the whole unit of resources
     // and resource worlds popout. It is toggled as a unit.
     {
@@ -651,6 +705,9 @@ function generateTemplates(templates) {
         templates.resourcesPanel.classList.add("cocaco", "resourcesPanel");
         templates.resourcesPanel.appendChild(
             templates.resources.cloneNode(true),
+        );
+        templates.resourcesPanel.appendChild(
+            templates.resourceStealChance.cloneNode(true),
         );
     }
 
