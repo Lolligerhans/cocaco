@@ -28,7 +28,7 @@ Uncertain cards have a coloured outline:
 |     🟨 | Possible |
 |     🟩 | Likely   |
 
-Click on an uncertain cards to adjusts its probability.
+Click on uncertain cards to adjust probabilities.
 
 | Card action | Effect |
 |-:|:-|
