@@ -28,6 +28,14 @@ cocaco_config = {
         autocollude: false,
 
         /**
+         * Generate rejection frame when an offer cannot be afforded. When the
+         * host declines automatically, set to 'false' to prevent generation by
+         * Cocaco.
+         * @type {Boolean}
+         */
+        declineImpossible: true,
+
+        /**
          * Trade at most this many resource per side. Makes the trades more bot
          * friendly. Colonist prevents too unbalaned trades (?).
          * @type {Number} Stay within [1,5].

@@ -203,18 +203,16 @@ State.implementor.collusionOffer = function ({ player, trade, accept }) {
     if (plannerResult === true) {
         accept();
     } else {
-        const hasEnough = CollusionPlanner.takerHasEnough(trade, guessAndRange);
+        // Do not interfere with the host auto-decline that happens when we
+        //  - cannot afford the trade
+        //  - have an embargo
+        const haveEnough = CollusionPlanner.takerHasEnough(trade, guessAndRange);
+        const weWantToDecline =
+            haveEnough || cocaco_config.collude.declineImpossible;
         const isEmbargoed = this.collusionPlanner.isEmbargoedTrade(trade);
-        // When we do not have enough, or are embargoed, the host already sends
-        // a response.
-        const maySendResponse = hasEnough && !isEmbargoed;
-        if (maySendResponse) {
-            // console.debug("State: Rejecting offer (can afford)");
+        if (weWantToDecline && !isEmbargoed) {
+            // console.debug("State: Rejecting offer");
             accept(false);
-        } else {
-            // Do not interfere with the auto-decline that happens when we
-            //  - cannot afford the trade
-            //  - have an embargo
         }
     }
 }
