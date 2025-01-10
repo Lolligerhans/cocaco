@@ -1,8 +1,8 @@
 root = true
 
-[*.{js,md}]
+[*.{js}]
   indent_size = 4
   indent_style = space
-[*.{css,html,json}]
+[*.{css,html,json,md}]
   indent_size = 2
   indent_style = space
