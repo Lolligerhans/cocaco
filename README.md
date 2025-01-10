@@ -83,6 +83,15 @@ See [doc/instructions.md](doc/instructions.md) for instructions. Use
 [Q&A](https://github.com/Lolligerhans/cocaco/discussions/categories/q-a?discussions_q=)
 for help.
 
+## Contributing
+
+| How | Documentation | Configs |
+|-|-|-|
+| Create a Pull Request                | [Documentation](doc/README.md)  | [.clang-format][ClangFormatConfig] |
+| [Start a discussion][Discussions]    | [Code](doc/code.md)             | [.ctagsignore](/.ctags-ignore)     |
+|                                      | [Algorithms](doc/algorithms.md) | [.editorconfig](/.editorconfig)    |
+|                                      |                                 | [.rgignore](/.rgignore)            |
+
 ## Attribution
 
 <!-- <a href="https://www.flaticon.com/free-icons/food-and-restaurant" title="food and restaurant icons"> Food and restaurant icons created by @mingyue - Flaticon</a>  -->
@@ -103,3 +112,6 @@ for help.
 [Explorer]: https://github.com/glasperfan/explorer "Explorer repository"
 [Original]: https://github.com/Lolligerhans/explorer "Old fork"
 [Plotly]: https://plotly.com/javascript/ "Plotly homepage"
+[Q&A]: https://github.com/Lolligerhans/cocaco/discussions/categories/q-a?discussions_q=
+[Discussions]: https://github.com/Lolligerhans/cocaco/discussions
+[ClangFormatConfig]: .clang-format

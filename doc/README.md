@@ -12,8 +12,8 @@
     - [ ] cards
   - [ ] Clickables
   - [ ] Logging
-- [ ] Algorithms
-  - [ ] Card Tracking
+- [ ] [Algorithms](algorithms.md)
+  - [x] [Card Tracking](algorithms.md#card-counting)
   - [ ] Plots/Info
 - [ ] Dump
-- [ ] Code
+- [x] [Code](code.md)

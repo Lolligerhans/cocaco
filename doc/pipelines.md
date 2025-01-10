@@ -23,8 +23,7 @@
 
 Input into the Cocaco extension flows through multiple pipelining steps before
 reaching the resource tracker. Each step takes (only) the output of the previous
-layer. While the pipeline is a linear sequence of processing steps, some
-branching may be incurred by using multiple of such pipelines at the same time.
+layer.
 
 Currently there is only one pipeline: `Colonist`.
 
