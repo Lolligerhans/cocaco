@@ -19,7 +19,7 @@
  *
  * TODO: ports
  */
-class Connect extends Trigger {
+class Connect extends Trigger{
 
     /**
      * Initializes ports and listeners
@@ -34,7 +34,6 @@ class Connect extends Trigger {
         browser.runtime.onMessage.addListener(dispatch);
 
         // Add more onMessages and port here
-
     }
 
     /**

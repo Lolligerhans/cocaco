@@ -65,22 +65,21 @@ class Render {
         colour_map,
         //haltCallback, // At log element currently
         //continueCallback, // At log element currently
-        resetCallback, // Currently does nothing
+        resetCallback,        // Currently does nothing
         recoverCardsCallback, // Goes in the card total cells
         recoverNamesCallback, // Goes in the corner cell
-        iconAssets // {"road": '<img src=...>', ...}
+        iconAssets,           // {"road": '<img src=...>', ...}
     ) {
         this.#configShown.enable("resourceTable");
 
         // Callbacks may be null
         console.assert(
-            ![
-                multiverse,
-                track,
-                playerNames,
-                colour_map,
-                iconAssets,
-            ].includes(null),
+            ![multiverse,
+              track,
+              playerNames,
+              colour_map,
+              iconAssets,
+        ].includes(null),
         );
         this.#playerNames = playerNames;
         this.#colour_map = colour_map;
@@ -92,7 +91,6 @@ class Render {
             recoverCardsCallback: recoverCardsCallback,
             recoverNamesCallback: recoverNamesCallback
         };
-
     }
 
     /**
@@ -104,10 +102,8 @@ class Render {
      */
     toggle(which = null, value = null) {
         this.#configShown.toggle(which, value);
-        console.log(
-            `🖥Toggle ${which} ➜`,
-            `${this.#configShown.isToggled(which) ? "hide" : "show"}`,
-        );
+        console.log(`🖥Toggle ${which} ➜`,
+                    `${this.#configShown.isToggled(which) ? "hide" : "show"}`);
         this.#mustRedraw = true;
         this.render();
     }
@@ -119,10 +115,10 @@ class Render {
         try {
             Object.values(Render.#ids).forEach(id => {
                 const e = document.getElementById(id);
-                if (e) e.remove();
+                if (e)
+                    e.remove();
             });
-        }
-        catch (e) {
+        } catch (e) {
             // We don't really care if this fails at the moment, but it might
             // help identify bugs.
             console.warn("Exception in unrender():", e);
@@ -229,6 +225,7 @@ class Render {
 
         // Rows for player i robbing player j. And one last cell for rob total
         let tblBody = robTable.tBodies[0];
+        // clang-format on
         for (i = 0; i < this.#playerNames.length; i++) {
             const thief = this.#playerNames[i];
             let row = tblBody.rows[i];
@@ -238,24 +235,35 @@ class Render {
                 //if (j === i) continue;
                 const victim = this.#playerNames[j];
                 let robCount = this.#track.robs[thief][victim];
-                if (robCount === undefined) { alertIf(43); robCount = 0; }
+                if (robCount === undefined) {
+                    alertIf(43);
+                    robCount = 0;
+                }
                 const robAdvantage = robCount - this.#track.robs[victim][thief];
                 const irrelevant = robCount === 0 && robAdvantage === 0;
-                const robColour = robAdvantage > 0 ? "#00a000"
-                    : robAdvantage < 0 ? "#a00000"
-                        : "#000000";
+                const robColour = robAdvantage > 0   ? "#00a000"
+                                  : robAdvantage < 0 ? "#a00000"
+                                                     : "#000000";
                 const style = `style="color:${robColour}"`;
                 let cell = row.cells[j + 1];
-                cell.innerHTML = irrelevant ? "" : `<span ${style}>${robCount}</span>`;
+                cell.innerHTML =
+                    irrelevant ? "" : `<span ${style}>${robCount}</span>`;
             }
             let j = this.#playerNames.length;
             let cell = row.cells[j + 1];
             let taken = this.#track.robsTaken[thief];
-            if (taken === undefined) { alertIf(44); taken = 0; }
-            const sevenStr = this.#track.robsSeven[thief] ? this.#track.robsSeven[thief].toString() : " ";
+            if (taken === undefined) {
+                alertIf(44);
+                taken = 0;
+            }
+            const sevenStr = this.#track.robsSeven[thief]
+                                 ? this.#track.robsSeven[thief].toString()
+                                 : " ";
             const knightsCount = taken - this.#track.robsSeven[thief];
+            // clang-format off
             const knightStr = knightsCount ? `+${knightsCount.toString()}` : "  ";
             cell.innerHTML = taken === 0 ? "" : `<span style="color:${this.#colour_map[thief]}">${sevenStr}${knightStr}</span>`;
+            // clang-format on
         }
 
         // Final row for lost totals and steal totals
@@ -264,13 +272,20 @@ class Render {
         for (let j = 0; j < this.#playerNames.length; ++j) {
             const victim = this.#playerNames[j];
             let lostCount = this.#track.robsLost[victim];
-            if (lostCount === undefined) { alertIf(45); lostCount = 0; }
+            if (lostCount === undefined) {
+                alertIf(45);
+                lostCount = 0;
+            }
             let cell = row.cells[j + 1];
+            // clang-format off
             cell.innerHTML = lostCount === 0 ? "" : `<span style="color:${this.#colour_map[victim]}">${lostCount}</span>`;
+            // clang-format on
         }
         let j = this.#playerNames.length;
         let cell = row.cells[j + 1];
-        cell.innerHTML = this.#track.robsTotal === 0 ? "" : `${this.#track.robsTotal}`;
+        cell.innerHTML =
+            this.#track.robsTotal === 0 ? "" : `${this.#track.robsTotal}`;
+        // clang-format on
     }
 
     /**
@@ -291,8 +306,7 @@ class Render {
         let headerRow = header.insertRow(0);
         let playerHeaderCell = headerRow.insertCell(0);
         playerHeaderCell.addEventListener(
-            "click", this.#context.recoverNamesCallback, false,
-        );
+            "click", this.#context.recoverNamesCallback, false);
         playerHeaderCell.className = "cocaco-tbl-player-col-header";
         // const icon = document.createElement("img");
         // const text = document.createElement("div");
@@ -302,14 +316,12 @@ class Render {
         for (let i = 0; i < Multiverse.resources.length; i++) {
             let resourceHeaderCell = headerRow.insertCell(i + 1);
             resourceHeaderCell.addEventListener(
-                "click", this.#context.recoverCardsCallback, false,
-            );
+                "click", this.#context.recoverCardsCallback, false);
             resourceHeaderCell.className = "cocaco-tbl-cell";
         }
         for (const [i, name] of Object.keys(Multiverse.costs).entries()) {
-            let headerCell = headerRow.insertCell(
-                i + 1 + Multiverse.resources.length,
-            );
+            let headerCell =
+                headerRow.insertCell(i + 1 + Multiverse.resources.length);
             headerCell.className = "cocaco-tbl-cell";
             headerCell.innerHTML = this.#iconElements[name];
 
@@ -322,29 +334,29 @@ class Render {
         const measureTotalCountFunction = (playerName) => {
             // Show the most likely value as default
             const defa = this.#multiverse.guessAndRange[playerName].cardSum[2];
-            const guessStr = prompt(
-                `${playerName}'s true card count:`, defa.toString(),
-            );
-            const guessCount = parseInt(guessStr, 10)
+            const guessStr =
+                prompt(`${playerName}'s true card count:`, defa.toString());
+            const guessCount = parseInt(guessStr, 10);
             this.#multiverse.collapseExactTotal(playerName, guessCount);
 
             this.render();
         };
 
+        // clang-format off
         const guessCardCountFunction = (playerName, resourceIndex, defaultCount) => {
+            // clang-format on
             const resourceName = Multiverse.getResourceName(resourceIndex);
             const icon = utf8Symbols[resourceName];
-            const guessStr = prompt(`How many ${icon} has ${playerName}?`, defaultCount.toString());
+            const guessStr = prompt(`How many ${icon} has ${playerName}?`,
+                                    defaultCount.toString());
 
             // If guessStr starts with a digit, it has no operator
             const startsWithDigit = guessStr.match(/^\d+/);
             if (startsWithDigit) {
                 const guessCount = parseInt(guessStr, 10);
-                this.#multiverse.weightGuessExact(
-                    playerName, resourceIndex, guessCount,
-                );
-            }
-            else {
+                this.#multiverse.weightGuessExact(playerName, resourceIndex,
+                                                  guessCount);
+            } else {
                 const guessCount = parseInt(guessStr.slice(1), 10);
                 const operator = guessStr[0];
                 if (!Object.hasOwn(predicates, operator)) {
@@ -354,15 +366,17 @@ class Render {
                 }
                 this.#multiverse.weightGuessPredicate(
                     playerName, resourceIndex,
-                    predicates[operator].f(guessCount), // Returns predicate lambda
+                    predicates[operator].f(guessCount),
                     predicates[operator].name(guessCount));
-                log(`[NOTE] Generating guess for ${playerName}[${icon}] ${operator} ${guessCount}`);
+                log(`[NOTE] Generating guess for ${playerName}[${icon}] ${
+                    operator} ${guessCount}`);
             }
 
             this.render(); // Show consequences of guess immediately
         };
         const guessHasNoBuilding = (playerName, buildingName) => {
-            this.#multiverse.weightGuessNotAvailable(playerName, Multiverse.costs[buildingName]);
+            this.#multiverse.weightGuessNotAvailable(
+                playerName, Multiverse.costs[buildingName]);
             this.render();
         };
 
@@ -376,20 +390,29 @@ class Render {
             let row = tblBody.insertRow(i);
             row.className = "cocaco-tbl-row";
             let playerRowCell = row.insertCell(0);
-            playerRowCell.className = "cocaco-tbl-player-col-cell";   // Same as for rob table
-            playerRowCell.addEventListener("click", measureTotalCountFunction.bind(null, player), false);
+            // Same as for rob table
+            playerRowCell.className = "cocaco-tbl-player-col-cell";
+            playerRowCell.addEventListener(
+                "click", measureTotalCountFunction.bind(null, player), false);
             // Resources
             for (let j = 0; j < Multiverse.resources.length; j++) {
                 const res = Multiverse.getResourceName(j);
                 let cell = row.insertCell(j + 1);
-                cell.className = "cocaco-tbl-cell";   // Same as for rob table
-                cell.addEventListener("click", guessCardCountFunction.bind(null, player, j, this.#multiverse.guessAndRange[player][res][2]), false);
+                // Same as for rob table
+                cell.className = "cocaco-tbl-cell";
+                cell.addEventListener(
+                    "click",
+                    guessCardCountFunction.bind(
+                        null, player, j,
+                        this.#multiverse.guessAndRange[player][res][2]),
+                    false);
             }
             // Buildings
             let j = Multiverse.resources.length + 1;
             let addBuildFunc = b => {
                 let cell = row.insertCell(j);
-                cell.addEventListener("click", guessHasNoBuilding.bind(null, player, b), false);
+                cell.addEventListener(
+                    "click", guessHasNoBuilding.bind(null, player, b), false);
                 cell.className = "cocaco-tbl-cell";
                 ++j;
             };
@@ -465,12 +488,13 @@ class Render {
         let headerRow = header.rows[0];
         let playerHeaderCell = headerRow.cells[0];
         playerHeaderCell.textContent = `${this.#multiverse.worldCount()} 🌎`;
-        for (let i = 0; i < Multiverse.resources.length; i++) { // TODO use spans to separate number from icon
+        for (let i = 0; i < Multiverse.resources.length; i++) {
             let resourceType = Multiverse.getResourceName(i);
             let resourceHeaderCell = headerRow.cells[i + 1];
             const total = this.#multiverse.totalResourceCounts[resourceType];
             const numberString = total > 0 ? `${total}` : "";
-            resourceHeaderCell.innerHTML = numberString + this.#iconElements[resourceType];
+            resourceHeaderCell.innerHTML =
+                numberString + this.#iconElements[resourceType];
         }
 
         // One resource table row per player
@@ -483,6 +507,7 @@ class Render {
             for (let j = 0; j < Multiverse.resources.length; j++) {
                 const res = Multiverse.getResourceName(j);
                 let cell = row.cells[j + 1];
+                // clang-format off
                 const resCount = this.#multiverse.guessAndRange[player][res][2]; // Guess
                 const fraction = this.#multiverse.guessAndRange[player][res][1]; // Fraction
                 const percentString = fraction > 0.999 ? "" : ` <span class="table-percent table-number-chance">${Math.round(fraction * 100)}%</span>`;
@@ -491,6 +516,7 @@ class Render {
                 cell.innerHTML = this.#multiverse.guessAndRange[player][res][3] === 0
                     ? "" // Display nothing if guaranteed 0 amount available
                     : `<span class="table-number">${resCount}</span>${percentString}<br><span class="table-percent" style="font-weight:100;background:${shadowColour}">${Math.round(stealChance * 100)}%</span>`;
+                // clang-format on
                 // Alternatively, background whole cell
                 //if (this.#manyWorlds.guessAndRange[player][res][3] !== 0)
                 //    cell.style.background = shadowColour;
@@ -500,9 +526,11 @@ class Render {
             let addBuildFunc = b => {
                 const chance = this.#multiverse.affordProbability[player][b];
                 let cell = row.cells[j];
+                // clang-format off
                 cell.innerHTML = chance < 0.001 ? "" // Show nothing if very unlikely
                     : chance > 0.999 ? "<span class='table-number table-tick'>✔️ </span>"
-                        : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
+                    : `<span class="table-number-chance">${Math.round(chance * 100)}%</span>`;
+                // clang-format on
                 if (0.001 < chance)
                     cell.style.background = colourInterpolate(chance);
                 else
@@ -530,7 +558,10 @@ class Render {
         for (i = 0; i < this.#playerNames.length; i++) {
             let playerHeaderCell = headerRow.insertCell(i + 1);
             playerHeaderCell.className = "cocaco-tbl-cell";
-            playerHeaderCell.innerHTML = `<div class="cocaco-tbl-player-col-cell-color" style="background-color:${this.#colour_map[this.#playerNames[i]]}">  </div>`; // Spaces to show the background colour only
+            // Use spaces   to show background color only
+            // clang-format off
+            playerHeaderCell.innerHTML = `<div class="cocaco-tbl-player-col-cell-color" style="background-color:${this.#colour_map[this.#playerNames[i]]}">  </div>`;
+            // clang-format on
         }
         i = this.#playerNames.length;
         let totalHeaderCell = headerRow.insertCell(i + 1);
@@ -542,10 +573,12 @@ class Render {
             let row = tblBody.insertRow(i);
             row.className = "cocaco-tbl-row";
             let playerRowCell = row.insertCell(0);
-            playerRowCell.className = "cocaco-rob-tbl-player-col-cell";   // Same as for resource table
+            // Same as for resource table
+            playerRowCell.className = "cocaco-rob-tbl-player-col-cell";
             for (let j = 0; j < this.#playerNames.length; ++j) {
                 let cell = row.insertCell(j + 1);
-                cell.className = "cocaco-tbl-cell";   // Same as for resource table
+                // Same as for resource table
+                cell.className = "cocaco-tbl-cell";
             }
             let j = this.#playerNames.length;
             let cell = row.insertCell(j + 1);
@@ -579,11 +612,13 @@ class Render {
     renderPlayerCell(player, robsCount = false) {
         const gar = this.#multiverse.guessAndRange[player].cardSum;
         const definite = gar[0] === gar[3]; // min === max
-        const value = gar[2]; // most likely
+        const value = gar[2];               // most likely
         const padding = value >= 10 ? "" : " ";
         const sumString = gar[3] === 0 ? "  " : `${padding}${value}`;
+        // clang-format off
         const post = definite ? "" : ` (${Math.round(gar[1] * 100)}%) | ${gar[0]} - ${gar[3]}`;
         return `<span class="cocaco-tbl-player-name" style="color:${this.#colour_map[player]}">${sumString} ${player}</span><span class="cocaco-tbl-unknown-stats">${post}</span>`;
+        // clang-format on
     }
 
     /**
@@ -592,6 +627,7 @@ class Render {
      * @return {string} Span element for a stylised player name
      */
     renderPlayerCellSteals(player) {
+        // clang-format off
         const diff = this.#track.robsTaken[player] - this.#track.robsLost[player];
         const diffStr = diff ? (diff < 0 ? "" : "+") + diff : "  ";
         //const justNumber = `${diffStr}`;
@@ -599,6 +635,7 @@ class Render {
         const fullText = ` ${diffStr}`;
         return `<span class="cocaco-tbl-player-name" style="color:${this.#colour_map[player]}">${player}${fullText}</span>`
             + `<span class="cocaco-tbl-player-col-cell-color" style="background-color:${this.#colour_map[player]}">  </span>`;
+        // clang-format on
     }
 }
 

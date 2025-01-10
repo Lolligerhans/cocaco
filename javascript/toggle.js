@@ -28,9 +28,7 @@ class Toggle {
      * The names of all available flags. The name "global" is reserved.
      */
     constructor(...names) {
-        this.#flags = Object.fromEntries(
-            names.map(n => [n, false])
-        );
+        this.#flags = Object.fromEntries(names.map(n => [n, false]));
         this.#flags.global = true;
         this.print();
     }
@@ -194,9 +192,8 @@ class Toggle {
         if (printGlobal && !which.includes("global")) {
             this.printGlobal();
         }
-        const logFlag = name => this.#logger.log(
-            name, "===", this.isToggled(name),
-        );
+        const logFlag = name =>
+            this.#logger.log(name, "===", this.isToggled(name));
         which.forEach(logFlag);
     }
 
@@ -207,7 +204,6 @@ class Toggle {
     print(...which) {
         this.#printPrivate(true, ...which);
     }
-
 
     /**
      * Print only the global flag
@@ -274,5 +270,4 @@ class Toggle {
             return true;
         }
     }
-
 }

@@ -1,3 +1,4 @@
+// clang-format off
 if (cocaco_config.replay === true)
 Replay.frames = [
 {"v0":2,"v1":2,"str":"lobby","message":{"action":9,"payload":false}},

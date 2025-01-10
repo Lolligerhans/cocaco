@@ -170,11 +170,8 @@ class Collude {
      */
     getCollusionTemplate(playerFrom, playerTo) {
         if (!this.#hasColludersByName(playerFrom.name, playerTo.name)) {
-            Collude.#logger.log(
-                playerFrom.name,
-                Collude.formatTemplate(),
-                playerTo.name,
-            );
+            Collude.#logger.log(playerFrom.name, Collude.formatTemplate(),
+                                playerTo.name);
             return null;
         }
         let template = this.#delta(playerFrom.name);
@@ -240,10 +237,8 @@ class Collude {
             console.assert(Object.hasOwn(this.#balances, playerName));
             Collude.#logger.log(
                 `𝚫 ${playerName} =`,
-                `${Collude.formatDelta(this.#delta(playerName))}`,
-            );
-        }
-        else {
+                `${Collude.formatDelta(this.#delta(playerName))}`);
+        } else {
             Collude.#logger.log(`𝚺 =`, p(this.#groupTotal));
             this.playerNames().forEach(p => this.print(p));
         }
@@ -392,5 +387,4 @@ class Collude {
         Collude.#logger.log(`✔ ${template.toSymbols()}`);
         return true;
     }
-
 }

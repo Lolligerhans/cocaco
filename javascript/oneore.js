@@ -10,6 +10,9 @@
 
 "use strict";
 
+// Formattter isnt configured to deal with this. Make it a class first.
+// clang-format off
+
 // Abuse object as namespace
 // TODO Would have been better as a class
 let twosheep =
@@ -1263,5 +1266,7 @@ const twosheepRecoverCards = twosheep.recoverCards.bind(twosheep);
 const twosheepRecoverNames = twosheep.recoverNames.bind(twosheep);
 // Full reset (same as startup)
 const twosheepRestart = twosheep.restartTracker.bind(twosheep);
+
+// clang-format on
 
 // vim: shiftwidth=4:softtabstop=4:expandtab

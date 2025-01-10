@@ -37,17 +37,15 @@ class Trigger {
      * @param {*} data Data to pass to each registered callback function
      */
     activateTrigger(name, data) {
-        // For debugging, pretend 
+        // For debugging, pretend
         this.#ensureTrigger(Trigger.#always);
-        this.#triggers[Trigger.#always] = this.#triggers[Trigger.#always]
-            .filter(callback => {
-                return !callback({ name: name, data: data });
-            });
+        this.#triggers[Trigger.#always] =
+            this.#triggers[Trigger.#always].filter(
+                callback => { return !callback({name: name, data: data}); });
         // console.debug("trigger: Activating trigger:", name, data);
         this.#ensureTrigger(name);
-        this.#triggers[name] = this.#triggers[name].filter(callback => {
-            return !callback(data);
-        });
+        this.#triggers[name] = this.#triggers[name].filter(
+            callback => { return !callback(data); });
     }
 
     /**
@@ -82,5 +80,4 @@ class Trigger {
         // console.debug("Trigger: registering onTrigger callback for:", name);
         this.#triggers[name].push(callback);
     }
-
 }

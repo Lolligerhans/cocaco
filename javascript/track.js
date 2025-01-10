@@ -1,12 +1,11 @@
 "use strict";
 
-
 /**
  * Simple counting structure for tracking events
  */
 class Track {
 
-    extra = { more: [], less: [], moreStrict: [], lessStrict: [] };
+    extra = {more: [], less: [], moreStrict: [], lessStrict: []};
 
     /**
      * Scalar data traces over rolls
@@ -14,7 +13,7 @@ class Track {
      * @property {Number[]} adjusted Maximum rarity after each roll, adjusted
      * @property {Number[]} number Number belonging to the maximum rarity
      */
-    maxRarity = { single: [], adjusted: [], number: [] };
+    maxRarity = {single: [], adjusted: [], number: []};
 
     /**
      * Maps how often a thief has stolen from a victim as robs[thief][victim].
@@ -66,14 +65,14 @@ class Track {
      * traces over rolls.
      * @type {{forward: Number[], backward: Number[]}}
      */
-    rollsKLD = { forward: [], backward: [] };
+    rollsKLD = {forward: [], backward: []};
 
     /**
      * The rarity values for each of the 11 numbers (2 - 12), after every roll.
      * @type {{single: Number[][11], adjusted: Number[][11]}}
      * 11-D data traces over rolls.
      */
-    rollsRarity = { single: [], adjusted: [] };
+    rollsRarity = {single: [], adjusted: []};
 
     /**
      * Copy of the first K values of 'rolls'. Tracks how much was processed w/
@@ -149,13 +148,11 @@ class Track {
         // Replay unprocessed rolls
         const newRolls = this.rolls.slice(this.rollsProcessed.length);
         for (let nextRoll of newRolls) {
-            this.rollsProcessed.push(nextRoll)
+            this.rollsProcessed.push(nextRoll);
             this.rollsHistogram[nextRoll] += 1;
             this.rollsHistogram[0] += 1;
-            this.rollsHistogram[1] = Math.max(
-                this.rollsHistogram[1],
-                this.rollsHistogram[nextRoll],
-            );
+            this.rollsHistogram[1] =
+                Math.max(this.rollsHistogram[1], this.rollsHistogram[nextRoll]);
             this.updateKL();
             this.updateRarity();
         };
@@ -168,7 +165,8 @@ class Track {
      * @param {Number} [count=1] Number of robs
      */
     addRob(thief, victim, count = 1) {
-        console.assert(typeof (count) === "number", "addRob: count must be a number");
+        console.assert(typeof (count) === "number",
+                       "addRob: count must be a number");
         this.robs[thief][victim] += count;
         this.robsTaken[thief] += count;
         this.robsLost[victim] += count;
@@ -183,7 +181,8 @@ class Track {
     addSeven(player) {
         if (this.robsSeven[player] === undefined) {
             // FIXME make error once working
-            console.warn(`addSeven: ${player} not in ${Object.keys(this.robsSeven)}`);
+            console.warn(
+                `addSeven: ${player} not in ${Object.keys(this.robsSeven)}`);
             return;
         }
         this.robsSeven[player] += 1;
@@ -208,14 +207,13 @@ class Track {
         equal = equal && badEquals(this.robsSeven, other.robsSeven);
         return equal;
     }
-
 }
 
 // ╭───────────────────────────────────────────────────────────────────────────╮
 // │ Private                                                                   │
 // ╰───────────────────────────────────────────────────────────────────────────╯
 
-Track.prototype.initRobs = function (playerNames) {
+Track.prototype.initRobs = function(playerNames) {
     this.robs = {};
     this.robsTaken = {};
     this.robsLost = {};
@@ -223,32 +221,33 @@ Track.prototype.initRobs = function (playerNames) {
     this.robsSeven = {};
     for (const player of playerNames) {
         this.robs[player] = {};
-        for (const p of playerNames) { this.robs[player][p] = 0; }
+        for (const p of playerNames) {
+            this.robs[player][p] = 0;
+        }
         this.robsTaken[player] = 0;
         this.robsLost[player] = 0;
         this.robsSeven[player] = 0;
     }
     this.printRobs();
-}
+};
 
 // Init the rolls member
-Track.prototype.initRolls = function () {
+Track.prototype.initRolls = function() {
     this.rolls = [];
     this.rollsHistogram = new Array(12 + 1).fill(0);
-    this.rollsKLD = { forward: [], backward: [], };
-}
+    this.rollsKLD = {forward: [], backward: []};
+};
 
 /**
  * Generate the KL values corresponding to the newest roll
  */
-Track.prototype.updateKL = function () {
+Track.prototype.updateKL = function() {
     const n = this.rollsProcessed.length;
     console.assert(n >= 1);
-    const rolls = this.rollsHistogram.slice(2, 13)
-        .map(x => x / n);
+    const rolls = this.rollsHistogram.slice(2, 13).map(x => x / n);
     this.rollsKLD.forward[n - 1] = klDivergence(trueProbability, rolls);
     this.rollsKLD.backward[n - 1] = klDivergence(rolls, trueProbability);
-}
+};
 
 /**
  * Generate the rarity values for the newest roll
@@ -259,35 +258,42 @@ Track.prototype.updateRarity = function updateRolls() {
     // Precompute distribution helpers
     const N = this.rollsProcessed.length;
     const index = N - 1; // Index to update in data traces
-    let dist = []; // Cache binomial(N,p) for each number
+    let dist = [];       // Cache binomial(N,p) for each number
     for (let i = 2; i <= 12; ++i) {
         dist[i - 2] = stats.binomialDistribution(N, trueProbability[i - 2]);
     }
     const clampProb = p => Math.min(Math.max(p, 0), 1);
-    let lessMoreDist = [];  // <=, >=
+    let lessMoreDist = []; // <=, >=
     const precomputeMoreOrLess = (number) => {
-        if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+        if (number <= 1 || 13 <= number)
+            alertIf("need number from 2 to 12 for dist");
         // (!) Start loop at i=1 and inline i=0
         let lessOrEqualAcc = dist[number - 2][0];
         let moreOrEqualAcc = 1;
         lessMoreDist[number - 2] = [];
-        lessMoreDist[number - 2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+        lessMoreDist[number - 2][0] =
+            [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
         for (let i = 1; i <= N; ++i) {
             lessOrEqualAcc += dist[number - 2][i];
             moreOrEqualAcc -= dist[number - 2][i - 1];
-            lessMoreDist[number - 2][i] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+            lessMoreDist[number - 2][i] =
+                [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
         }
     };
     // TODO: symmetric: copy 2-6 to 12-8
     for (let number = 2; number <= 12; ++number)
         precomputeMoreOrLess(number);
     let prob = (x, number) => {
-        if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+        if (number <= 1 || 13 <= number)
+            alertIf("need number from 2 to 12 for dist");
         // Generate total probability mass with density <= p(x), x \in [0,N].
         let sum = 0;
         const pr = dist[number - 2][x];
         // Add small epsilon for stability
-        for (const d of dist[number - 2]) { if (d <= pr + 0.00000001) sum += d; }
+        for (const d of dist[number - 2]) {
+            if (d <= pr + 0.00000001)
+                sum += d;
+        }
         sum = Math.min(Math.max(sum, 0), 1);
         return sum;
     };
@@ -307,13 +313,18 @@ Track.prototype.updateRarity = function updateRolls() {
     };
 
     // rollsRarity
-    this.rollsRarity.single[index] = this.rollsHistogram.slice(2).map(computeRarity);
-    this.rollsRarity.adjusted[index] = this.rollsRarity.single[index].map(Track.probAdjust);
+    this.rollsRarity.single[index] =
+        this.rollsHistogram.slice(2).map(computeRarity);
+    this.rollsRarity.adjusted[index] =
+        this.rollsRarity.single[index].map(Track.probAdjust);
 
     // extra
-    const lessMoreChance = this.rollsHistogram.slice(2).map((v, i) => lessMoreDist[i][v]);
+    const lessMoreChance =
+        this.rollsHistogram.slice(2).map((v, i) => lessMoreDist[i][v]);
     this.extra.less[index] = lessMoreChance.map(x => x[0]);
     this.extra.more[index] = lessMoreChance.map(x => x[1]);
-    this.extra.lessStrict[index] = this.extra.less[index].map((p, i) => p - dist[i][this.rollsHistogram[i + 2]]);
-    this.extra.moreStrict[index] = this.extra.more[index].map((p, i) => p - dist[i][this.rollsHistogram[i + 2]]);
-}
+    this.extra.lessStrict[index] = this.extra.less[index].map(
+        (p, i) => p - dist[i][this.rollsHistogram[i + 2]]);
+    this.extra.moreStrict[index] = this.extra.more[index].map(
+        (p, i) => p - dist[i][this.rollsHistogram[i + 2]]);
+};

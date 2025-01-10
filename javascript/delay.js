@@ -199,10 +199,7 @@ class Delay {
     #start() {
         console.assert(this.#isFree());
         // let timeoutId = NaN;
-        this.timeout = setTimeout(
-            this.#boundUpdate,
-            this.options.delayTime,
-        );
+        this.timeout = setTimeout(this.#boundUpdate, this.options.delayTime);
         // timeoutId = deepCopy(this.timeout);
         // console.debug(
         //     "delay.js: start()-ing interval",
@@ -259,6 +256,4 @@ class Delay {
         clearTimeout(this.timeout);
         this.timeout = -1;
     }
-
-
 };

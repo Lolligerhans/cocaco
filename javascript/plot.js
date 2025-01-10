@@ -49,7 +49,8 @@ function generateTraceFromMwDistribution(distribution, player, resource) {
     for (let numb = 0; numb < distribution[player][resource].length; ++numb) {
         // Generate fake samples for having 'numb' many of this card
         const d = distribution[player][resource];
-        const fakeSampleCount = Math.round(configSampleCount * d[numb].toFixed(2));
+        const fakeSampleCount =
+            Math.round(configSampleCount * d[numb].toFixed(2));
         for (let j = 0; j < fakeSampleCount; ++j)
             y.push(numb);
     }
@@ -57,14 +58,14 @@ function generateTraceFromMwDistribution(distribution, player, resource) {
     return [x, y];
 }
 
-function generatePerCountBubbles(allPlayers, distribution, player, resource, totalCards, spread = 0.3) {
+function generatePerCountBubbles(allPlayers, distribution, player, resource,
+                                 totalCards, spread = 0.3) {
     // Generate one bubble for each count, accumulated over all worlds
     let size = [];
     let y = [];
     let opacity = [];
     //    log("Generating distribution bubble for", player, resource);
     //    log(distribution[player][resource]);
-
 
     // Offset values for better readability
     const playerIdx = allPlayers.indexOf(player);
@@ -88,11 +89,9 @@ function generatePerCountBubbles(allPlayers, distribution, player, resource, tot
             const sVal = rarity;
             const oVal = chance;
 
-
             y.push(yVal + offset / 2);
             size.push(sVal * 1000); // Bubble marker size should be up to 1000
             opacity.push(oVal);
-
 
             /*
             y.push(numb);
@@ -129,14 +128,16 @@ function plotTest() {
     log("example_players:", example_players);
     log("Colours:", example_player_colors);
 
-    var x = ['day 1', 'day 1', 'day 1', 'day 1', 'day 1', 'day 1',
-        'day 2', 'day 2', 'day 2', 'day 2', 'day 2', 'day 2']
+    var x = [
+        'day 1', 'day 1', 'day 1', 'day 1', 'day 1', 'day 1', 'day 2', 'day 2',
+        'day 2', 'day 2', 'day 2', 'day 2'
+    ];
 
     var trace1 = {
         y: [0.2, 0.2, 0.6, 1.0, 0.5, 0.4, 0.2, 0.7, 0.9, 0.1, 0.5, 0.3],
         x: x,
         name: 'kale',
-        marker: { color: '#3D9970' },
+        marker: {color: '#3D9970'},
         type: 'box'
     };
 
@@ -144,7 +145,7 @@ function plotTest() {
         y: [0.6, 0.7, 0.3, 0.6, 0.0, 0.5, 0.7, 0.9, 0.5, 0.8, 0.7, 0.2],
         x: x,
         name: 'radishes',
-        marker: { color: '#FF4136' },
+        marker: {color: '#FF4136'},
         type: 'box'
     };
 
@@ -152,17 +153,18 @@ function plotTest() {
         y: [0.1, 0.3, 0.1, 0.9, 0.6, 0.6, 0.9, 1.0, 0.3, 0.6, 0.8, 0.5],
         x: x,
         name: 'carrots',
-        marker: { color: '#FF851B' },
+        marker: {color: '#FF851B'},
         type: 'box'
     };
 
-    var traceTest =
-    {
-        y: [0.0, 0.1, 0.2, 0.3, 1.4, 1.5,   // day1
-            0.6, 0.7, 0.8, 0.9, 0.0, 0.1],  // day2
+    var traceTest = {
+        y: [
+            0.0, 0.1, 0.2, 0.3, 1.4, 1.5, // day1
+            0.6, 0.7, 0.8, 0.9, 0.0, 0.1  // day2
+        ],
         x: x,
         name: 'test',
-        marker: { color: '#000000' },
+        marker: {color: '#000000'},
         type: 'box'
     };
 
@@ -192,14 +194,13 @@ function plotTest() {
     let LeonTraces = [];
     for (let i = 0; i < resourceTypes.length; ++i) {
         const res = resourceTypes[i];
-        let [vx, vy] = generateTraceFromMwDistribution(
-            example_mwDistribution, "Leon", res);
-        LeonTraces[i] =
-        {
+        let [vx, vy] = generateTraceFromMwDistribution(example_mwDistribution,
+                                                       "Leon", res);
+        LeonTraces[i] = {
             y: vy,
             x: vx,
             name: "Leon",
-            marker: { color: '#00FF00' },
+            marker: {color: '#00FF00'},
             type: "box"
         };
     }
@@ -211,30 +212,27 @@ function plotTest() {
             const res = resourceTypes[i];
             let [vx, vy] = generateTraceFromMwDistribution(
                 example_mwDistribution, player, res);
-            playerTraces[resourceTypes.length * j + i] =
-            {
+            playerTraces[resourceTypes.length * j + i] = {
                 y: vy,
                 x: vx,
                 name: player,
-                marker: { color: example_player_colors[player] },
+                marker: {color: example_player_colors[player]},
                 type: 'box',
                 showlegend: false,
             };
         }
     }
 
-    const data = [trace1, trace2, trace3, traceTest/*, traceWood1, tracebrick1*/]
-        .concat(LeonTraces).concat(playerTraces);
+    const data =
+        [trace1, trace2, trace3, traceTest /*, traceWood1, tracebrick1*/]
+            .concat(LeonTraces)
+            .concat(playerTraces);
     log(playerTraces);
     log(LeonTraces);
     log(data);
 
     const layout = {
-        yaxis:
-        {
-            title: 'normalized moisture',
-            zeroline: false
-        },
+        yaxis: {title: 'normalized moisture', zeroline: false},
         boxmode: 'group'
         //  paper_bgcolor: '#7f7f7f',
         //  plot_bgcolor: '#c7c7c7'
@@ -302,17 +300,15 @@ function bubbleTest() {
         const player = example_players[j];
         for (let i = 0; i < resourceTypes.length; ++i) {
             const res = resourceTypes[i];
-            let [tx, ty, _tsize, topacity]  // Trace
-                = generatePerCountBubbles(
-                    example_players,
-                    example_mwDistribution,
-                    player,
-                    res,
-                    totalResources[res],
-                    0.4);
-            const ttext = topacity.map(o => { const perc = 100 * o.toFixed(2); return `${perc}%` });
-            playerBubbles[resourceTypes.length * j + i] =
-            {
+            let [tx, ty, _tsize, topacity] // Trace
+                = generatePerCountBubbles(example_players,
+                                          example_mwDistribution, player, res,
+                                          totalResources[res], 0.4);
+            const ttext = topacity.map(o => {
+                const perc = 100 * o.toFixed(2);
+                return `${perc}%`
+            });
+            playerBubbles[resourceTypes.length * j + i] = {
                 y: ty,
                 x: tx,
                 name: player,
@@ -323,7 +319,7 @@ function bubbleTest() {
                     sizemode: "area",
                     //                          size: tsize,
                     size: 20,
-                    line: { color: "black", width: 1 }
+                    line: {color: "black", width: 1}
                 },
                 text: ttext
             };
@@ -339,13 +335,8 @@ function bubbleTest() {
         showlegend: false,
         height: 400,
         width: 400,
-        xaxis:
-        {
-            tickvals: [1, 2, 3, 4, 5],
-            ticktext: resourceTypes
-        },
-        yaxis:
-        {
+        xaxis: {tickvals: [1, 2, 3, 4, 5], ticktext: resourceTypes},
+        yaxis: {
             tick0: 0,
             dtick: 1,
             autorange: true,
@@ -361,12 +352,17 @@ function histogramTest() {
     let N = 36 + 18;
     const useFix = false;
 
-    if (useFix) N = 36;
+    if (useFix)
+        N = 36;
     const c = N / 36;
     log("Starting histogram test");
     let testRolls = new Array(N).fill(0);
     testRolls = testRolls.map(() => { return randomDie() + randomDie(); });
-    if (useFix) testRolls = [5, 9, 11, 4, 8, 3, 10, 8, 2, 3, 6, 8, 10, 5, 6, 10, 7, 4, 7, 3, 9, 3, 11, 6, 8, 6, 8, 8, 3, 7, 5, 4, 9, 7, 6, 9];
+    if (useFix)
+        testRolls = [
+            5, 9, 11, 4, 8,  3, 10, 8, 2, 3, 6, 8, 10, 5, 6, 10, 7, 4,
+            7, 3, 9,  3, 11, 6, 8,  6, 8, 8, 3, 7, 5,  4, 9, 7,  6, 9
+        ];
     testHist = new Array(13).fill(0);
     for (let r of testRolls) {
         testHist[r] += 1;
@@ -383,24 +379,23 @@ function histogramTest() {
     const cok = [0, 0, 0]; // Black
     const colo = x.map((_v, i) => {
         const f = i / x.length;
-        return `rgb(${Math.floor(cok[0] * (1 - f) + col[0] * f)},${Math.floor(cok[1] * (1 - f) + col[1] * f)},${Math.floor(cok[2] * (1 - f) + col[2] * f)})`;
+        return `rgb(${Math.floor(cok[0] * (1 - f) + col[0] * f)},${
+            Math.floor(cok[1] * (1 - f) + col[1] * f)},${
+            Math.floor(cok[2] * (1 - f) + col[2] * f)})`;
     });
     log("x:", x, "y:", y, "colo:", colo);
-    let trace =
-    {
+    let trace = {
         type: 'bar',
         x: x,
         y: y,
-        marker:
-        {
+        marker: {
             color: colo,
         },
         width: x.map(() => 1),
         hoverinfo: x.map((_, i) => i.toString()),
         //    histfunc: "count",
         name: "dice rolls",
-        xbins:
-        {
+        xbins: {
             start: 2,
             end: 12,
             size: 1,
@@ -410,7 +405,7 @@ function histogramTest() {
     const probability36 = [1, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 1];
     const probability = probability36.map(x => x / 36);
     const testLineX = [1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.5];
-    const testLineY = probability36.map(x => c * x);  // Expectation
+    const testLineY = probability36.map(x => c * x); // Expectation
     //  let testLineY = [c,1*c,2*c,3*c,4*c,5*c,6*c,5*c,4*c,3*c,2*c,1*c,c];
 
     // Luck
@@ -422,16 +417,19 @@ function histogramTest() {
     const clampProb = p => Math.min(Math.max(p, 0), 1);
     let lessMoreDist = [];
     const precomputeMoreOrLess = (number) => {
-        if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+        if (number <= 1 || 13 <= number)
+            alertIf("need number from 2 to 12 for dist");
         // (!) Start loop at i=1 and inline i=0
         let lessOrEqualAcc = dist[number - 2][0];
         let moreOrEqualAcc = 1;
         lessMoreDist[number - 2] = [];
-        lessMoreDist[number - 2][0] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+        lessMoreDist[number - 2][0] =
+            [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
         for (let i = 1; i <= N; ++i) {
             lessOrEqualAcc += dist[number - 2][i];
             moreOrEqualAcc -= dist[number - 2][i - 1];
-            lessMoreDist[number - 2][i] = [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
+            lessMoreDist[number - 2][i] =
+                [clampProb(lessOrEqualAcc), clampProb(moreOrEqualAcc)];
         }
     };
     // TODO symmetric: copy 2-6 to 12-8
@@ -442,7 +440,8 @@ function histogramTest() {
     log("dist:", dist);
     let prob = (x, number) => {
         log(`\n===== number=${number}, x=${x} ===== `);
-        if (number <= 1 || 13 <= number) alertIf("need number from 2 to 12 for dist");
+        if (number <= 1 || 13 <= number)
+            alertIf("need number from 2 to 12 for dist");
         // Generate total probability mass with density <= p(x). x \in [0,N].
         let sum = 0;
         const pr = dist[number - 2][x];
@@ -462,11 +461,12 @@ function histogramTest() {
         const sum = distrib.reduce((acc, val) => acc + val) - distrib[0];
         return Math.min(Math.max(sum, 0), 1);
     };
-    let histPercent = testHist.slice(2).map((v, i, _arr) => { return v / testLineY[i + 1] - 1 });
+    let histPercent = testHist.slice(2).map(
+        (v, i, _arr) => {return v / testLineY[i + 1] - 1});
     let maxPercent = Math.max.apply(null, histPercent);
     log("===========================================");
-    let minChance = { number: 0, chance: 2.0 }; // Invalid initialization
-    let minAdjustedChance = { number: 0, chance: 2.0 }; // Invalid initialization
+    let minChance = {number: 0, chance: 2.0};         // Invalid initialization
+    let minAdjustedChance = {number: 0, chance: 2.0}; // Invalid initialization
     const chanceLevel = testHist.slice(2).map((v, i) => {
         let p = prob(v, i + 2);
         if (p <= minChance.chance) {
@@ -549,25 +549,21 @@ function histogramTest() {
     // const maxRealLuck = Math.max.apply(null, realLuck);
 
     // TRACES
-    const layout =
-    {
+    const layout = {
         hovermode: "closest",
-        margin: { t: 0, b: 15, l: 15, r: 25 },
+        margin: {t: 0, b: 15, l: 15, r: 25},
         showlegend: false,
         height: 292 / divideSizes,
         width: 300 / divideSizes,
-        xaxis:
-        {
+        xaxis: {
             tickvals: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             autorage: false,
         },
-        yaxis:
-        {
+        yaxis: {
             dtick: Math.ceil(6 * c / 4),
             tick0: 0,
         },
-        yaxis2:
-        {
+        yaxis2: {
             //      title: "luck",
             overlaying: "y",
             side: "right",
@@ -579,8 +575,7 @@ function histogramTest() {
             //      autorage: false,
             //      range: [-1, Math.max(1,maxPercent)],
         },
-        yaxis3:
-        {
+        yaxis3: {
             zeroline: false,
             overlaying: "y",
             side: "left",
@@ -591,81 +586,76 @@ function histogramTest() {
             //nticks: 0,
             //tickvals: [1.0],
         },
-        annotations:
-            [
-                {
-                    x: minChance.number,
-                    y: minChance.chance,
-                    xref: 'x',
-                    yref: 'y3',
+        annotations: [
+            {
+                x: minChance.number,
+                y: minChance.chance,
+                xref: 'x',
+                yref: 'y3',
 
-                    ax: minChance.xoffset,
-                    ay: minChance.yoffset,
-                    axref: "x",
-                    ayref: "y3",
+                ax: minChance.xoffset,
+                ay: minChance.yoffset,
+                axref: "x",
+                ayref: "y3",
 
-                    text: `<b>${(minChance.chance * 100).toFixed(1)}%</b>`,
-                    bgcolor: "midnightblue",
-                    opacity: 0.8,
-                    showarrow: true,
-                    arrowhead: 6,
-                    arrowsize: 1,
-                    arrowwidth: 1,
-                    arrowcolor: "darkblue",
-                    font:
-                    {
-                        //family: "Courier New, monospace",
-                        size: 12,
-                        color: "white",
-                        fontweight: "bold",
-                    },
-                    //align="center",
-                    //bordercolor="#c7c7c7",
-                    //borderwidth=2,
-                    //borderpad=4,
+                text: `<b>${(minChance.chance * 100).toFixed(1)}%</b>`,
+                bgcolor: "midnightblue",
+                opacity: 0.8,
+                showarrow: true,
+                arrowhead: 6,
+                arrowsize: 1,
+                arrowwidth: 1,
+                arrowcolor: "darkblue",
+                font: {
+                    //family: "Courier New, monospace",
+                    size: 12,
+                    color: "white",
+                    fontweight: "bold",
                 },
-                {
-                    // Position where arrow points
-                    xref: "x",
-                    yref: "y3",
-                    x: minAdjustedChance.number,
-                    y: minAdjustedChance.chance,
+                //align="center",
+                //bordercolor="#c7c7c7",
+                //borderwidth=2,
+                //borderpad=4,
+            },
+            {
+                // Position where arrow points
+                xref: "x",
+                yref: "y3",
+                x: minAdjustedChance.number,
+                y: minAdjustedChance.chance,
 
-                    // Position of text
-                    ax: minAdjustedChance.xoffset,
-                    ay: minAdjustedChance.yoffset,
-                    axref: "x",
-                    ayref: "y3",
+                // Position of text
+                ax: minAdjustedChance.xoffset,
+                ay: minAdjustedChance.yoffset,
+                axref: "x",
+                ayref: "y3",
 
-                    text: `<b>${(minAdjustedChance.chance * 100).toFixed(1)}%</b>`,
-                    bgcolor: "red",
-                    opacity: 0.8,
-                    showarrow: true,
-                    arrowhead: 6,
-                    arrowsize: 1,
-                    arrowwidth: 1,
-                    arrowcolor: "darkred",
-                    font:
-                    {
-                        size: 12,
-                        color: "white",
-                        fontweight: "bold",
-                    },
+                text: `<b>${(minAdjustedChance.chance * 100).toFixed(1)}%</b>`,
+                bgcolor: "red",
+                opacity: 0.8,
+                showarrow: true,
+                arrowhead: 6,
+                arrowsize: 1,
+                arrowwidth: 1,
+                arrowcolor: "darkred",
+                font: {
+                    size: 12,
+                    color: "white",
+                    fontweight: "bold",
                 },
-            ],
+            },
+        ],
     };
-
 
     // expectation -----------------------------
 
-    let trace2 =
-    {
+    let trace2 = {
         x: testLineX,
         y: testLineY,
         mode: "lines",
         name: "expectation",
-        marker: { color: "#0a0" },
-        line: { width: 3, dash: "solid", shape: "hvh" },
+        marker: {color: "#0a0"},
+        line: {width: 3, dash: "solid", shape: "hvh"},
     };
 
     // relative over draw -----------------------------
@@ -690,8 +680,7 @@ function histogramTest() {
       },
     };
     */
-    let trace3 =
-    {
+    let trace3 = {
         type: 'bar',
         x: testLineX.slice(1, 13),
         y: realLuck,
@@ -700,8 +689,7 @@ function histogramTest() {
         //    color: luckColor,
         name: "luck",
         //    base: histPercent.map(x => {return x < 0 ? x : 0}),
-        marker:
-        {
+        marker: {
             //      color: "green",
             //      color: "#69f",
             color: luckColor,
@@ -725,98 +713,86 @@ function histogramTest() {
     //      line: { color: "#f96", width: 4 },
     //    },
     //  };
-    let trace3_1 =
-    {
+    let trace3_1 = {
         type: 'scatter',
         mode: "markers",
         x: testLineX.slice(1, 13),
         y: chanceLevel,
         yaxis: "y3",
         name: "rarity level (%)",
-        marker:
-        {
+        marker: {
             color: "midnightblue",
             size: 9,
-            line: { color: "white", width: 2 },
+            line: {color: "white", width: 2},
         },
-    }
-    let trace3_2 =
-    {
+    };
+    let trace3_2 = {
         type: 'scatter',
         mode: "markers",
         x: testLineX.slice(1, 13),
         y: adjustedChance,
         yaxis: "y3",
         name: "Adjusted rarity level",
-        marker:
-        {
+        marker: {
             color: "red",
             size: 9,
-            line: { color: "white", width: 2 },
+            line: {color: "white", width: 2},
         },
     };
-    let trace3_less =
-    {
+    let trace3_less = {
         type: 'scatter',
         mode: "markers",
         x: testLineX.slice(1, 13),
         y: lessChance,
         yaxis: "y3",
         name: "P(X <= x)",
-        marker:
-        {
+        marker: {
             color: "lightgray",
             size: 4,
-            line: { color: "black", width: 0.5 },
+            line: {color: "black", width: 0.5},
             symbol: "triangle-down",
             opacity: 1.0,
         },
     };
-    let trace3_less_strict =
-    {
+    let trace3_less_strict = {
         type: 'scatter',
         mode: "markers",
         x: testLineX.slice(1, 13),
         y: lessStrict,
         yaxis: "y3",
         name: "P(X < x)",
-        marker:
-        {
+        marker: {
             color: "black",
             size: 4,
-            line: { color: "lightgray", width: 0.5 },
+            line: {color: "lightgray", width: 0.5},
             symbol: "triangle-down",
         },
     };
-    let trace3_more =
-    {
+    let trace3_more = {
         type: 'scatter',
         mode: "markers",
         x: testLineX.slice(1, 13),
         y: moreChance,
         yaxis: "y3",
         name: "p(X >= x)",
-        marker:
-        {
+        marker: {
             color: "lightgray",
             size: 4,
-            line: { color: "black", width: 0.5 },
+            line: {color: "black", width: 0.5},
             symbol: "triangle-up",
         },
     };
-    let trace3_more_strict =
-    {
+    let trace3_more_strict = {
         type: 'scatter',
         mode: "markers",
         x: testLineX.slice(1, 13),
         y: moreStrict,
         yaxis: "y3",
         name: "p(X > x)",
-        marker:
-        {
+        marker: {
             color: "black",
             size: 4,
-            line: { color: "lightgray", width: 0.5 },
+            line: {color: "lightgray", width: 0.5},
             symbol: "triangle-up",
         },
     };
@@ -848,13 +824,12 @@ function histogramTest() {
     log("histPercent:", histPercent);
     log("maxPercent:", maxPercent);
     log("realLuck (testHist):", realLuck);
-    const config = { displayModeBar: false };
-    const data =
-        [
-            trace, trace2,
-            trace3_less, trace3_less_strict, trace3_more, trace3_more_strict,
-    /*trace4,*/ trace3, trace3_2, trace3_1,
-        ];
+    const config = {displayModeBar: false};
+    const data = [
+        trace, trace2, trace3_less, trace3_less_strict, trace3_more,
+        trace3_more_strict,
+        /*trace4,*/ trace3, trace3_2, trace3_1
+    ];
     Plotly.newPlot(testHistogramPlotDivId, data, layout, config);
 }
 
@@ -869,22 +844,21 @@ function histogramTest() {
  */
 function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map) {
     let playerBubbles = [];
-    const totalResources = Multiverse.generateFullNamesFromWorld(trackerObject);   // FIXME what is happening here?
+    const totalResources = Multiverse.generateFullNamesFromWorld(trackerObject);
     for (let j = 0; j < trackerObject.playerNames.length; ++j) {
         const player = trackerObject.playerNames[j];
         for (let i = 0; i < resourceTypes.length; ++i) {
             const res = resourceTypes[i];
-            const [tx, ty, _tsize, topacity]  // Trace
-                = generatePerCountBubbles(
-                    trackerObject.playerNames,
-                    trackerObject.marginalDistribution,
-                    player,
-                    res,
-                    totalResources[res],
-                    0.4);
-            const ttext = topacity.map(o => { const perc = 100 * o.toFixed(2); return `${perc}%` });
-            playerBubbles[resourceTypes.length * j + i] =
-            {
+            const [tx, ty, _tsize, topacity] // Trace
+                = generatePerCountBubbles(trackerObject.playerNames,
+                                          trackerObject.marginalDistribution,
+                                          player, res, totalResources[res],
+                                          0.4);
+            const ttext = topacity.map(o => {
+                const perc = 100 * o.toFixed(2);
+                return `${perc}%`
+            });
+            playerBubbles[resourceTypes.length * j + i] = {
                 y: ty,
                 x: tx,
                 name: player,
@@ -894,7 +868,7 @@ function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map) {
                     opacity: topacity,
                     sizemode: "area",
                     size: 20 / (divideSizes ** 2),
-                    line: { color: "black", width: 1 }
+                    line: {color: "black", width: 1}
                 },
                 text: ttext
             };
@@ -902,18 +876,16 @@ function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map) {
     }
 
     const layout = {
-        margin: { t: 0, b: 15, l: 10, r: 0 },
+        margin: {t: 0, b: 15, l: 10, r: 0},
         showlegend: false,
         height: 300 / divideSizes,
         width: 400 / divideSizes,
-        xaxis:
-        {
+        xaxis: {
             tickvals: [1, 2, 3, 4, 5],
             ticktext: resourceTypes.map(res => utf8Symbols[res]),
             autorange: false
         },
-        yaxis:
-        {
+        yaxis: {
             tick0: 0,
             dtick: 1,
             rangemode: "tozero",
@@ -921,7 +893,7 @@ function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map) {
         }
     };
 
-    const config = { displayModeBar: false };
+    const config = {displayModeBar: false};
 
     Plotly.newPlot(idToPlotInto, playerBubbles, layout, config);
     //console.debug("🫧 Finished plotting MW resources into", `ID=${idToPlotInto}`);
@@ -943,7 +915,8 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
         // Linearly interpolate towards base colour starting at black during
         // progression in data (moves in the game).
         const f = i / trackerObject.rolls.length;
-        return `rgb(${Math.ceil(c[0] * f)},${Math.ceil(c[1] * f)},${Math.ceil(c[2] * f)})`;
+        return `rgb(${Math.ceil(c[0] * f)},${Math.ceil(c[1] * f)},${
+            Math.ceil(c[2] * f)})`;
     });
     const n = trackerObject.rolls.length / 36;
     // Pad by 1 value front + back back
@@ -953,8 +926,8 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
     // Rolls
     const ones = new Array(trackerObject.rolls.length).fill(1);
 
-    // Expectation
-    const ex = [1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.5]; // Cover the bars at the ends
+    // Expectation. Extend borders by 0.5 for visual effect in the plot.
+    const ex = [1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.5];
     const ey = probability.map(x => N * x); // Expectation
 
     // More or Less chances
@@ -989,8 +962,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
     minAdjustedChance.yoffset = 0.15;
 
     // KL-Divergence boxes
-    let kl =
-    {
+    let kl = {
         values: [0, 0],
         xoffset: 14 - minChance.xoffset, // On the other side
         yoffsets: [0.05, 0.15],
@@ -1012,29 +984,26 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
 
     // -----------------------------------------------
 
-    let rollTrace =
-    {
+    let rollTrace = {
         type: "bar",
         x: trackerObject.rolls,
         y: ones,
         width: ones,
-        marker: { color: colo },
+        marker: {color: colo},
         name: "dice rolls", // Not shown
-        xbins:
-        {
+        xbins: {
             start: 2,
             end: 12,
             size: 1,
         },
     };
-    let expTrace =
-    {
+    let expTrace = {
         x: ex,
         y: ey,
         mode: "lines",
-        name: "expectation",   // Hidden
-        marker: { color: "#0a0" },
-        line: { width: 3, dash: "solid", shape: "hvh" },  // Also: shape=linear
+        name: "expectation", // Hidden
+        marker: {color: "#0a0"},
+        line: {width: 3, dash: "solid", shape: "hvh"}, // Also: shape=linear
     };
     const luckColor = adjustedRarity.map(rar => {
         const r = Math.ceil(255 * Math.cos(Math.PI * rar / 2));
@@ -1059,44 +1028,41 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
     };
     */
 
-    let luckTrace =
-    {
+    let luckTrace = {
         type: 'bar',
         x: ex.slice(1, 13),
         y: luck,
         yaxis: "y2",
         width: 0.2,
-        marker: { color: luckColor, },
+        marker: {
+            color: luckColor,
+        },
         name: "luck",
     };
-    let rarityTrace =
-    {
+    let rarityTrace = {
         type: "scatter",
         mode: "markers",
         x: ex.slice(1, 13),
         y: rarity,
         yaxis: "y3",
         name: "rarity",
-        marker:
-        {
+        marker: {
             color: "midnightblue",
             size: 9,
-            line: { color: "white", width: 2 },
+            line: {color: "white", width: 2},
         },
     };
-    let adjustedRarityTrace =
-    {
+    let adjustedRarityTrace = {
         type: "scatter",
         mode: "markers",
         x: ex.slice(1, 13),
         y: adjustedRarity,
         yaxis: "y3",
         name: "adjusted rarity",
-        marker:
-        {
+        marker: {
             color: "red",
             size: 9,
-            line: { color: "white", width: 2 },
+            line: {color: "white", width: 2},
         },
     };
     let rarityProgressionTrace = {
@@ -1106,7 +1072,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
         yaxis: "y3", // Probabilities 1 downto 0
         mode: "lines",
         name: "single rarity progression",
-        marker: { color: "midnightblue" },
+        marker: {color: "midnightblue"},
     };
     let adjustedRarityProgressionTrace = {
         x: rollsTicksX,
@@ -1115,69 +1081,61 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
         yaxis: "y3", // Probabilities 1 downto 0
         mode: "lines",
         name: "adjusted rarity progression",
-        marker: { color: "red" },
+        marker: {color: "red"},
     };
-    let lessTrace =
-    {
+    let lessTrace = {
         type: 'scatter',
         mode: "markers",
         x: ex.slice(1, 13),
         y: lessChance,
         yaxis: "y3",
         name: "P(X <= x)",
-        marker:
-        {
+        marker: {
             color: "lightgray",
             size: 4,
-            line: { color: "black", width: 0.5 },
+            line: {color: "black", width: 0.5},
             symbol: "triangle-down",
         },
     };
-    let lessTraceStrict =
-    {
+    let lessTraceStrict = {
         type: 'scatter',
         mode: "markers",
         x: ex.slice(1, 13),
         y: lessStrict,
         yaxis: "y3",
         name: "P(X < x)",
-        marker:
-        {
+        marker: {
             color: "black",
             size: 4,
-            line: { color: "lightgray", width: 0.5 },
+            line: {color: "lightgray", width: 0.5},
             symbol: "triangle-down",
         },
     };
-    let moreTrace =
-    {
+    let moreTrace = {
         type: 'scatter',
         mode: "markers",
         x: ex.slice(1, 13),
         y: moreChance,
         yaxis: "y3",
         name: "p(X >= x)",
-        marker:
-        {
+        marker: {
             color: "lightgray",
             size: 4,
-            line: { color: "black", width: 0.5 },
+            line: {color: "black", width: 0.5},
             symbol: "triangle-up",
         },
     };
-    let moreTraceStrict =
-    {
+    let moreTraceStrict = {
         type: 'scatter',
         mode: "markers",
         x: ex.slice(1, 13),
         y: moreStrict,
         yaxis: "y3",
         name: "p(X > x)",
-        marker:
-        {
+        marker: {
             color: "black",
             size: 4,
-            line: { color: "lightgray", width: 0.5 },
+            line: {color: "lightgray", width: 0.5},
             symbol: "triangle-up",
         },
     };
@@ -1188,7 +1146,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
         yaxis: "y4",
         mode: "lines",
         name: "forward",
-        marker: { color: "purple" },
+        marker: {color: "purple"},
     };
     let rollsKLDTraceBackward = {
         x: rollsKLD.xb,
@@ -1197,38 +1155,35 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
         yaxis: "y4",
         mode: "lines",
         name: "backward",
-        marker: { color: "purple" },
-        line: { dash: "dot" },
+        marker: {color: "purple"},
+        line: {dash: "dot"},
     };
 
-    const layout =
-    {
+    const layout = {
         hovermode: "closest",
-        margin: { t: 0, b: 15, l: 15, r: 25 },
+        margin: {t: 0, b: 15, l: 15, r: 25},
         showlegend: false,
         height: 300 / divideSizes,
         width: 300 / divideSizes,
-        xaxis:
-        {
+        xaxis: {
             tickvals: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             autorage: false,
         },
-        xaxis2:
-        // One tick per roll (not per number)
-        {
+        xaxis2: {
+            // One tick per roll (not per number)
             overlaying: "x",
             side: "top",
             showgrid: false,
             showticklables: false,
             zeroline: false,
         },
-        yaxis:  // Rolls bar chart + expectation
-        {
+        yaxis: {
+            // Rolls bar chart + expectation
             dtick: Math.ceil(6 * n / 4),
             tick0: 0,
         },
-        yaxis2: // Luck bar chart
-        {
+        yaxis2: {
+            // Luck bar chart
             overlaying: "y",
             side: "right",
             //      dtick: 1,
@@ -1237,8 +1192,7 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
             //      autorage: false,
             //      range: [-1, Math.max(1,maxLuck)], // [-1, 1] ?
         },
-        yaxis3:
-        {
+        yaxis3: {
             zeroline: false,
             overlaying: "y",
             side: "left",
@@ -1248,9 +1202,8 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
             range: [1, 0],
             //autorange: "reversed",
         },
-        yaxis4:
         // Rolls KL-D axis
-        {
+        yaxis4: {
             zeroline: false,
             overlaying: "y",
             side: "left",
@@ -1259,121 +1212,127 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
             autorange: true,
             type: "log",
         },
-        annotations:
-            [
-                { // Blue text box (minimal chance)
-                    // Pointed at position
-                    x: minChance.number,
-                    y: minChance.chance,
-                    xref: "x",
-                    yref: "y3",
+        annotations: [
+            // Blue text box (minimal chance)
+            {
+                // Pointed at position
+                x: minChance.number,
+                y: minChance.chance,
+                xref: "x",
+                yref: "y3",
 
-                    // Text position
-                    ax: minChance.xoffset,
-                    ay: minChance.yoffset,
-                    axref: "x",
-                    ayref: "y3",
+                // Text position
+                ax: minChance.xoffset,
+                ay: minChance.yoffset,
+                axref: "x",
+                ayref: "y3",
 
-                    text: `<b>${(minChance.chance * 100).toFixed(1)}%</b>`,
-                    bgcolor: "midnightblue",
-                    opacity: 0.8,
-                    showarrow: true,
-                    arrowhead: 6,
-                    arrowsize: 1,
-                    arrowwidth: 1,
-                    arrowcolor: "darkblue",
-                    font:
-                    {
-                        size: 12,
-                        color: "white",
-                        fontweight: "bold",
-                    },
+                text: `<b>${(minChance.chance * 100).toFixed(1)}%</b>`,
+                bgcolor: "midnightblue",
+                opacity: 0.8,
+                showarrow: true,
+                arrowhead: 6,
+                arrowsize: 1,
+                arrowwidth: 1,
+                arrowcolor: "darkblue",
+                font: {
+                    size: 12,
+                    color: "white",
+                    fontweight: "bold",
                 },
-                { // Red text box (minimal adjusted change)
-                    x: minAdjustedChance.number,
-                    y: minAdjustedChance.chance,
-                    xref: "x",
-                    yref: "y3",
+            },
+            // Red text box (minimal adjusted change)
+            {
+                x: minAdjustedChance.number,
+                y: minAdjustedChance.chance,
+                xref: "x",
+                yref: "y3",
 
-                    // Text position
-                    ax: minAdjustedChance.xoffset,
-                    ay: minAdjustedChance.yoffset,
-                    axref: "x",
-                    ayref: "y3",
+                // Text position
+                ax: minAdjustedChance.xoffset,
+                ay: minAdjustedChance.yoffset,
+                axref: "x",
+                ayref: "y3",
 
-                    text: `<b>${(minAdjustedChance.chance * 100).toFixed(1)}%</b>`,
-                    bgcolor: "red",
-                    opacity: 0.8,
-                    showarrow: true,
-                    arrowhead: 6,
-                    arrowsize: 1,
-                    arrowwidth: 1,
-                    arrowcolor: "darkred",
-                    font:
-                    {
-                        size: 12,
-                        color: "white",
-                        fontweight: "bold",
-                    },
+                text: `<b>${(minAdjustedChance.chance * 100).toFixed(1)}%</b>`,
+                bgcolor: "red",
+                opacity: 0.8,
+                showarrow: true,
+                arrowhead: 6,
+                arrowsize: 1,
+                arrowwidth: 1,
+                arrowcolor: "darkred",
+                font: {
+                    size: 12,
+                    color: "white",
+                    fontweight: "bold",
                 },
-                { // Purple text box (KL divergence from should to is)
-                    // Dummy values
-                    x: 7, y: 0.5, xref: "x", yref: "y3",
+            },
+            // Purple text box (KL divergence from should to is)
+            {
+                // Dummy values
+                x: 7,
+                y: 0.5,
+                xref: "x",
+                yref: "y3",
 
-                    ax: kl.xoffset,
-                    ay: kl.yoffsets[0],
-                    axref: "x",
-                    ayref: "y3",
+                ax: kl.xoffset,
+                ay: kl.yoffsets[0],
+                axref: "x",
+                ayref: "y3",
 
-                    text: kl.values[0] === Infinity ? "" : `<b>${(kl.values[0] * 100).toFixed(1)}%</b>`,
-                    bgcolor: "purple",
-                    opacity: 0.8,
-                    showarrow: true, // To allow fixed position
-                    arrowcolor: "rgba(0,0,0,0)",
-                    font:
-                    {
-                        size: 12,
-                        color: "white",
-                        fontweight: "bold",
-                    },
+                text: kl.values[0] === Infinity
+                          ? ""
+                          : `<b>${(kl.values[0] * 100).toFixed(1)}%</b>`,
+                bgcolor: "purple",
+                opacity: 0.8,
+                showarrow: true, // To allow fixed position
+                arrowcolor: "rgba(0,0,0,0)",
+                font: {
+                    size: 12,
+                    color: "white",
+                    fontweight: "bold",
                 },
-                { // Purple text box (KL divergence from is to should)
-                    // Dummy values
-                    x: 7, y: 0.5, xref: "x", yref: "y3",
+            },
+            // Purple text box (KL divergence from is to should)
+            {
+                // Dummy values
+                x: 7,
+                y: 0.5,
+                xref: "x",
+                yref: "y3",
 
-                    ax: kl.xoffset,
-                    ay: kl.yoffsets[1],
-                    axref: "x",
-                    ayref: "y3",
+                ax: kl.xoffset,
+                ay: kl.yoffsets[1],
+                axref: "x",
+                ayref: "y3",
 
-                    text: kl.values[1] === Infinity ? "" : `<b>${(kl.values[1] * 100).toFixed(1)}%</b>`,
-                    bgcolor: "purple",
-                    opacity: 0.8,
-                    showarrow: true, // To allow fixed position
-                    arrowcolor: "rgba(0,0,0,0)",
-                    font:
-                    {
-                        size: 12,
-                        color: "white",
-                        fontweight: "bold",
-                    },
-                }
-            ], // annotations
+                text: kl.values[1] === Infinity
+                          ? ""
+                          : `<b>${(kl.values[1] * 100).toFixed(1)}%</b>`,
+                bgcolor: "purple",
+                opacity: 0.8,
+                showarrow: true, // To allow fixed position
+                arrowcolor: "rgba(0,0,0,0)",
+                font: {
+                    size: 12,
+                    color: "white",
+                    fontweight: "bold",
+                },
+            }
+        ], // annotations
     }; // layout
 
-    const config = { displayModeBar: false };
-    const extraData = config.extraRollProbabilities
-        ? [lessTrace, moreTrace, lessTraceStrict, moreTraceStrict]
-        : [];
-    const data =
-        [
-            rollTrace, expTrace,
-            rollsKLDTraceForward, rollsKLDTraceBackward,
-            rarityProgressionTrace, adjustedRarityProgressionTrace,
-    /*zeroTrace,*/ luckTrace,
-            ...extraData,
-            adjustedRarityTrace, rarityTrace,
-        ];
+    const config = {displayModeBar: false};
+    const extraData =
+        config.extraRollProbabilities
+            ? [lessTrace, moreTrace, lessTraceStrict, moreTraceStrict]
+            : [];
+    const data = [
+        rollTrace, expTrace, rollsKLDTraceForward, rollsKLDTraceBackward,
+        rarityProgressionTrace, adjustedRarityProgressionTrace,
+        /*zeroTrace,*/ luckTrace, ...extraData, adjustedRarityTrace, rarityTrace
+    ];
     Plotly.newPlot(idToPlotInto, data, layout, config);
     //console.debug("📊 Finished plotting rolls histogram into", `ID=${idToPlotInto}`);
 }
@@ -1383,9 +1342,12 @@ function plotRollsAsHistogram(trackerObject, idToPlotInto) {
 //============================================================
 
 if (configPlotTests === true) {
-    document.addEventListener('DOMContentLoaded', function () {
-        if (document.getElementById(testPlotDiv) !== null) plotTest();
-        if (document.getElementById(testBubblePlotDivId) !== null) bubbleTest();
-        if (document.getElementById(testHistogramPlotDivId) !== null) histogramTest();
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById(testPlotDiv) !== null)
+            plotTest();
+        if (document.getElementById(testBubblePlotDivId) !== null)
+            bubbleTest();
+        if (document.getElementById(testHistogramPlotDivId) !== null)
+            histogramTest();
     }, false);
 }

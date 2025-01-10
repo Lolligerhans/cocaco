@@ -91,7 +91,6 @@ class ColonistSource extends Trigger {
         super();
         this.registerPacketGenerators();
     }
-
 };
 
 // ╭───────────────────────────────────────────────────────────╮
@@ -102,8 +101,7 @@ class ColonistSource extends Trigger {
  * Register reparsers to obtain the necessary frames from the @see Reparse
  * module.
  */
-ColonistSource.prototype.registerPacketGenerators = function () {
-
+ColonistSource.prototype.registerPacketGenerators = function() {
     // It is generally a good idea to use 'setInterval()' when reacting to data,
     // to ensure that the rest of the frame has been parsed. And even that the
     // same frame has been parsed by the remaining reparsers.
@@ -117,7 +115,7 @@ ColonistSource.prototype.registerPacketGenerators = function () {
         payload => this.readPlayerUserStatesData(payload),
         packet => {
             this.activateTrigger("playerUserStates", packet);
-            return { isDone: true };
+            return {isDone: true};
         },
     );
 
@@ -131,13 +129,12 @@ ColonistSource.prototype.registerPacketGenerators = function () {
             Object.entries(gameLogState).forEach(([logIndex, logMessage]) => {
                 const packet = this.readGameLogData(logIndex, logMessage);
                 if (packet === null) {
-                    return { isDone: false };
-                }
-                else {
+                    return {isDone: false};
+                } else {
                     this.activateTrigger("gameLogState", packet);
                 }
             });
-            return { isDone: false };
+            return {isDone: false};
         },
     );
 
@@ -151,19 +148,18 @@ ColonistSource.prototype.registerPacketGenerators = function () {
             const ret = this.readGameStateData(
                 gameState,
                 // Accept both state and diff frames, but know which it is
-                frame.data.type === 91,
-            );
+                frame.data.type === 91);
             return ret;
         },
         packets => {
             packets.forEach(packet => {
                 if (packet === null) {
                     debugger; // TEST: Can this happen?
-                    return { isDone: false };
+                    return {isDone: false};
                 }
                 this.activateTrigger("gameState", packet);
             });
-            return { isDone: false };
+            return {isDone: false};
         },
     );
 
@@ -174,15 +170,15 @@ ColonistSource.prototype.registerPacketGenerators = function () {
         Reparse.entryPoints.gameChatState,
         gameChatState => gameChatState,
         gameChatState => {
-            Object.entries(gameChatState).forEach(([chatIndex, chatMessage]) => {
-                const packet = this.readGameChatData(chatIndex, chatMessage);
+            Object.entries(gameChatState).forEach(([chatIdx, chatMessge]) => {
+                const packet = this.readGameChatData(chatIdx, chatMessge);
                 if (packet) {
                     this.activateTrigger("gameChatState", packet);
                 } else {
                     // Nothing
                 }
             });
-            return { isDone: false };
+            return {isDone: false};
         },
     );
 
@@ -193,7 +189,7 @@ ColonistSource.prototype.registerPacketGenerators = function () {
         this.activateTrigger("playerUsername", packet);
         return true;
     });
-}
+};
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Packet generators                                         │
@@ -201,15 +197,15 @@ ColonistSource.prototype.registerPacketGenerators = function () {
 
 // Use 'onTrigger' to obtain the Source packets
 
-ColonistSource.prototype.readPlayerUserStatesData = function (payload) {
+ColonistSource.prototype.readPlayerUserStatesData = function(payload) {
     const packet = {
         type: "playerUserStates",
         data: payload,
     };
     return packet;
-}
+};
 
-ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
+ColonistSource.prototype.readGameLogData = function(logIndex, logMessage) {
     console.assert(logMessage.text);
     console.assert(logMessage.text.type != null);
     const type = ColonistSource.logTypeMap[logMessage.text.type];
@@ -227,7 +223,7 @@ ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
         data: data,
     };
     return packet;
-}
+};
 
 /**
  * @param {Number} chatIndex
@@ -237,35 +233,32 @@ ColonistSource.prototype.readGameLogData = function (logIndex, logMessage) {
  * @param {Number} chatMessage.from
  * @return {null|{type:string,data:{index:Number,type:string,payload:*}}}
  */
-ColonistSource.prototype.readGameChatData = function (chatIndex, chatMessage) {
+ColonistSource.prototype.readGameChatData = function(chatIndex, chatMessage) {
     const text = chatMessage.text.message;
     let type;
     if (text.match("^" + cocaco_config.collude.phrases.start + " ")) {
         type = "collusionStart";
     } else if (text.match("^" + cocaco_config.collude.phrases.stop + "$")) {
         type = "collusionStop";
-    }
-    else {
+    } else {
         return null;
     }
     const data = {
         index: chatIndex,
         type: type,
-        payload: ColonistSource.chatInterpreters[type](
-            chatMessage.text.from,
-            text,
-        ),
+        payload:
+            ColonistSource.chatInterpreters[type](chatMessage.text.from, text)
     };
-    const packet = { type: "gameChatState", data: data };
+    const packet = {type: "gameChatState", data: data};
     return packet;
-}
+};
 
 /**
  * @param {Object} gameState gameState object of the frame
  * @param {boolean} isUpdate
  * @return {null | {type: "gameState", data: {type: string, payload: *}}}
  */
-ColonistSource.prototype.readGameStateData = function (gameState, isUpdate) {
+ColonistSource.prototype.readGameStateData = function(gameState, isUpdate) {
     let packets = [];
     Object.entries(gameState).forEach(([k, v]) => {
         if (!ColonistSource.gameStateInterpreters[k]) {
@@ -276,29 +269,29 @@ ColonistSource.prototype.readGameStateData = function (gameState, isUpdate) {
             isUpdate: isUpdate,
             payload: ColonistSource.gameStateInterpreters[k](v, isUpdate),
         };
-        packets.push({ type: "gameState", data: data });
+        packets.push({type: "gameState", data: data});
     });
     return packets;
-}
+};
 
 /**
  * Capture the manual pseudo "frame" that we invoke from the Colonist main
  * module.
  * @param {string} name
  */
-ColonistSource.prototype.setPlayerUsername = function (name) {
+ColonistSource.prototype.setPlayerUsername = function(name) {
     const packet = {
         type: "playerUsername",
         data: name,
     };
     this.activateTrigger("internalPlayerUsername", packet);
-}
+};
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Log-message interpreters                                  │
 // ╰───────────────────────────────────────────────────────────╯
 
-ColonistSource.logInterpreters.roll = function (logMessage) {
+ColonistSource.logInterpreters.roll = function(logMessage) {
     const sum = logMessage.text.firstDice + logMessage.text.secondDice;
     const payload = {
         player: {
@@ -307,102 +300,101 @@ ColonistSource.logInterpreters.roll = function (logMessage) {
         number: sum,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.got = function (logMessage) {
+ColonistSource.logInterpreters.got = function(logMessage) {
     console.assert(logMessage.text.type === 47);
     const payload = {
         player: logMessage.text.playerColor,
         cards: logMessage.text.cardsToBroadcast,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.tradeBank = function (logMessage) {
+ColonistSource.logInterpreters.tradeBank = function(logMessage) {
     const payload = {
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         give: logMessage.text.givenCardEnums,
         take: logMessage.text.receivedCardEnums,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.yop = function (logMessage) {
+ColonistSource.logInterpreters.yop = function(logMessage) {
     const payload = {
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         cards: logMessage.text.cardEnums
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.mono = function (logMessage) {
-    const cardList = new Array(
-        logMessage.text.amountStolen
-    ).fill(logMessage.text.cardEnum);
+ColonistSource.logInterpreters.mono = function(logMessage) {
+    const cardList =
+        new Array(logMessage.text.amountStolen).fill(logMessage.text.cardEnum);
     const payload = {
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         cards: cardList,
         card: logMessage.text.cardEnum,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.tradeOffer = function (logMessage) {
+ColonistSource.logInterpreters.tradeOffer = function(logMessage) {
     const payload = {
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         cards: logMessage.text.offeredCardEnums,
-        cardsWanted : logMessage.text.wantedCardEnums,
+        cardsWanted: logMessage.text.wantedCardEnums,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.tradeCounter = function (logMessage) {
+ColonistSource.logInterpreters.tradeCounter = function(logMessage) {
     const payload = {
         // Countering player
-        player: { index: logMessage.text.playerColorCreator },
+        player: {index: logMessage.text.playerColorCreator},
         cards: logMessage.text.offeredCardEnums,
         // Creator of the original trade
         originalPlayerId: logMessage.text.playerColorOffered,
         cards_wanted: logMessage.text.wantedCardEnums,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.tradePlayer = function (logMessage) {
+ColonistSource.logInterpreters.tradePlayer = function(logMessage) {
     const payload = {
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         cards: logMessage.text.givenCardEnums,
-        target_player: { index: logMessage.text.acceptingPlayerColor },
+        target_player: {index: logMessage.text.acceptingPlayerColor},
         target_cards: logMessage.text.receivedCardEnums,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.discard = function (logMessage) {
+ColonistSource.logInterpreters.discard = function(logMessage) {
     console.assert(logMessage.text.areResourceCards === true);
     const payload = {
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         cards: logMessage.text.cardEnums,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.buyDev = function (logMessage) {
+ColonistSource.logInterpreters.buyDev = function(logMessage) {
     const payload = {
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.buyBuilding = function (logMessage) {
+ColonistSource.logInterpreters.buyBuilding = function(logMessage) {
     const payload = {
-        player: { index: logMessage.text.playerColor },
-        building: { index: logMessage.text.pieceEnum },
+        player: {index: logMessage.text.playerColor},
+        building: {index: logMessage.text.pieceEnum},
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.stealRandom = function (logMessage) {
+ColonistSource.logInterpreters.stealRandom = function(logMessage) {
     console.assert(logMessage.specificRecipients);
     const payload = {
         playerId: logMessage.text.playerColorThief,
@@ -412,37 +404,35 @@ ColonistSource.logInterpreters.stealRandom = function (logMessage) {
     console.assert(payload.cards.length === 1, "We can only steal 1 card");
     console.assert(payload.cards[0] === 0, "Steal is unknown");
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.stealAgainstUs = function (logMessage) {
+ColonistSource.logInterpreters.stealAgainstUs = function(logMessage) {
     console.assert(logMessage.toSpectators === false);
     const payload = {
         // Only the thief is listed
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         cards: logMessage.text.cardEnums,
     };
     return payload;
-}
+};
 
-ColonistSource.logInterpreters.stealAgainstThem = function (logMessage) {
+ColonistSource.logInterpreters.stealAgainstThem = function(logMessage) {
     console.assert(logMessage.toSpectators === false);
     const payload = {
         // Only the victim is listed
-        player: { index: logMessage.text.playerColor },
+        player: {index: logMessage.text.playerColor},
         cards: logMessage.text.cardEnums,
     };
     return payload;
-}
+};
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Chat-message interpreters                                 │
 // ╰───────────────────────────────────────────────────────────╯
 
-ColonistSource.chatInterpreters.collusionStart = function (player, text) {
+ColonistSource.chatInterpreters.collusionStart = function(player, text) {
     let others = [];
-    const regEx = new RegExp(
-        / (?<name>[^,]+)/g,
-    );
+    const regEx = new RegExp(/ (?<name>[^,]+)/g);
     // console.debug("Searching", text);
     const search = text.matchAll(regEx);
     for (const other of search) {
@@ -455,21 +445,21 @@ ColonistSource.chatInterpreters.collusionStart = function (player, text) {
         others: others,
     };
     return payload;
-}
+};
 
-ColonistSource.chatInterpreters.collusionStop = function (player, text) {
+ColonistSource.chatInterpreters.collusionStop = function(player, text) {
     text; // Unused
     const payload = {
         player: player,
     };
     return payload;
-}
+};
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Game state interpreters                                   │
 // ╰───────────────────────────────────────────────────────────╯
 
-ColonistSource.gameStateInterpreters.currentState = function (currentState) {
+ColonistSource.gameStateInterpreters.currentState = function(currentState) {
     // Leave undefined what is missing. Set to null what is available but
     // irrelevant. Observer should store and incrementally update what is not
     // undefined.
@@ -481,17 +471,17 @@ ColonistSource.gameStateInterpreters.currentState = function (currentState) {
         currentTurnPlayerColor: currentState.currentTurnPlayerColor,
         // Use undefined if not there
         turnState: currentState.turnState === undefined ? undefined : turnState,
-        actionState: currentState.actionState === undefined ? undefined : actionState,
+        actionState: currentState.actionState === undefined ? undefined
+                                                            : actionState,
     };
     return payload;
-}
+};
 
-ColonistSource.gameStateInterpreters.tradeState = function (tradeState) {
+ColonistSource.gameStateInterpreters.tradeState = function(tradeState) {
     // TODO: Remap indices to something readable
     return tradeState;
-}
+};
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Interface                                                 │
 // ╰───────────────────────────────────────────────────────────╯
-

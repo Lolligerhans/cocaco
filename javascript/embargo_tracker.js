@@ -30,7 +30,7 @@ class EmbargoTracker {
         // Do linear search over active embargoes
         const isTheSame = ([a, b]) => {
             return playerA.equals(a) && playerB.equals(b) ||
-                playerA.equals(b) && playerB.equals(a);
+                   playerA.equals(b) && playerB.equals(a);
         };
         const ret = this.#embargoes.some(isTheSame);
         return ret;
@@ -60,5 +60,4 @@ class EmbargoTracker {
         this.#embargoes = embargoes;
         this.#logDeviatingEmbargoes(oldEmbargoes, "Remove embargo:");
     }
-
 }

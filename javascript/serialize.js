@@ -54,14 +54,12 @@ function cocaco_decode_send(frame) {
     const str = msgpack.deserialize(tmp);
     // console.debug("deserialized str:", str);
     const data_message = frame.buffer.slice(
-        frame.byteOffset + overlen,
-        frame.byteLength + frame.byteOffset
-    );
+        frame.byteOffset + overlen, frame.byteLength + frame.byteOffset);
     // console.debug("Shortened buffer data_message:", data_message);
     const u8 = new Uint8Array(data_message);
     const message = msgpack.deserialize(u8);
     // console.debug("deserialized message:", message);
-    const res = { v0: v0, v1: v1, str: str, message: message };
+    const res = {v0: v0, v1: v1, str: str, message: message};
     return res;
 }
 
@@ -72,7 +70,7 @@ function cocaco_decode_send(frame) {
  * @param {*} message Message object as described in the documentation
  * @return {Uint8Array} Encoded frame
  */
-function cocaco_encode_send({ v0, v1, str, message }) {
+function cocaco_encode_send({v0, v1, str, message}) {
     // We create a larger ArrayBuffer with a new full-sized uint8 view and copy the
     // serialized message into it. Not sure if we could convince msgpack to write
     // into a buffer we give to it.
@@ -85,7 +83,8 @@ function cocaco_encode_send({ v0, v1, str, message }) {
     // TODO: Use msgpack fixstr/int helpers?
     const messageSerialized = msgpack.serialize(message);
     const strOffset = 3;
-    const strAsAscii = [...Array(str.length).keys()].map(i => str.charCodeAt(i));
+    const strAsAscii =
+        [...Array(str.length).keys()].map(i => str.charCodeAt(i));
     const messageOffset = strOffset + str.length;
     const fullLength = messageOffset + messageSerialized.byteLength;
 

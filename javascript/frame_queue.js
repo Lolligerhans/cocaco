@@ -110,5 +110,4 @@ class FrameQueue {
         ++this.#position;
         return nextFrame;
     }
-
 }

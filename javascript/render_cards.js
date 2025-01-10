@@ -7,13 +7,15 @@ class RenderCards {
 
     static templates = document.createDocumentFragment();
     static resourceTypes = ["wood", "brick", "sheep", "wheat", "ore"];
+    // clang-format off
     static assets = mapObject({
-        wood: "../assets/wood31.jpg",
+        wood:  "../assets/wood31.jpg",
         brick: "../assets/brick24.jpg",
         sheep: "../assets/sheep1.jpg",
         wheat: "../assets/wheat2.jpg",
-        ore: "../assets/ore27.jpg",
+        ore:   "../assets/ore27.jpg",
     }, value => browser.runtime.getURL(value));
+    // clang-format on
 
     #assets = null;
 
@@ -48,8 +50,8 @@ class RenderCards {
      * visibility styling.
      * @type {Toggle}
      */
-    #toggle = new Toggle("resourcesPanel", "rollsPlot")
-        .enable("resourcesPanel");
+    #toggle =
+        new Toggle("resourcesPanel", "rollsPlot").enable("resourcesPanel");
 
     /**
      * The 'Track' object used to get rolls data from. This object is only read.
@@ -83,11 +85,8 @@ class RenderCards {
          */
         const guessPredicate = (type, count, predicate) => {
             this.#multiverse.weightGuessPredicate(
-                playerName,
-                Multiverse.getResourceIndex(type),
-                predicate.f(count),
-                predicate.name(count),
-            );
+                playerName, Multiverse.getResourceIndex(type),
+                predicate.f(count), predicate.name(count));
             this.render();
         };
         /**
@@ -110,13 +109,11 @@ class RenderCards {
             const onClick = (pred = ">=") => {
                 const predicate = predicates[pred];
                 this.#logger.log(
-                    `Guessing ${playerName}[${type}] ${predicate.name(count)}`,
-                );
+                    `Guessing ${playerName}[${type}] ${predicate.name(count)}`);
                 guessPredicate(type, count, predicate);
             };
-            element.parentNode.addEventListener("click", _event => {
-                onClick(">=");
-            });
+            element.parentNode.addEventListener("click",
+                                                _event => { onClick(">="); });
             element.parentNode.addEventListener("contextmenu", event => {
                 onClick("<");
                 event.preventDefault();
@@ -133,7 +130,6 @@ class RenderCards {
                 // typeImages[0] represents having 1 card, not 0
                 addListener(imageElement, type, resourceImageIndex + 1);
             });
-
         };
         for (const type of RenderCards.resourceTypes) {
             addListenersByType(type);
@@ -167,9 +163,8 @@ class RenderCards {
             node.src = newSrc;
         });
         // console.debug("Returning entry:", entry);
-        entry.addEventListener("mouseenter", _event =>
-            this.#updateResourceWorlds(playerName)
-        );
+        entry.addEventListener(
+            "mouseenter", _event => this.#updateResourceWorlds(playerName));
         return entry;
     }
 
@@ -218,7 +213,8 @@ class RenderCards {
      * @return {HTMLElement}
      */
     #generateNewResourceWorlds(playerName, playerColour) {
-        let resourceWorlds = RenderCards.templates.resourceWorlds.cloneNode(true);
+        let resourceWorlds =
+            RenderCards.templates.resourceWorlds.cloneNode(true);
         // // For testing, just append to body
         // document.body.appendChild(resourceWorlds);
         let nameEntry = resourceWorlds.querySelector(".playerName");
@@ -249,9 +245,8 @@ class RenderCards {
         const addButton = (name, symbol = null) => {
             let newButton = RenderCards.templates.button.cloneNode(true);
             newButton.textContent = symbol ?? newButton.textContent;
-            newButton.addEventListener("click", _event => {
-                this.toggle(name);
-            });
+            newButton.addEventListener("click",
+                                       _event => { this.toggle(name); });
             sidebar.querySelector(".buttons").appendChild(newButton);
         };
         addButton("resourcesPanel", " 🂠");
@@ -260,21 +255,12 @@ class RenderCards {
         let resStealChanceElem = sidebar.querySelector(".resourceStealChance");
         for (const player of this.#playerNames) {
             let newResourcesEntry = this.#cloneSidebarResourceEntry(
-                player,
-                this.#colour_map[player],
-            );
-            this.#addResourceGuessEventListeners(
-                newResourcesEntry,
-                player,
-                this.#multiverse,
-            );
+                player, this.#colour_map[player]);
+            this.#addResourceGuessEventListeners(newResourcesEntry, player,
+                                                 this.#multiverse);
             resourcesElement.appendChild(newResourcesEntry);
-            resStealChanceElem.appendChild(
-                this.#cloneSidebarResourceTypeEntry(
-                    player,
-                    this.#colour_map[player],
-                ),
-            );
+            resStealChanceElem.appendChild(this.#cloneSidebarResourceTypeEntry(
+                player, this.#colour_map[player]));
         }
         return sidebar;
     }
@@ -291,7 +277,7 @@ class RenderCards {
     #generateResourceWorldCards(playerName) {
         const playerResources = this.#multiverse.getPlayerResources(playerName);
         let res = [];
-        playerResources.forEach(({ chance, resources }) => {
+        playerResources.forEach(({chance, resources}) => {
             let cards = RenderCards.templates.resourceCards.cloneNode(true);
 
             // HACK: Generate a guess-and-range object like 'Multiverse' would.
@@ -309,9 +295,12 @@ class RenderCards {
                 ];
             };
             Resources.names().forEach(addFakeRange);
-            let cardsElement = RenderCards.templates.resourceCards.cloneNode(true);
-            RenderCards.#updateCardsElement(cardsElement, fakeResourceGuessAndRange);
-            let outlineColour = chance >= 1 ? "#0000" : colourInterpolate(chance);
+            let cardsElement =
+                RenderCards.templates.resourceCards.cloneNode(true);
+            RenderCards.#updateCardsElement(cardsElement,
+                                            fakeResourceGuessAndRange);
+            let outlineColour =
+                chance >= 1 ? "#0000" : colourInterpolate(chance);
             cardsElement.style["outline-color"] = outlineColour;
             cardsElement.querySelectorAll("img").forEach(node => {
                 const newSrc = this.#assets[node.alt];
@@ -347,42 +336,39 @@ class RenderCards {
         const cardCount = resourceCards.length;
         console.assert(cardCount === 19 * 5);
         let childCardIndex = 0; // [0, 95)
-        let i = 0; // [0, 19]
+        let i = 0;              // [0, 19]
         const increment = (offset = 1) => {
             i += offset;
             childCardIndex += offset;
         };
-        const updateCard = (
-            resourceIndex, count,
-            show = true, chance = null,
-        ) => {
-            if (count === 0) {
-                return; // Cannot update the 0th card
-            }
-            const cardIndex = resourceIndex * 19 + count - 1;
-            const card = resourceCards[cardIndex];
-            if (show === false) {
-                card.style.display = "none";
-                return;
-            }
-            card.style.display = "flex";
-            if (chance === null)
-                card.style["outline-color"] = "#0000";
-            else
-                card.style["outline-color"] = colourInterpolate(chance);
-        };
+        const updateCard =
+            (resourceIndex, count, show = true, chance = null) => {
+                if (count === 0) {
+                    return; // Cannot update the 0th card
+                }
+                const cardIndex = resourceIndex * 19 + count - 1;
+                const card = resourceCards[cardIndex];
+                if (show === false) {
+                    card.style.display = "none";
+                    return;
+                }
+                card.style.display = "flex";
+                if (chance === null)
+                    card.style["outline-color"] = "#0000";
+                else
+                    card.style["outline-color"] = colourInterpolate(chance);
+            };
         RenderCards.resourceTypes.forEach((resourceType, resourceIndex) => {
             i = 0;
             childCardIndex = resourceIndex * 19;
             let probability = 1;
 
-            const update = (show, chance) => updateCard(
-                resourceIndex, i,
-                show, chance,
-            );
+            const update = (show, chance) =>
+                updateCard(resourceIndex, i, show, chance);
             const r = guessAndRange[resourceType];
             const d = distribution[resourceType];
-            console.assert(d.length === 20, "Expect 20 entries for a card distribution", d);
+            console.assert(d.length === 20,
+                           "Expect 20 entries for a card distribution", d);
 
             // Guaranteed cards: show them
             for (; i <= r[0]; increment()) {
@@ -397,8 +383,7 @@ class RenderCards {
                     // display only that would not be a big deal.
                     0 <= probability && probability <= 1,
                     "Card probabilities should be withing [0,1]. Is:",
-                    probability,
-                );
+                    probability);
                 probability = clampProbability(probability);
                 update(true, probability);
                 probability -= d[i];
@@ -431,8 +416,7 @@ class RenderCards {
             const card = resourceCards[index];
             if (value === 0) {
                 card.style.visibility = "hidden";
-            }
-            else {
+            } else {
                 card.style.visibility = "visible";
                 card.style["outline-color"] = colourInterpolate(value);
             }
@@ -455,10 +439,7 @@ class RenderCards {
             return;
         }
         this.#track.updateRollsData();
-        plotRollsAsHistogram(
-            this.#track,
-            rollsPlotDiv,
-        );
+        plotRollsAsHistogram(this.#track, rollsPlotDiv);
         unhide(rollsPlotDiv);
     }
 
@@ -483,7 +464,8 @@ class RenderCards {
      */
     #updateResources() {
         let resourcesDiv = this.#sidebar.querySelector(".resources");
-        let resourceStealChanceDiv = this.#sidebar.querySelector(".resourceStealChance");
+        let resourceStealChanceDiv =
+            this.#sidebar.querySelector(".resourceStealChance");
         if (!this.#toggle.isToggled("resourcesPanel")) {
             // Save the cycles when nothing has to be shown anyway
             hide(resourcesDiv);
@@ -499,15 +481,10 @@ class RenderCards {
         let stealEntries = resourceStealChanceDiv.childNodes;
         Object.entries(this.#playerNames).forEach(([index, playerName]) => {
             const indexNumber = Number.parseInt(index);
-            this.#updateEntry(
-                entries[indexNumber],
-                guessAndRange[playerName],
-                distribution[playerName],
-            );
-            this.#updateEntrySteals(
-                stealEntries[indexNumber],
-                stealProbabilitiy[playerName],
-            );
+            this.#updateEntry(entries[indexNumber], guessAndRange[playerName],
+                              distribution[playerName]);
+            this.#updateEntrySteals(stealEntries[indexNumber],
+                                    stealProbabilitiy[playerName]);
         });
         unhide(resourcesDiv);
     }
@@ -526,11 +503,12 @@ class RenderCards {
     static #updateCardsElement(cardsElement, guessAndRange) {
         const cards = cardsElement.childNodes;
         console.assert(cards.length === 19 * 5, "Sanity check");
-        const indexMap = { wood: 0, brick: 1, sheep: 2, wheat: 3, ore: 4 };
+        const indexMap = {wood: 0, brick: 1, sheep: 2, wheat: 3, ore: 4};
         const updateAs = (resourceName, subResourceIndex, isShown) => {
             const cardIndex = 19 * indexMap[resourceName] + subResourceIndex;
             const card = cards[cardIndex];
-            console.assert(card.firstElementChild.alt === resourceName, "Santiy check");
+            console.assert(card.firstElementChild.alt === resourceName,
+                           "Santiy check");
             if (isShown) {
                 card.style.display = "flex";
             } else {
@@ -539,16 +517,10 @@ class RenderCards {
             card.style["outline-color"] = "#0000";
         };
         const updateFromRange = (resourceName, guessAndRange) => {
-            console.assert(
-                guessAndRange[0] === guessAndRange[3],
-                "Min should be equal to max for now",
-            );
+            console.assert(guessAndRange[0] === guessAndRange[3],
+                           "Min should be equal to max for now");
             for (let i = 1; i <= 19; ++i) {
-                updateAs(
-                    resourceName,
-                    i - 1,
-                    i <= guessAndRange[0],
-                );
+                updateAs(resourceName, i - 1, i <= guessAndRange[0]);
             }
         };
         RenderCards.resourceTypes.forEach(resourceName => {
@@ -623,7 +595,6 @@ class RenderCards {
         this.#sidebar.remove();
         this.#sidebar = null;
     }
-
 }
 
 /**
@@ -701,7 +672,7 @@ function generateTemplates(templates) {
     const insertResourceCardIntoDiv = (div, typeString) => {
         const image = templates[typeString].cloneNode(true);
         div.appendChild(image);
-    }
+    };
     for (const resource of RenderCards.resourceTypes) {
         const firstCard = templates.cardFirst.cloneNode(true);
         insertResourceCardIntoDiv(firstCard, resource);
@@ -727,8 +698,7 @@ function generateTemplates(templates) {
         templates.resourceEntry = document.createElement("div");
         templates.resourceEntry.classList.add("cocaco", "resourceEntry");
         templates.resourceEntry.appendChild(
-            templates.playerName.cloneNode(true),
-        );
+            templates.playerName.cloneNode(true));
         let currentResourceCards = templates.resourceCards.cloneNode(true);
         templates.resourceEntry.appendChild(currentResourceCards);
     }
@@ -737,11 +707,12 @@ function generateTemplates(templates) {
     // including name and the resource types.
     {
         templates.resourceTypeEntry = document.createElement("div");
-        templates.resourceTypeEntry.classList.add("cocaco", "resourceTypeEntry");
+        templates.resourceTypeEntry.classList.add("cocaco",
+                                                  "resourceTypeEntry");
         templates.resourceTypeEntry.appendChild(
-            templates.playerName.cloneNode(true),
-        );
-        let currentResourceChance = templates.resourceCardsSingle.cloneNode(true);
+            templates.playerName.cloneNode(true));
+        let currentResourceChance =
+            templates.resourceCardsSingle.cloneNode(true);
         currentResourceChance.classList.add("show-on-hover");
         templates.resourceTypeEntry.appendChild(currentResourceChance);
     }
@@ -758,7 +729,8 @@ function generateTemplates(templates) {
     // construction.
     {
         templates.resourceStealChance = document.createElement("div");
-        templates.resourceStealChance.classList.add("cocaco", "resourceStealChance");
+        templates.resourceStealChance.classList.add("cocaco",
+                                                    "resourceStealChance");
         templates.resourceStealChance.classList.add("show-on-hover");
     }
 
@@ -770,8 +742,7 @@ function generateTemplates(templates) {
         templates.resourceWorlds.classList.add("cocaco", "resourceWorlds");
         templates.resourceWorlds.classList.add("show-on-hover");
         templates.resourceWorlds.appendChild(
-            templates.playerName.cloneNode(true),
-        );
+            templates.playerName.cloneNode(true));
     }
 
     // The resourcesPanel is the element containing the whole unit of resources
@@ -780,14 +751,11 @@ function generateTemplates(templates) {
         templates.resourcesPanel = document.createElement("div");
         templates.resourcesPanel.classList.add("cocaco", "resourcesPanel");
         templates.resourcesPanel.appendChild(
-            templates.resources.cloneNode(true),
-        );
+            templates.resources.cloneNode(true));
         templates.resourcesPanel.appendChild(
-            templates.resourceStealChance.cloneNode(true),
-        );
+            templates.resourceStealChance.cloneNode(true));
         templates.resourcesPanel.appendChild(
-            templates.resourceWorlds.cloneNode(true),
-        );
+            templates.resourceWorlds.cloneNode(true));
     }
 
     // A div element for the plotting code to plot into
@@ -817,15 +785,9 @@ function generateTemplates(templates) {
         templates.sidebar = document.createElement("div");
         templates.sidebar.id = "cocaco-sidebar";
         templates.sidebar.classList.add("cocaco");
-        templates.sidebar.appendChild(
-            templates.buttons.cloneNode(true),
-        )
-        templates.sidebar.appendChild(
-            templates.resourcesPanel.cloneNode(true),
-        );
-        templates.sidebar.appendChild(
-            templates.rollsPlot.cloneNode(true),
-        );
+        templates.sidebar.appendChild(templates.buttons.cloneNode(true))
+        templates.sidebar.appendChild(templates.resourcesPanel.cloneNode(true));
+        templates.sidebar.appendChild(templates.rollsPlot.cloneNode(true));
     }
 
     // console.debug("generated:", templates);

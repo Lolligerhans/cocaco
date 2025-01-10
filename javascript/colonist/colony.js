@@ -46,7 +46,8 @@ class Colony {
         console.assert(keys.length === 1);
         if (keys.length !== 1) {
             console.error("Expected 1 resource card in element", element);
-            alertIf("Expected at least 1 resource card in element (unreachable)");
+            alertIf(
+                "Expected at least 1 resource card in element (unreachable)");
         }
         return keys[0];
     }
@@ -83,9 +84,19 @@ class Colony {
      */
     static findAllResourceCardsInHtml(html) {
         // Match 'resourceSnippets' against string content
-        let foundAny = false;   // For sanity check
-        let cards = { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, cloth: 0, coin: 0, paper: 0 };
-        for (const [res, uniqueResString] of Object.entries(Colony.resourceSnippets)) {
+        let foundAny = false; // For sanity check
+        let cards = {
+            wood: 0,
+            brick: 0,
+            sheep: 0,
+            wheat: 0,
+            ore: 0,
+            cloth: 0,
+            coin: 0,
+            paper: 0
+        };
+        for (const [res, uniqueResString] of Object.entries(
+                 Colony.resourceSnippets)) {
             // Count number of occurrences of identifying strings like "card_brick"
             let resourceRegex = new RegExp(uniqueResString, "g");
             let count = (html.match(resourceRegex) || []).length;
@@ -113,8 +124,10 @@ class Colony {
             // Alt text is "dice_6" when rolling a 6.
             // Only images present are the dice images.
             let altText = img.getAttribute("alt");
-            if (!altText) alertIf("No alt text in dice image");
-            if (!diceTest.test(altText)) return sum;   // Skip if not a dice image
+            if (!altText)
+                alertIf("No alt text in dice image");
+            if (!diceTest.test(altText))
+                return sum; // Skip if not a dice image
             let diceNum = Number(altText.slice(-1));
             return sum + diceNum;
         }, 0);
@@ -122,8 +135,10 @@ class Colony {
     }
 
     static deleteSomeElements() {
-        const ids = ["remove_ad_in_game_left", "remove_ad_in_game_right",
-            "in_game_ab_right", "in_game_ab_left"];
+        const ids = [
+            "remove_ad_in_game_left", "remove_ad_in_game_right",
+            "in_game_ab_right", "in_game_ab_left"
+        ];
         for (const id of ids) {
             let element = document.getElementById(id);
             if (element)
@@ -139,10 +154,13 @@ class Colony {
      * String constants used to determine log message types
      */
     static snippets = {
-        initialPlacement: { split: " placed a " },
+        initialPlacement: {split: " placed a "},
         // Used to determine which resources each player should get in the initial phase
         receivedInitialResourcesSnippet: "received starting resources",
-        gold: { present: "from gold tile", absent: "selecting resource from gold tile" },
+        gold: {
+            present: "from gold tile",
+            absent: "selecting resource from gold tile"
+        },
         // Sufficient (not necessary) to identify messages from the initial phase
         sufficientInitialPhaseMessageSnippet: "received starting resources",
         // Necessary (not sufficient) for detecting initial placement. Used to determine players
@@ -160,42 +178,44 @@ class Colony {
         boughtSnippet: " bought ",
         tradeBankGaveSnippet: "gave bank",
         tradeBankTookSnippet: "and took",
-        mono: { present: " stole ", absent: "from" },
+        mono: {present: " stole ", absent: "from"},
         discardedSnippet: " discarded ",
         trade: {
             detect: " gave and got from ",
             split: " and got ",
             transform: x => x.replace(/\s+/g, ' ').trim()
         },
-        steal: { known: ["You stole", " from you"], detect: " stole from " },
+        steal: {known: ["You stole", " from you"], detect: " stole from "},
         winSnippet: "won the game",
         rolledSnippet: " rolled ",
 
         // New
         movedRobber: " moved Robber ",
         movedShip: " moved ",
-        placeShipRoad: { text: " placed a ", alt: ["ship", "road"] },
-        placeKnight: { text: " placed a ", alt: "Knight" },
+        placeShipRoad: {text: " placed a ", alt: ["ship", "road"]},
+        placeKnight: {text: " placed a ", alt: "Knight"},
         activateKnight: " activated knight ",
-        upgradeKnight: { text: " upgraded ", alt: "Knight" },
+        upgradeKnight: {text: " upgraded ", alt: "Knight"},
         aqueduct: "selected from Aqueduct",
         upgradeCity: " upgraded to level ",
         progressCard: {
-            text: " used ", alts: [
-                // These must match the strings in the 'parseProgressCard' function
-                "Commodity Monopoly",
-                "Crane",
-                "Deserter",
-                "Engineer",
-                "Master Merchant",
-                "Medicine",
-                "Resource Monopoly",
-                "Road Building",
-                "card road building", // Base game only
-                "Smith",
-                "Spy",
-                "Wedding",
-            ]
+            text: " used ",
+            alts:
+                [
+                    // These must match the strings in the 'parseProgressCard' function
+                    "Commodity Monopoly",
+                    "Crane",
+                    "Deserter",
+                    "Engineer",
+                    "Master Merchant",
+                    "Medicine",
+                    "Resource Monopoly",
+                    "Road Building",
+                    "card road building", // Base game only
+                    "Smith",
+                    "Spy",
+                    "Wedding",
+                ]
         },
         commodityMonopoly: " stole ",
         resourceMonopoly: " stole ",
@@ -229,9 +249,14 @@ class Colony {
     };
 
     static imageNameSnippets = {
-        wood: "card_lumber", brick: "card_brick", sheep: "card_wool",
-        wheat: "card_grain", ore: "card_ore",
-        cloth: "card_cloth", coin: "card_coin", paper: "card_paper",
+        wood: "card_lumber",
+        brick: "card_brick",
+        sheep: "card_wool",
+        wheat: "card_grain",
+        ore: "card_ore",
+        cloth: "card_cloth",
+        coin: "card_coin",
+        paper: "card_paper",
         unknown: "card_rescardback",
         road: "road_red",
         settlement: "settlement_red",
@@ -243,12 +268,13 @@ class Colony {
     /**
      * Cut only the resources out of imageNameSnippets
      */
-    static resourceSnippets = ((
-        { wood, brick, sheep, wheat, ore, cloth, coin, paper }) => (
-        { wood, brick, sheep, wheat, ore, cloth, coin, paper })
-    )(Colony.imageNameSnippets);
+    static resourceSnippets =
+        (({wood, brick, sheep, wheat, ore, cloth, coin, paper}) =>
+             ({wood, brick, sheep, wheat, ore, cloth, coin, paper}))(
+            Colony.imageNameSnippets);
 
     static colonistAssets = {
+        // clang-format off
         wood: `<img src="dist/images/${Colony.imageNameSnippets["wood"]}.svg" class="cocaco-tbl-resource-icon"/>`,
         brick: `<img src="dist/images/${Colony.imageNameSnippets["brick"]}.svg" class="cocaco-tbl-resource-icon"/>`,
         sheep: `<img src="dist/images/${Colony.imageNameSnippets["sheep"]}.svg" class="cocaco-tbl-resource-icon"/>`,
@@ -263,6 +289,7 @@ class Colony {
         devcard: `<img src="dist/images/${Colony.imageNameSnippets["devcard"]}.svg" class="cocaco-tbl-resource-icon"/>`,
         city: `<img src="dist/images/${Colony.imageNameSnippets["city"]}.svg" class="cocaco-tbl-resource-icon"/>`,
         ship: `<img src="dist/images/${Colony.imageNameSnippets["ship"]}.svg" class="cocaco-tbl-resource-icon"/>`,
+        // clang-format on
     };
 
     /**
@@ -518,7 +545,7 @@ Colony.prototype.findPlayerName = function Colony_prototype_findPlayerName() {
     this.playerUsernameElement = document.getElementById("header_profile_username");
     console.assert(
         this.playerUsernameElement !== null,
-        "should always be present, during and outside of games",
+        "should always be present, during and outside of games"
     );
     this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
     if (this.playerUsername === "") {
@@ -619,7 +646,7 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
         const player = playerUserStates.find(x => x.selectedColor == colourIndex);
         console.assert(
             player !== undefined,
-            `Player with colour index ${colourIndex} not found in playerUserStates`,
+            `Player with colour index ${colourIndex} not found in playerUserStates`
         );
         return player.username;
         // --index; // The messaging is 1-based (for player indices only)
@@ -802,7 +829,7 @@ Colony.prototype.recoverUsers = function Colony_prototype_recoverUsers(
             msg.style.background = this.playerColours[name];
             this.logger.log(
                 msg, `🥥 Found player %c${name}%c with colour ${colour}`,
-                this.cssColourPlayer(name), "",
+                this.cssColourPlayer(name), ""
             );
             this.initialiseTracker(false);
         }
@@ -849,14 +876,13 @@ Colony.prototype.initialiseTracker = function Colony_prototype_initialiseTracker
         alternativeAssets : Colony.colonistAssets;
     switch (cocaco_config.render.type) {
         case "table":
-            this.renderObject = new Render
-                (
-                    this.multiverse, this.trackerCollection,
-                    this.players, this.playerColours,
-                    null,
-                    ...recoverFunctions,
-                    usedAssets,
-                );
+            this.renderObject = new Render (
+                this.multiverse, this.trackerCollection,
+                this.players, this.playerColours,
+                null,
+                ...recoverFunctions,
+                usedAssets,
+            );
         case "cards":
             this.renderObject = new RenderCards(
                 this.multiverse,
@@ -1047,7 +1073,7 @@ Colony.prototype.restartMainLoop = function Colony_prototype_restartMainLoop() {
             this,
             () => this.activeIndex === currentIndex // Continue condition
         ),
-        Colony.refreshRate,
+        Colony.refreshRate
     );
 
     return true;
@@ -1059,7 +1085,7 @@ Colony.prototype.restartMainLoop = function Colony_prototype_restartMainLoop() {
 Colony.prototype.mainLoopToggle = function () {
     if (this.startupFlag === true) {
         console.warn(
-            "this.mainLoopToggle() suppressed: this.startupFlag === true",
+            "this.mainLoopToggle() suppressed: this.startupFlag === true"
         );
         return;
     }
@@ -1365,8 +1391,8 @@ Colony.prototype.parseTradeBankMessage = function (element) {
         player,
         Multiverse.sliceSubtract(
             Multiverse.asSlice(takeResources),
-            Multiverse.asSlice(giveResources),
-        ),
+            Multiverse.asSlice(giveResources)
+        )
     );
 
     return true;
@@ -1426,7 +1452,7 @@ Colony.prototype.parseDiscardedMessage = function (element) {
     this.multiverse.collapseTotal(player, n => n >> 1 === sliceTotal);
     this.multiverse.transformSpawn(
         player,
-        Multiverse.sliceNegate(Multiverse.asSlice(discarded)),
+        Multiverse.sliceNegate(Multiverse.asSlice(discarded))
     );
 
     return true;
@@ -1501,7 +1527,7 @@ Colony.prototype.stealKnown = function (element) {
         console.assert([1, 2].includes(count));
         console.assert(
             (merchantStolen["unknown"] || -1) !== 0,
-            "Known steals have no unknown cards",
+            "Known steals have no unknown cards"
         );
         this.logger.log(element, `${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColourPlayer(stealingPlayer), "", this.cssColourPlayer(targetPlayer), "");
 
@@ -1522,7 +1548,7 @@ Colony.prototype.stealKnown = function (element) {
         console.assert([1, 2].includes(count));
         console.assert(
             (weddingStolen["unknown"] || -1) !== 0,
-            "Known steals have no unknown cards",
+            "Known steals have no unknown cards"
         );
         this.logger.log(element, `${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColourPlayer(stealingPlayer), "", this.cssColourPlayer(targetPlayer), "");
 
@@ -1541,7 +1567,7 @@ Colony.prototype.stealKnown = function (element) {
 
     console.assert(
         this.turnState.nextSteal === "robber",
-        "Should set next steal before entering here",
+        "Should set next steal before entering here"
     );
 
     this.logger.log(element, `${utf8Symbols.steal} %c${stealingPlayer}%c ← ${utf8Symbols[stolenResourceType]} %c${targetPlayer}%c`, this.cssColourPlayer(stealingPlayer), "", this.cssColourPlayer(targetPlayer), "");
@@ -1595,7 +1621,7 @@ Colony.prototype.stealUnknown = function (element) {
         const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(
             merchantStolen["unknown"] === stolenCount,
-            "Unknown merchant steals have only unknown cards",
+            "Unknown merchant steals have only unknown cards"
         );
         this.logger.log(element, `${utf8Symbols.merchant} %c${stealingPlayer}%c ← ${resourcesAsUtf8(merchantStolen)} %c${targetPlayer}%c`, this.cssColourPlayer(stealingPlayer), "", this.cssColourPlayer(targetPlayer), "");
 
@@ -1619,7 +1645,7 @@ Colony.prototype.stealUnknown = function (element) {
         const stolenCount = Multiverse.sliceTotal(asSlice);
         console.assert(
             weddingStolen["unknown"] === stolenCount,
-            "Unknown wedding steals have only unknown cards",
+            "Unknown wedding steals have only unknown cards"
         );
         this.logger.log(element, `${utf8Symbols.wedding} %c${stealingPlayer}%c ← ${resourcesAsUtf8(weddingStolen)} %c${targetPlayer}%c`, this.cssColourPlayer(stealingPlayer), "", this.cssColourPlayer(targetPlayer), "");
 
@@ -1733,7 +1759,7 @@ Colony.prototype.parsePlaceKnight = function (element) {
         element,
         `${utf8Symbols.build} ${utf8Symbols.knight} %c${player}%c → ${resourceStr}`,
         this.cssColourPlayer(player),
-        "",
+        ""
     );
 
     this.multiverse.transformSpawn(player, costSlice);
@@ -1961,7 +1987,7 @@ Colony.prototype.parseCommercialHarborOurs = function (element) {
         us,
         otherPlayer,
         { [gave]: 1 },
-        { [took]: 1 },
+        { [took]: 1 }
     );
 
     return true;

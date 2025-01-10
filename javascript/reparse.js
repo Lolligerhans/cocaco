@@ -42,6 +42,9 @@ class Reparse {
     // │ Receive helpers                                       │
     // ╰───────────────────────────────────────────────────────╯
 
+    // Use formatter when it can keep key: (arg) => in one line
+    // clang-format off
+
     /**
      * Common '#doesApply' functions. The functions here return closures to be
      * applied to the message object in order filter them. This may be
@@ -51,6 +54,7 @@ class Reparse {
      * Predefined "does-apply" functions to filter by common criteria
      */
     static applyDoers = {
+
         /**
          * @return {function():true}
          */
@@ -73,7 +77,7 @@ class Reparse {
             // );
             console.assert(
                 message.id && message.data.type,
-                "Can this ever not be the case?",
+                "Can this ever not be the case?"
             );
             let ok = true
             if (Object.hasOwn(kinds, "id")) {
@@ -161,7 +165,7 @@ class Reparse {
             let e = message.data.payload.serverId;
             return e;
         },
-    }
+    };
 
     // ╭───────────────────────────────────────────────────────╮
     // │ Send helpers                                          │
@@ -223,6 +227,7 @@ class Reparse {
         },
     };
 
+    // clang-format on
     // ╭───────────────────────────────────────────────────────╮
     // │ Application                                           │
     // ╰───────────────────────────────────────────────────────╯
@@ -275,16 +280,14 @@ class Reparse {
         console.assert(direction === "receive" || direction === "send");
         let didRemoveFrame = false; // Pretend the frame was deleted
         let didChangeFrame = false;
-        Reparse.reparsers[direction] = Reparse.reparsers[direction].filter(
-            reparser => {
+        Reparse.reparsers[direction] =
+            Reparse.reparsers[direction].filter(reparser => {
                 if (didRemoveFrame === true) {
                     // Emulate 'break;' behaviour
                     return true;
                 }
-                const { isDone, frame: returnedFrame } = reparser.apply(
-                    frame,
-                    reparseOptions,
-                );
+                const {isDone, frame: returnedFrame} =
+                    reparser.apply(frame, reparseOptions);
                 // When returning
                 //  - undefined:            Regular behaviour
                 //  - null:                 Delete frame
@@ -311,8 +314,8 @@ class Reparse {
         // HACK: This is unintuitive. Who should be responsible to encode
         //       this? Maybe receive_MAIN and send_MAIN should do this? Or
         //       the handle() function?
-        const encoder = direction === "receive" ?
-            cocaco_encode_receive : cocaco_encode_send;
+        const encoder = direction === "receive" ? cocaco_encode_receive
+                                                : cocaco_encode_send;
         const encodedFrame = encoder(frame);
         return encodedFrame;
     }
@@ -383,7 +386,7 @@ class Reparse {
             debugger;
         }
         if (res === null) {
-            return { isDone: false };
+            return {isDone: false};
         }
         try {
             const ret = this.#callback(res, frame, reparse);
@@ -391,7 +394,7 @@ class Reparse {
         } catch (e) {
             console.error(`reparse.js: ❌ "${this.#name}" (#callback):`, e);
             debugger;
-            return { isDone: true };
+            return {isDone: true};
         }
     }
 
@@ -411,8 +414,7 @@ class Reparse {
                 // console.debug("🚫 Does not apply");
                 return null;
             }
-        }
-        catch (e) {
+        } catch (e) {
             console.error("Failed reparser #doesApply:", this.#name);
             throw e;
         }
@@ -421,8 +423,7 @@ class Reparse {
         try {
             entryPoint = this.#getEntryPoint(frame);
             // console.debug("Entry point: ", entryPoint);
-        }
-        catch (e) {
+        } catch (e) {
             Reparse.#logger.log("Failed reparser #getEntryPoint:", this.#name);
         }
         if (!entryPoint) {
@@ -444,7 +445,6 @@ class Reparse {
 // │ Predefined reparser helpers                                               │
 // ╰───────────────────────────────────────────────────────────────────────────╯
 
-
 /**
  * Predefined function for the '#parse' function of a 'Reparse' instance.
  * Returns groups with matching country codes.
@@ -465,7 +465,7 @@ function check_country_code(entryPoint) {
     let ret = [];
     for (let [code, players] of Object.entries(codes)) {
         if (players.length >= 2) {
-            ret.push({ code: code, players: players });
+            ret.push({code: code, players: players});
         }
     }
     return ret;
@@ -489,10 +489,13 @@ function check_development_cards(entryPoint) {
     // Ignore played cards
     for (let [player, usedAndUnused] of Object.entries(entryPoint.players)) {
         // If only the devs bought this turn are updated this is missing
-        if (!usedAndUnused) continue;
-        if (!usedAndUnused.developmentCards) continue;
+        if (!usedAndUnused)
+            continue;
+        if (!usedAndUnused.developmentCards)
+            continue;
         let devs = usedAndUnused.developmentCards.cards;
-        if (devs.length === 0) continue;
+        if (devs.length === 0)
+            continue;
         players[player] = devs;
     }
     res.players = players;

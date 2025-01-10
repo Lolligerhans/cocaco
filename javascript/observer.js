@@ -83,7 +83,7 @@ class Observer extends Trigger {
      *
      * @param {BuyPayload} param0
      */
-    buy({ player, object }) {
+    buy({player, object}) {
         let observation = {
             type: "buy",
             payload: {
@@ -104,7 +104,7 @@ class Observer extends Trigger {
      *
      * @param {CollusionStartPayload} param0
      */
-    collusionStart({ player, players }) {
+    collusionStart({player, players}) {
         let observation = {
             type: "collusionStart",
             payload: {
@@ -123,7 +123,7 @@ class Observer extends Trigger {
      *
      * @param {CollusionStopPayload} param0
      */
-    collusionStop({ player }) {
+    collusionStop({player}) {
         let observation = {
             type: "collusionStop",
             payload: {
@@ -152,7 +152,7 @@ class Observer extends Trigger {
      *
      * @param {CollusionAcceptancePayload} param0
      */
-    collusionAcceptance({ player, trade, accept }) {
+    collusionAcceptance({player, trade, accept}) {
         console.assert(typeof accept === "function");
         let observation = {
             type: "collusionAcceptance",
@@ -200,7 +200,7 @@ class Observer extends Trigger {
      *
      * @param {DiscardPayload} param0
      */
-    discard({ player, resources, limit = 7 }) {
+    discard({player, resources, limit = 7}) {
         console.assert(resources instanceof Resources);
         let observation = {
             type: "discard",
@@ -241,7 +241,7 @@ class Observer extends Trigger {
      *
      * @param {GotPayload} param0
      */
-    got({ player, resources }) {
+    got({player, resources}) {
         console.assert(resources instanceof Resources);
         let observation = {
             type: "got",
@@ -263,7 +263,7 @@ class Observer extends Trigger {
      *
      * @param {MonoPayload} param0
      */
-    mono({ player, resource, resources }) {
+    mono({player, resource, resources}) {
         console.assert(resources instanceof Resources);
         let observation = {
             type: "mono",
@@ -292,7 +292,7 @@ class Observer extends Trigger {
      *
      * @param {OfferPayload} param0
      */
-    offer({ offer, targets = [], isCounter = false }) {
+    offer({offer, targets = [], isCounter = false}) {
         console.assert(offer.giver !== null);
         // taker may be null for trade offers since there is no dedicated taker
         console.assert(offer.resources !== null);
@@ -315,7 +315,7 @@ class Observer extends Trigger {
      *
      * @param {RollPayload} param0
      */
-    roll({ player, number }) {
+    roll({player, number}) {
         console.assert(2 <= number && number <= 12);
         let observation = {
             type: "roll",
@@ -339,11 +339,11 @@ class Observer extends Trigger {
      *
      * @param {StartPayload} param0
      */
-    start({ us, players }) {
+    start({us, players}) {
         console.assert(players.size() === 4,
-            "Can remove this check when more players are intended");
+                       "Can remove this check when more players are intended");
         console.assert(players.name(us.name) !== null,
-            "We should participate in the game");
+                       "We should participate in the game");
         console.assert(players instanceof Players);
         let observation = {
             type: "start",
@@ -368,7 +368,7 @@ class Observer extends Trigger {
      *
      * @param {StealPayload} param0
      */
-    steal({ thief = null, victim = null, resource = null }) {
+    steal({thief = null, victim = null, resource = null}) {
         // Can leave out one of them, but not both.
         console.assert(thief || victim);
         let observation = {
@@ -412,7 +412,7 @@ class Observer extends Trigger {
      *
      * @param {TurnPayload} param0
      */
-    turn({ player, phase }) {
+    turn({player, phase}) {
         const observation = {
             type: "turn",
             payload: {
@@ -431,7 +431,7 @@ class Observer extends Trigger {
      *
      * @param {YopPayload} param0
      */
-    yop({ player, resources }) {
+    yop({player, resources}) {
         console.assert(resources instanceof Resources);
         console.assert(resources.sum() === 2);
         const observation = {
@@ -443,7 +443,6 @@ class Observer extends Trigger {
         };
         this.#observe(observation);
     }
-
 };
 
 // ╭───────────────────────────────────────────────────────────╮
@@ -453,12 +452,12 @@ class Observer extends Trigger {
 // These builders make it convenient to construct valid standard properties.
 // They are not meant to verify them thoroughly.
 
-Observer.property.players = function (players) {
+Observer.property.players = function(players) {
     console.assert(players.every(x => x instanceof Player));
     return players;
-}
+};
 
-Observer.property.trader = function (arg) {
+Observer.property.trader = function(arg) {
     if (arg === null) {
         return null;
     }
@@ -467,14 +466,14 @@ Observer.property.trader = function (arg) {
         return arg;
     }
     return arg;
-}
+};
 
-Observer.property.resource = function (arg) {
+Observer.property.resource = function(arg) {
     console.assert(Resources.names().includes(arg));
     return arg;
-}
+};
 
-Observer.property.transfer = function ({
+Observer.property.transfer = function({
     from = null,
     to = null,
     resources = new Resources(),
@@ -484,8 +483,8 @@ Observer.property.transfer = function ({
         from: Observer.property.trader(from),
         to: Observer.property.trader(to),
         resources: resources,
-    }
+    };
     // Sanity check: transfer between different players (allow both null)
     console.assert(transfer.from !== transfer.to || transfer.from === null);
     return transfer;
-}
+};

@@ -49,15 +49,14 @@ class MessageLog {
     constructor(chatElement = null) {
         this.init(chatElement);
     }
-
 }
 
-MessageLog.prototype.clear = function () {
+MessageLog.prototype.clear = function() {
     MessageLog.clear();
-}
+};
 
 // Defaults to global cocaco_config object
-MessageLog.prototype.init = function (chatElement) {
+MessageLog.prototype.init = function(chatElement) {
     this.chatElement = chatElement;
     this.loggers = [];
     for (const [key, value] of Object.entries(MessageLog.configOptions)) {
@@ -66,7 +65,7 @@ MessageLog.prototype.init = function (chatElement) {
         }
         console.log(`🥥 MessageLog: ${key} = ${cocaco_config[key]}`);
     }
-}
+};
 
 /**
  * If DOM logging is enabled:
@@ -76,45 +75,44 @@ MessageLog.prototype.init = function (chatElement) {
  *  - log to console (same content as DOM logging)
  * @param {[e:?HTMLElement, m:string, ...colouring]} args
  */
-MessageLog.prototype.log = function (...args) {
+MessageLog.prototype.log = function(...args) {
     if (this.enabled === false) {
         return;
     }
     for (const l of this.loggers) {
         l.call(this, ...args);
     }
-}
+};
 
-MessageLog.prototype.logChat = function (...args) {
+MessageLog.prototype.logChat = function(...args) {
     if (this.chatElement == null) {
         return;
     }
     const element = MessageLog.styledElement(...args);
     this.chatElement.appendChild(element);
     element.scrollIntoView(); // Does nothing (?)
-}
+};
 
-MessageLog.prototype.logConsole = function (_messageElement, ...args) {
+MessageLog.prototype.logConsole = function(_messageElement, ...args) {
     // Drop the first argument which is the DOM message element
     console.log(...args);
-}
+};
 
 // Switch between logMessage() and logChat() depending on the presence of
 // a message element. Results in a DOM element being added somewhere.
-MessageLog.prototype.logDom = function (messageElement, ...args) {
+MessageLog.prototype.logDom = function(messageElement, ...args) {
     if (messageElement)
         this.logMessage(messageElement, ...args);
     else
         this.logChat(...args);
-}
+};
 
-MessageLog.prototype.logMessage = function (messageElement, ...args) {
+MessageLog.prototype.logMessage = function(messageElement, ...args) {
     const element = MessageLog.styledElement(...args);
     messageElement.appendChild(element);
-}
+};
 
-MessageLog.configOptions =
-{
+MessageLog.configOptions = {
     // These keys must be in the global cocaco_config element
     "logConsole": MessageLog.prototype.logConsole,
     "logDom": MessageLog.prototype.logDom,

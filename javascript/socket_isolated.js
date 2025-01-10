@@ -11,13 +11,11 @@ let WebSocket_MAIN = null;
  * @param {WebSocket} object
  */
 function setWebSocket_MAIN(object) {
-    console.assert(
-        WebSocket_MAIN === null,
-        "Objects should start uninitialized",
-    );
+    console.assert(WebSocket_MAIN === null,
+                   "Objects should start uninitialized");
     console.assert(object != null);
     WebSocket_MAIN = object;
     console.log("🛜 WebSocket_MAIN imported");
 }
 
-exportFunction(setWebSocket_MAIN, window, { defineAs: "setWebSocket_MAIN" });
+exportFunction(setWebSocket_MAIN, window, {defineAs: "setWebSocket_MAIN"});

@@ -16,8 +16,10 @@ class Colonist {
      * Remove some HTMLElements on a best effort basis. Its ok if this fails.
      */
     static deleteSomeElements() {
-        const ids = ["remove_ad_in_game_left", "remove_ad_in_game_right",
-            "in_game_ab_right", "in_game_ab_left"];
+        const ids = [
+            "remove_ad_in_game_left", "remove_ad_in_game_right",
+            "in_game_ab_right", "in_game_ab_left"
+        ];
         for (const id of ids) {
             let e = document.getElementById(id);
             if (e) {
@@ -71,16 +73,14 @@ class Colonist {
         }
         if (this.chatElement) {
             if (Colony.enlarger) {
-                this.chatElement.removeEventListener(
-                    "click", Colony.enlarger, false,
-                );
+                this.chatElement.removeEventListener("click", Colony.enlarger,
+                                                     false);
                 Colony.enlarger = null;
             }
             if (cocaco_config.largeLog) {
                 Colony.enlarger = enlarge.bind(null, this.logElement);
-                this.chatElement.addEventListener(
-                    "click", Colony.enlarger, false,
-                );
+                this.chatElement.addEventListener("click", Colony.enlarger,
+                                                  false);
             }
         }
 
@@ -96,11 +96,12 @@ class Colonist {
      */
     findName() {
         if (!cocaco_config.replay) {
-            this.playerUsernameElement = document.getElementById(
-                "header_profile_username");
-            this.playerUsername = deepCopy(this.playerUsernameElement.textContent);
+            this.playerUsernameElement =
+                document.getElementById("header_profile_username");
+            this.playerUsername =
+                deepCopy(this.playerUsernameElement.textContent);
             console.assert(this.playerUsernameElement !== null,
-                "playerUsernameElement should always be present");
+                           "playerUsernameElement should always be present");
         }
         if (cocaco_config.fixedPlayerName === true) {
             this.playerUsername = cocaco_config.playerName;
@@ -131,22 +132,20 @@ class Colonist {
         Reparse.register(
             "receive",
             "Colonist match countries",
-            Reparse.applyDoers.byKind({ type: [4] }),
+            Reparse.applyDoers.byKind({type: [4]}),
             Reparse.entryPoints.playerUserStates,
             check_country_code,
             groups => {
                 let any = false;
                 for (let group of groups) {
-                    this.logger.log(
-                        this.chatElement,
-                        `${group.code}: ${group.players}`,
-                    );
+                    this.logger.log(this.chatElement,
+                                    `${group.code}: ${group.players}`);
                     any = true;
                 }
                 if (any === false) {
                     this.logger.log(this.chatElement, "No country matches");
                 }
-                return { isDone: true };
+                return {isDone: true};
             },
         );
 
@@ -159,64 +158,55 @@ class Colonist {
          * @param {Number} colourIndex
          * @return {string} Player name corresponding to the given colour
          */
-        let getPlayerName = function (colourIndex) {
+        let getPlayerName = function(colourIndex) {
             if (playerUserStates === null) {
-                console.error("getPlayerName called before setting playerUserStates");
+                console.error(
+                    "getPlayerName called before setting playerUserStates");
                 return "<unknown>"; // Only used for display so return something
             }
             // Two equal signs to compare with string type colourIndex
-            const player = playerUserStates.find(
-                x => x.selectedColor == colourIndex);
-            console.assert(
-                player !== undefined,
-                "colour index should be available",
-            );
+            const player =
+                playerUserStates.find(x => x.selectedColor == colourIndex);
+            console.assert(player !== undefined,
+                           "colour index should be available");
             return player.username;
         };
 
         // Gets a copy of the playerUserStates used as lookup for the dev spy
-        Reparse.register(
-            "receive",
-            "Colonist set playerUserStates",
-            Reparse.applyDoers.byKind({ type: [4], id: "130" }),
-            Reparse.entryPoints.playerUserStates,
-            state => state,
-            state => {
-                playerUserStates = state;
-                // console.info("playerUserStates:", playerUserStates);
-                return { isDone: false };
-            }
-        );
+        Reparse.register("receive", "Colonist set playerUserStates",
+                         Reparse.applyDoers.byKind({type: [4], id: "130"}),
+                         Reparse.entryPoints.playerUserStates, state => state,
+                         state => {
+                             playerUserStates = state;
+                             // console.info("playerUserStates:", playerUserStates);
+                             return {isDone: false};
+                         });
 
         Reparse.register(
-            "receive",
-            "Colonist dev spy",
-            Reparse.applyDoers.byKind({ type: [4, 91], id: "130" }),
-            Reparse.entryPoints.developmentCardsState,
-            check_development_cards,
+            "receive", "Colonist dev spy",
+            Reparse.applyDoers.byKind({type: [4, 91], id: "130"}),
+            Reparse.entryPoints.developmentCardsState, check_development_cards,
             cards => {
                 if (Object.hasOwn(cards, "bank")) {
-                    const names = cards.bank.map(
-                        card => Colony.enumNames.devcards[card],
-                    );
+                    const names =
+                        cards.bank.map(card => Colony.enumNames.devcards[card]);
                     const icons = names.map(name => utf8Symbols[name]);
                     const show = `Bank: ${icons.join("")}`;
                     // console.debug(show);
                     this.logger.log(this.chatElement, show);
                 }
-                for (let [index, player_cards] of Object.entries(cards.players)) {
+                for (let [index, player_cards] of Object.entries(
+                         cards.players)) {
                     const names = player_cards.map(
-                        card => Colony.enumNames.devcards[card],
-                    );
+                        card => Colony.enumNames.devcards[card]);
                     const icons = names.map(name => utf8Symbols[name]);
                     const playerName = getPlayerName(index);
                     const show = `${playerName}: ${icons.join("")}`;
                     // console.debug(show);
                     this.logger.log(this.chatElement, show);
                 }
-                return { isDone: false };
-            }
-        );
+                return {isDone: false};
+            });
 
         return true; // Register only once
     }
@@ -237,19 +227,19 @@ class Colonist {
                 if (x.message && x.message.action && x.message.action === 0) {
                     console.debug("❗ Chat message found");
                 }
-                return { isDone: false };
+                return {isDone: false};
             },
         );
 
         Reparse.register(
             "send",
             "Test getting chat actions",
-            Reparse.applySend.byType({ v0: 3, v1: 1, action: 0, }),
+            Reparse.applySend.byType({v0: 3, v1: 1, action: 0}),
             Reparse.entryPointsSend.payload,
             x => x,
             str => {
                 console.debug("🗨️", str);
-                return { isDone: false };
+                return {isDone: false};
             },
         );
 
@@ -291,11 +281,7 @@ class Colonist {
     setupState() {
         this.source = new ColonistSource();
         this.observer = new ColonistObserver(this.source, this.resender);
-        this.state = new State(
-            this.observer,
-            this.resender,
-            this.chatElement,
-        );
+        this.state = new State(this.observer, this.resender, this.chatElement);
 
         // HACK: Supply playerUsername manually instead of reparsing
         this.source.setPlayerUsername(this.playerUsername);
@@ -312,15 +298,18 @@ class Colonist {
     start() {
         // Execute these tasks in order. Repeat each task until returning true.
         let tasks = [
-            { name: "Reset", funct: () => this.reset() },
-            { name: "Parse Home DOM", funct: () => this.findName() },
-            { name: "Parse Game DOM", funct: () => this.findElements() },
-            { name: "Resender setup", funct: () => this.startResender() },
-            { name: "Receive reparsers", funct: () => this.registerReceiveReparsers() },
-            { name: "Send reparsers", funct: () => this.registerSendReparsers() },
-            { name: "State setup", funct: () => this.setupState() },
-            { name: "Clear log", funct: () => this.clearLog() },
-            { name: "WebSocket ready", funct: () => this.webSocketReady() },
+            {name: "Reset", funct: () => this.reset()},
+            {name: "Parse Home DOM", funct: () => this.findName()},
+            {name: "Parse Game DOM", funct: () => this.findElements()},
+            {name: "Resender setup", funct: () => this.startResender()},
+            {
+                name: "Receive reparsers",
+                funct: () => this.registerReceiveReparsers()
+            },
+            {name: "Send reparsers", funct: () => this.registerSendReparsers()},
+            {name: "State setup", funct: () => this.setupState()},
+            {name: "Clear log", funct: () => this.clearLog()},
+            {name: "WebSocket ready", funct: () => this.webSocketReady()},
         ];
         executeWithRetries(tasks);
     }
@@ -339,9 +328,7 @@ class Colonist {
             // TEST: This block is for testing only
             if (cocaco_config.replay === false) {
                 // May not have a log element in replay mode
-                const runTest = () => {
-                    this.resender.test();
-                };
+                const runTest = () => { this.resender.test(); };
 
                 this.logElement.addEventListener("click", runTest, false);
             } else if (cocaco_config.resendTestOnClick === true) {
@@ -365,5 +352,4 @@ class Colonist {
         }
         return true;
     }
-
 }

@@ -78,34 +78,27 @@ class Resend {
     constructor() {
         console.assert(
             Reparse.reparserCount() === 0,
-            "Resend should be constructed before registering other reparsers",
-        );
+            "Resend should be constructed before registering other reparsers");
         console.assert(socketsReady === false);
         console.assert(
             Resend.instanceCount === 0,
-            "Multiple instances interfere with their sequence numbers",
-        );
+            "Multiple instances interfere with their sequence numbers");
 
-        this.logger.log(
-            "Resend: constructing instance",
-            Resend.instanceCount++,
-        );
+        this.logger.log("Resend: constructing instance",
+                        Resend.instanceCount++);
 
         this.defaultAdjustSequence = (frame) => {
             console.assert(frame.message.sequence,
-                "We expect all frames to have sequencec numbers");
+                           "We expect all frames to have sequencec numbers");
             console.assert(
                 this.sequence !== null,
-                "Must have seen the first real sequence nuber first",
-            );
+                "Must have seen the first real sequence nuber first");
             const chosenSequence = this.expectedSequence();
-            this.logger.log(
-                "Resend: Choosing sequence", chosenSequence,
-                `(was ${frame.message.sequence})`
-            );
+            this.logger.log("Resend: Choosing sequence", chosenSequence,
+                            `(was ${frame.message.sequence})`);
             frame.message.sequence = chosenSequence;
             ++this.injectionOffset;
-        }
+        };
 
         // If we do not register Resend as the first reparsers we may be unable
         // to send messages immediately when reparsing them (because resend my
@@ -149,16 +142,13 @@ class Resend {
     checkSequcence(sequence) {
         const correct = sequence === this.expectedSequence();
         const printWrong = () => {
-            console.warn(
-                "Resend is out of sync:", sequence,
-                `(frame) !== (expected)`, this.expectedSequence(),
-            );
+            console.warn("Resend is out of sync:", sequence,
+                         `(frame) !== (expected)`, this.expectedSequence());
         };
         const printCorrect = () => {
             this.logger.log(
                 `Resend sequence OK: ${sequence}` +
-                `(frame) === (expected) ${this.expectedSequence()}`,
-            );
+                `(frame) === (expected) ${this.expectedSequence()}`);
         };
         if (correct) {
             if (sequence % cocaco_config.printResendSequence === 0) {
@@ -212,10 +202,7 @@ class Resend {
      * be specified by 'ReparseOptions'. For regular injection the default is
      * fine.
      */
-    sendFrame(
-        frame,
-        reparseOptions = new ReparseOptions(),
-    ) {
+    sendFrame(frame, reparseOptions = new ReparseOptions()) {
         // Currently users should use sendMessage because we expect only 3-1
         // frames.
         // Currently we expect no adjustSequence, but is valid in principle.
@@ -249,10 +236,8 @@ class Resend {
             return;
         }
         // console.debug("Constructing new 3-1 frame for message =", message);
-        this.sendFrame(
-            { v0: 3, v1: 1, str: this.serverId, message: message },
-            reparseOptions,
-        );
+        this.sendFrame({v0: 3, v1: 1, str: this.serverId, message: message},
+                       reparseOptions);
     }
 
     /**
@@ -271,7 +256,6 @@ class Resend {
         };
         this.sendMessage(message);
     }
-
 };
 
 /**
@@ -281,19 +265,19 @@ class Resend {
  * continue with its own sequence number, lagging behind the sequence number
  * expected from the outside.
  */
-Resend.prototype.registerSequenceCorrector = function () {
+Resend.prototype.registerSequenceCorrector = function() {
     Reparse.register(
         "send",
         "Resend-SequenceCorrector",
-        Reparse.applySend.byType({ v0: 3, v1: 1 }),
+        Reparse.applySend.byType({v0: 3, v1: 1}),
         Reparse.entryPointsSend.message,
         message => message,
         (message, frame, reparse) => {
             if (reparse.native === false) {
-                return { isDone: false };
+                return {isDone: false};
             }
             if (this.injectionOffset === 0) {
-                return { isDone: false };
+                return {isDone: false};
             }
             if (message.action === 68) {
                 // Sequence injection should prevent this from happening. If
@@ -301,8 +285,9 @@ Resend.prototype.registerSequenceCorrector = function () {
                 this.serverId = message.payload;
                 this.sequence = message.sequence;
                 this.injectionOffset = 0;
-                console.error("resend.js: 🔁 Resetting sequence", this.sequence);
-                return { isDone: false };
+                console.error("resend.js: 🔁 Resetting sequence",
+                              this.sequence);
+                return {isDone: false};
             }
             console.assert(message.sequence === this.regularSequence());
             if (!(message.sequence === this.regularSequence())) {
@@ -311,10 +296,9 @@ Resend.prototype.registerSequenceCorrector = function () {
             const newSequence = this.expectedSequence();
             this.logger.log(
                 `resend.js: Correcting sequence ${message.sequence} 🔀`,
-                newSequence,
-            );
+                newSequence);
             message.sequence = deepCopy(newSequence);
-            return { isDone: false, frame: frame };
+            return {isDone: false, frame: frame};
         },
     );
 };
@@ -325,36 +309,31 @@ Resend.prototype.registerSequenceCorrector = function () {
  * Also verifies the correctness of later sequence numbers, but that is not very
  * useful at the moment.
  */
-Resend.prototype.registerSequenceCounter = function () {
+Resend.prototype.registerSequenceCounter = function() {
     const callback = (sequence, _frame, reparseOptions) => {
         if (this.abort()) {
-            return { isDone: true };
+            return {isDone: true};
         }
         if (reparseOptions.native === false) {
-            return { isDone: false };
+            return {isDone: false};
         }
         if (this.sequence === null) {
             this.sequence = sequence + 1;
-            this.logger.log(
-                "Resend: Starting expected sequence:", this.sequence,
-            );
-            return { isDone: false };
+            this.logger.log("Resend: Starting expected sequence:",
+                            this.sequence);
+            return {isDone: false};
         }
         const correctSequence = this.checkSequcence(sequence);
         if (!correctSequence) {
             this.abort(true);
         }
         ++this.sequence;
-        return { isDone: false };
+        return {isDone: false};
     };
-    Reparse.register(
-        "send",
-        "Resend-SequenceCounter",
-        Reparse.applySend.byType({ v0: 3, v1: 1 }),
-        Reparse.entryPointsSend.message,
-        message => message.sequence,
-        callback,
-    );
+    Reparse.register("send", "Resend-SequenceCounter",
+                     Reparse.applySend.byType({v0: 3, v1: 1}),
+                     Reparse.entryPointsSend.message,
+                     message => message.sequence, callback);
 };
 
 // Resend.prototype.registerChatMuter = function () {
@@ -392,35 +371,35 @@ Resend.prototype.registerSequenceCounter = function () {
  *
  * Before the server ID was found, no frames can be sent.
  */
-Resend.prototype.registerServerId = function () {
+Resend.prototype.registerServerId = function() {
     Reparse.register(
         "send",
         "Resend-ServerId",
-        Reparse.applySend.byType({ v0: 3, v1: 1 }),
+        Reparse.applySend.byType({v0: 3, v1: 1}),
         frame => frame,
         frame => frame.str,
         str => {
             if (this.abort()) {
-                return { isDone: true };
+                return {isDone: true};
             }
             if (this.serverId === null) {
                 this.serverId = str;
                 this.logger.log("Resend: Server ID set to:", str);
-                return { isDone: false };
+                return {isDone: false};
             }
             const isConsistent = this.serverId === str;
             if (isConsistent) {
-                return { isDone: false };
+                return {isDone: false};
             }
-            console.error("Resend inconsistent str:",
-                str, "!==", this.serverId);
+            console.error("Resend inconsistent str:", str,
+                          "!==", this.serverId);
             this.abort(true);
-            return { isDone: true };
+            return {isDone: true};
         },
     );
 };
 
-Resend.prototype.registerChatEcho = function () {
+Resend.prototype.registerChatEcho = function() {
     Reparse.register(
         "send",
         "Resend-ChatEcho",
@@ -429,40 +408,36 @@ Resend.prototype.registerChatEcho = function () {
         message => message,
         (message, frame, reparse) => {
             if (cocaco_config.echo === false) {
-                return { isDone: true };
+                return {isDone: true};
             }
             if (this.abort()) {
-                return { isDone: true };
+                return {isDone: true};
             }
             if (reparse.native === false) {
                 console.debug("😄 Skipping injected message:", message);
-                return { isDone: false, frame: frame };
+                return {isDone: false, frame: frame};
             }
             if (message.action == null) {
-                return { isDone: false };
+                return {isDone: false};
             }
             if (message.action !== 0) {
-                return { isDone: false };
+                return {isDone: false};
             }
 
             const copy = deepCopy(frame);
             copy.message.payload += "+";
             this.sendFrame(
-                copy,
-                new ReparseOptions({ native: false, doReaprse: true }),
-            );
+                copy, new ReparseOptions({native: false, doReaprse: true}));
 
             const copy2 = deepCopy(frame);
             copy2.message.payload += "(+)";
             this.sendFrame(
-                copy2,
-                new ReparseOptions({ native: false, doReaprse: false }),
-            );
+                copy2, new ReparseOptions({native: false, doReaprse: false}));
 
             message.payload += "_";
             console.debug("Modifying chat to:", message.sequence, "=", message);
             // this.sendMessage(message);
-            return { isDone: false, frame: frame };
+            return {isDone: false, frame: frame};
         },
     );
 };

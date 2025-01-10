@@ -56,9 +56,8 @@ class ColonistTrade {
      */
     #cleanup() {
         const filterTrades = trades => {
-            const closedTrades = Object.keys(trades).filter(
-                key => trades[key] == null,
-            );
+            const closedTrades =
+                Object.keys(trades).filter(key => trades[key] == null);
             closedTrades.forEach(key => delete trades[key]);
         };
         filterTrades(this.#tradeState.activeOffers ?? {});
@@ -134,7 +133,9 @@ class ColonistTrade {
         if (trade.counterOfferInResponseToTradeId != null) {
             ret = this.creatorOfTradeId(trade.counterOfferInResponseToTradeId);
         }
-        if (ret == null) { ColonistTrade.#printWarn("noCreator"); }
+        if (ret == null) {
+            ColonistTrade.#printWarn("noCreator");
+        }
         return ret;
     }
 
@@ -171,12 +172,10 @@ class ColonistTrade {
          */
         const generateEmbargoes = ([playerId, playerEmbargoState]) => {
             playerEmbargoState.activeEmbargosAgainst.forEach(
-                v => ret.push([Number.parseInt(playerId), v]),
-            );
+                v => ret.push([Number.parseInt(playerId), v]));
         };
-        Object.entries(this.#tradeState.embargoState).forEach(
-            generateEmbargoes,
-        );
+        Object.entries(this.#tradeState.embargoState)
+            .forEach(generateEmbargoes);
         return ret;
     }
 
@@ -215,14 +214,14 @@ class ColonistTrade {
      */
     reset(tradeState) {
         this.#newTrades.clear();
-        Object.keys(tradeState.activeOffers).forEach(
-            key => this.#newTrades.add(key)
-        );
+        Object.keys(tradeState.activeOffers)
+            .forEach(key => this.#newTrades.add(key));
         this.#tradeState = structuredClone(tradeState);
         this.#cleanup();
         // Only add embargoes if the input object contained them
-        const embargoes = Object.hasOwn(tradeState, "embargoState") ?
-            this.#getEmbargoes() : [];
+        const embargoes = Object.hasOwn(tradeState, "embargoState")
+                              ? this.#getEmbargoes()
+                              : [];
         return [this.#getNewTrades(), embargoes];
     }
 
@@ -236,33 +235,27 @@ class ColonistTrade {
                 console.warn(
                     "Expecting to find trade in the tradeState",
                     "This may happen when starting in the middle of a game",
-                    ...args,
-                );
+                    ...args);
                 break;
             case "noCreator":
                 debugger;
                 console.warn(
                     "Trade without creator.",
-                    "This may happen when starting in the middle of a game.",
-                );
+                    "This may happen when starting in the middle of a game.");
                 break;
             case "noCreatorLookup":
                 console.warn(
                     `Creator of trade ${args} not found.`,
-                    "This may happen when starting in the middle of a game.",
-                );
+                    "This may happen when starting in the middle of a game.");
                 break;
             case "nullTrade":
                 console.warn(
                     "Unexpected null trade.",
-                    "This may happen when starting in the middle of a game.",
-                );
+                    "This may happen when starting in the middle of a game.");
                 break;
             case "reusedTradeId":
-                console.error(
-                    "A trade ID from an earlier round was re-used:",
-                    ...args,
-                );
+                console.error("A trade ID from an earlier round was re-used:",
+                              ...args);
                 break;
             case "testGeneration":
                 console.error("Inconsistent creator", ...args);
@@ -271,11 +264,9 @@ class ColonistTrade {
                 console.warn(
                     "Trade unknown.",
                     "This may happen when starting in the middle of a game.",
-                    ...args,
-                );
+                    ...args);
                 break;
-            default:
-                console.assert(false, "No known warning reason:", reason);
+            default: console.assert(false, "No known warning reason:", reason);
         }
     }
 
@@ -298,9 +289,8 @@ class ColonistTrade {
      */
     update(tradeState) {
         this.#newTrades.clear();
-        Object.entries(tradeState.activeOffers ?? {}).forEach(
-            ([tradeId, trade]) => this.#updateTrade(tradeId, trade)
-        );
+        Object.entries(tradeState.activeOffers ?? {})
+            .forEach(([tradeId, trade]) => this.#updateTrade(tradeId, trade));
         this.#tradeState = combineObject(this.#tradeState, tradeState);
         this.#cleanup();
         const newTrades = this.#getNewTrades();
@@ -311,15 +301,14 @@ class ColonistTrade {
         }
 
         // Only add embargoes if the input object contained them
-        const embargoes = Object.hasOwn(tradeState, "embargoState") ?
-            this.#getEmbargoes() : null;
+        const embargoes = Object.hasOwn(tradeState, "embargoState")
+                              ? this.#getEmbargoes()
+                              : null;
 
-        this.#logger.log(
-            `Trade: new=${Object.keys(newTrades).length},`,
-            `active=${this.countActiveTrades()},`,
-            `closed=${this.countClosedTrades()},`,
-            `old=${this.countOldTrades()}`,
-        );
+        this.#logger.log(`Trade: new=${Object.keys(newTrades).length},`,
+                         `active=${this.countActiveTrades()},`,
+                         `closed=${this.countClosedTrades()},`,
+                         `old=${this.countOldTrades()}`);
         return [newTrades, embargoes];
     }
 
@@ -347,5 +336,4 @@ class ColonistTrade {
         let actualCreator = this.#extractCreator(trade);
         this.#creators[tradeId] = actualCreator;
     }
-
 }

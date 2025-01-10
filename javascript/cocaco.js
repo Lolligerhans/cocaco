@@ -16,17 +16,17 @@ setInterval(() => {
         document.body.prepend(backgroundIcon);
 }, 3000);
 
-
 let e = document.getElementById("header_navigation_store");
 if (e !== null)
     e.textContent = "(🥥 Cocaco " + version_string + ")";
-e = document.querySelector(".betaTag")
+e = document.querySelector(".betaTag");
 if (e !== null)
     e.textContent = "🥥 Cocaco " + version_string;
 
 const alternativeAssets = {
     // Missing assets for non-base game modes.
     // Alternatives at 408f1c219dc04fb8746541fed624e6d4026aaaac
+    // clang-format off
     wood: `<img alt="wood" src="${theBrowser.runtime.getURL("assets/wood31.jpg")}" class="cocaco-tbl-resource-icon"/>`,
     brick: `<img alt="brick" src="${theBrowser.runtime.getURL("assets/brick24.jpg")}" class="cocaco-tbl-resource-icon"/>`,
     sheep: `<img alt="sheep" src="${theBrowser.runtime.getURL("assets/sheep1.jpg")}" class="cocaco-tbl-resource-icon"/>`,
@@ -41,6 +41,7 @@ const alternativeAssets = {
     settlement: `<img alt="settlement" src="${theBrowser.runtime.getURL("assets/settle7.jpg")}" class="cocaco-tbl-resource-icon"/>`,
     devcard: `<img alt="devcard" src="${theBrowser.runtime.getURL("assets/dev4.jpg")}" class="cocaco-tbl-resource-icon"/>`,
     city: `<img alt="city" src="${theBrowser.runtime.getURL("assets/city23.jpg")}" class="cocaco-tbl-resource-icon"/>`
+    // clang-format on
 };
 
 /**
@@ -53,8 +54,7 @@ function colourInterpolate(zeroToOne) {
         // Warn about invalid inputs even though we correct them. We do not mean
         // to input invalid numbers.
         0 <= zeroToOne && zeroToOne <= 1,
-        "Interfṕolation factor should be between 0 and 1",
-    );
+        "Interfṕolation factor should be between 0 and 1");
     // Clamp to hedge against inaccurate floats
     zeroToOne = clampProbability(zeroToOne);
     if (zeroToOne < 0.5) {
@@ -70,10 +70,13 @@ function colourInterpolate(zeroToOne) {
 }
 
 let facTorialArray = [];
+
 function factorial(x) {
     // We just hope that we do not overflow
-    if (x < 2) return 1;
-    if (facTorialArray[x] > 0) return facTorialArray[x];    // (undefined > 0) === false
+    if (x < 2)
+        return 1;
+    if (facTorialArray[x] > 0)
+        return facTorialArray[x]; // (undefined > 0) === false
     return facTorialArray[x] = x * factorial(x - 1);
 }
 
@@ -94,9 +97,8 @@ function choose(n, k) {
  * Categorical distribution represented by array of probabilities
  */
 function klDivergence(p, q) {
-    const kl = p
-        .map((x, i) => x === 0 ? 0 : (x * Math.log(x / q[i])))
-        .reduce((a, b) => a + b, 0);
+    const kl = p.map((x, i) => x === 0 ? 0 : (x * Math.log(x / q[i])))
+                   .reduce((a, b) => a + b, 0);
     return kl;
 }
 
@@ -144,10 +146,9 @@ function setDoInterval(repeat, time, then = null) {
     //console.debug("⏱ waiting before continuing setDoInterval of", repeat.name);
     setTimeout(
         setDoInterval, time, // Callback, time
-        repeat, time, then // Arguments to be used for callback
+        repeat, time, then   // Arguments to be used for callback
     );
 }
-
 
 /**
  * @typedef {Object} Task
@@ -177,18 +178,13 @@ function executeWithRetries(tasks, retryTime = 3000) {
         if (task.done) {
             continue;
         }
-        console.log(
-            `🧭 ( ${i} ) executeWithRetries:`,
-            task.name ?? task.funct.name
-        );
+        console.log(`🧭 ( ${i} ) executeWithRetries:`,
+                    task.name ?? task.funct.name);
         // Assume we will succeed and remember for when we come back
         task.done = true;
-        setDoInterval(
-            task.funct,
-            retryTime,
-            // Recurse
-            executeWithRetries.bind(null, tasks),
-        );
+        setDoInterval(task.funct, retryTime,
+                      // Recurse
+                      executeWithRetries.bind(null, tasks));
         // The program flow continues in the setDoInterval()
         return;
     }
@@ -215,6 +211,7 @@ function resize(element, w = 1000, h = 800) {
     element.style.width = `${w}px`;
     element.style.height = `${h}px`;
 }
+
 const enlarge = (e) => resize(e);
 const setHidden = (flag, ...rest) => {
     if (flag === true)
@@ -223,18 +220,22 @@ const setHidden = (flag, ...rest) => {
         unhide(...rest);
 };
 const hide = (...rest) => rest.forEach(e => {
-    if (e) e.classList.add("cocaco-hidden");
+    if (e)
+        e.classList.add("cocaco-hidden");
 });
 const unhide = (...rest) => rest.forEach(e => {
-    if (e) e.classList.remove("cocaco-hidden")
+    if (e)
+        e.classList.remove("cocaco-hidden")
 });
 
 function log(...args) {
     console.log(...args);
 }
+
 function logs(...args) {
     log(...args.map(x => JSON.stringify(x)));
 }
+
 function log2(...args) {
     log(...args);
     logs(...args);
@@ -304,11 +305,8 @@ function rotateToLastPosition(array, value) {
     const pos = array.indexOf(value);
     if (pos < 0) {
         // Expected when spectating
-        console.warn("Could not rotate to last position:",
-            value,
-            "not found in",
-            array
-        );
+        console.warn("Could not rotate to last position:", value,
+                     "not found in", array);
         return array;
     }
     const rotation = array.length - pos - 1;
@@ -342,28 +340,23 @@ function alertIf(message) {
  * Predefined predicates to be used for resource-guessing
  */
 const predicates = {
-    "<":
-    {
+    "<": {
         "f": (x) => { return (y) => y < x; },
         "name": (x) => `< ${x}`,
     },
-    ">":
-    {
+    ">": {
         "f": (x) => { return (y) => y > x; },
         "name": (x) => `> ${x}`,
     },
-    ">=":
-    {
+    ">=": {
         "f": (x) => { return (y) => y >= x; },
         "name": (x) => `>= ${x}`,
     },
-    "<=":
-    {
+    "<=": {
         "f": (x) => { return (y) => y <= x; },
         "name": (x) => `<= ${x}`,
     },
-    "!":
-    {
+    "!": {
         "f": (x) => { return (y) => y != x; },
         "name": (x) => `!= ${x}`,
     },
@@ -374,14 +367,17 @@ const predicates = {
  */
 function verifyPlayers(players_array, p1 = null, p2 = null) {
     if (p1 === null && p2 === null) {
-        console.error(`${verifyPlayers.name}: Must specify at least one player`);
+        console.error(
+            `${verifyPlayers.name}: Must specify at least one player`);
         debugger;
         return false;
     }
     for (const p of [p1, p2]) {
-        if (p === null) continue;
+        if (p === null)
+            continue;
         if (!players_array.includes(p)) {
-            console.error(`${verifyPlayers.name}: {Unknown player: ${p}, valid players: ${players_array}`);
+            console.error(`${verifyPlayers.name}: {Unknown player: ${
+                p}, valid players: ${players_array}`);
             return false;
         }
     }
@@ -404,7 +400,8 @@ function allTests() {
     //console.info("● [🌎] ManyWorlds old test done (starts debugger when failing)");
     let tmp = new ManyWorlds();
     tmp.worldTest();
-    console.info("● [🌎] ManyWorlds new test over (starts debugger when failing)");
+    console.info(
+        "● [🌎] ManyWorlds new test over (starts debugger when failing)");
 
     //console.info("● [🌎] Both tests done. Exiting.");
     return
@@ -434,20 +431,18 @@ function main() {
             colonist.start();
         } else {
             console.assert(cocaco_config.pipeline === "Colony",
-                "Only valid pipelines")
+                           "Only valid pipelines")
             console.log("🥥 Running Colony on colonist.io");
             let colony = new Colony();
             colony.restartTracker();
         }
-    }
-    else if (window.location.hostname === "twosheep.io") {
+    } else if (window.location.hostname === "twosheep.io") {
         // Twosheep broke long ago and we never bothered to bring it back. Could
         // be resurrected relatively easily.
         console.log("🥥 Running twosheep on twosheep.io");
         console.assert(window.location.hostname === "twosheep.io");
         twosheep.restartTracker();
-    }
-    else {
+    } else {
         console.assert(false, "Should only run on a Catan website");
     }
 }
@@ -461,7 +456,7 @@ function main() {
 let handledCount = 0;
 let ackTime = Date.now();
 
-let portToBackground = theBrowser.runtime.connect({ name: "dump-port" });
+let portToBackground = theBrowser.runtime.connect({name: "dump-port"});
 // console.debug("cocaco.js: Connected:", portToBackground);
 portToBackground.onDisconnect.addListener(() => {
     console.log("cocaco.js: Disconnected from background script");
@@ -469,7 +464,8 @@ portToBackground.onDisconnect.addListener(() => {
 });
 portToBackground.onMessage.addListener((message) => {
     console.assert(message.type, "Sanity check");
-    console.assert(message.type === "ack", "Only ack messages should go this direction");
+    console.assert(message.type === "ack",
+                   "Only ack messages should go this direction");
     console.debug(`Background: Ack ${message.payload} / ${handledCount}`);
     if (Math.abs(handledCount - message.payload) > 100) // Arbitrary value
         cosole.warn("cocaco.js: Background out of sync");
@@ -491,15 +487,17 @@ function acknowledge() {
 }
 
 let doDump = cocaco_config.dump;
+
 function dumpEvent(event) {
-    if (doDump[event.direction]) try {
-        portToBackground.postMessage({ type: "dump", payload: event.frame });
-        acknowledge();
-    } catch (e) {
-        console.error("Dump", event.direction, "failed:", e);
-        console.warn("Dump", event.direction, "off");
-        doDump[event.direction] = false;
-    }
+    if (doDump[event.direction])
+        try {
+            portToBackground.postMessage({type: "dump", payload: event.frame});
+            acknowledge();
+        } catch (e) {
+            console.error("Dump", event.direction, "failed:", e);
+            console.warn("Dump", event.direction, "off");
+            doDump[event.direction] = false;
+        }
 }
 
 function dispatch(event) {
@@ -509,18 +507,13 @@ function dispatch(event) {
         return undefined;
     }
     try {
-        let ret = Reparse.applyAll(
-            event.direction,
-            event.frame,
-            event.reparse,
-        );
+        let ret = Reparse.applyAll(event.direction, event.frame, event.reparse);
         return ret;
     } catch (e) {
         // This is generally not meant to fire. Reparse has its own level of
         // try-catch that disables throwing reparsers.
-        console.error(
-            "Error reparsing", event.direction, "frame:", event.frame, e,
-        );
+        console.error("Error reparsing", event.direction, "frame:", event.frame,
+                      e);
     }
 }
 
@@ -586,9 +579,7 @@ function post_handle() {
         const event = outgoing.take();
         injectionLogger.log("Inject", event);
         switch (event.direction) {
-            case "receive":
-                console.assert(false, "Not implemented");
-                break;
+            case "receive": console.assert(false, "Not implemented"); break;
             case "send":
                 event.reparseOptions.adjustSequence(event.frame);
                 const encodedFrame = cocaco_encode_send(event.frame);
@@ -597,13 +588,9 @@ function post_handle() {
                     break;
                 }
                 WebSocket_MAIN.wrappedJSObject.send(
-                    cloneInto(encodedFrame, window),
-                    event.reparseOptions,
-                );
+                    cloneInto(encodedFrame, window), event.reparseOptions);
                 break;
-            default:
-                console.assert(false, "Invalid direction");
-                break;
+            default: console.assert(false, "Invalid direction"); break;
         }
     }
     injectionLogger.log("No more outgoing events");
@@ -629,23 +616,25 @@ let sentMessages = [];
 
 function receive_MAIN(
     encodedFrame,
-    reparse = { doReparse: true, native: true },
+    reparse = {
+        doReparse: true,
+        native: true
+    },
 ) {
     let ret;
     try {
         const frame = cocaco_decode_receive(new Uint8Array(encodedFrame));
         if (cocaco_config.log.receive) {
-            receivedMessages.push({ frame: frame, dataLength: encodedFrame.byteLength });
+            receivedMessages.push(
+                {frame: frame, dataLength: encodedFrame.byteLength});
             let type = frame.data.type ?? -1;
-            console.debug("🛜 📥", receivedMessages.length, "|",
-                type, "(", encodedFrame.byteLength, ")", frame);
+            console.debug("🛜 📥", receivedMessages.length, "|", type, "(",
+                          encodedFrame.byteLength, ")", frame);
             if (receivedMessages.length % 10 === 0) {
                 console.debug("(receivedMessages):", receivedMessages);
             }
         }
-        ret = handle(
-            { direction: "receive", frame: frame, reparse: reparse },
-        );
+        ret = handle({direction: "receive", frame: frame, reparse: reparse});
     } catch (e) {
         console.error("receive_MAIN(): Failed with error:", e);
     }
@@ -668,36 +657,33 @@ function send_MAIN(encodedFrame, reparse) {
             }
             let action = "action=🗙";
             if (frame.message && frame.message.action) {
-                action = "action=" +
+                action =
+                    "action=" +
                     (ColonistSource.actionMap[frame.message.action] ?? "?");
             }
             let visibility = "";
             if (reparse.native === false) {
                 visibility = reparse.doReparse ? "🔔" : "🔕";
             }
-            console.debug(
-                "🛜 📤", sentMessages.length, `${visibility} |`,
-                sequence, action, "|",
-                frame.v0, frame.v1, `(${encodedFrame.byteLength}B)`,
-                frame.message, frame, encodedFrame,
-            );
+            console.debug("🛜 📤", sentMessages.length, `${visibility} |`,
+                          sequence, action, "|", frame.v0, frame.v1,
+                          `(${encodedFrame.byteLength}B)`, frame.message, frame,
+                          encodedFrame);
             // console.debug("raw:", JSON.stringify(frame));
             if (sentMessages.length % 10 === 0) {
                 console.debug("(all sentMessages):", sentMessages);
             }
         }
-        ret = handle(
-            { direction: "send", frame: frame, reparse: reparse },
-        );
+        ret = handle({direction: "send", frame: frame, reparse: reparse});
     } catch (e) {
         console.error("send_MAIN(): Failed with error:", e);
     }
     return cloneInto(ret, window);
 }
 
-exportFunction(post_MAIN, window, { defineAs: "post_MAIN" });
-exportFunction(receive_MAIN, window, { defineAs: "receive_MAIN" });
-exportFunction(send_MAIN, window, { defineAs: "send_MAIN" });
+exportFunction(post_MAIN, window, {defineAs: "post_MAIN"});
+exportFunction(receive_MAIN, window, {defineAs: "receive_MAIN"});
+exportFunction(send_MAIN, window, {defineAs: "send_MAIN"});
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Start                                                     │

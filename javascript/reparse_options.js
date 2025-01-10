@@ -26,9 +26,12 @@ class ReparseOptions {
      * the host's messages. 'adjustSequence' can react to the action the host
      * took during the events in-between.
      */
-    constructor({ native = null, doReparse = null, adjustSequence = null } = {}) {
-        if (native) this.native = native;
-        if (doReparse) this.doReparse = doReparse;
-        if (adjustSequence) this.adjustSequence = adjustSequence;
+    constructor({native = null, doReparse = null, adjustSequence = null} = {}) {
+        if (native)
+            this.native = native;
+        if (doReparse)
+            this.doReparse = doReparse;
+        if (adjustSequence)
+            this.adjustSequence = adjustSequence;
     }
 }

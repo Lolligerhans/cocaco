@@ -35,7 +35,7 @@ class Trade {
      * @param {Resources} resources
      * @param {Player} taker
      */
-    constructor({ giver = null, resources = null, taker = null } = {}) {
+    constructor({giver = null, resources = null, taker = null} = {}) {
         console.assert(giver && resources);
         console.assert(resources.hasPositiveAndNegative());
         this.giver = giver;
@@ -95,11 +95,8 @@ class Trade {
             }
             templateAppend = ` ${matches} ${template.toSymbols(true)}`;
         }
-        const ret = this.giver.name
-            + " " + this.resources.toSymbols()
-            + templateAppend
-            + " " + this.taker.name;
+        const ret = this.giver.name + " " + this.resources.toSymbols() +
+                    templateAppend + " " + this.taker.name;
         return ret;
     }
-
 }

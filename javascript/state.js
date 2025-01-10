@@ -1,6 +1,5 @@
 "use strict";
 
-
 /**
  * Class 'State' implements the response to observations
  */
@@ -22,14 +21,11 @@ class State extends Trigger {
      * impact (especially from plots).
      * @type {Delay}
      */
-    #updateDelay = new Delay(
-        () => this.#update(),
-        {
-            delayTime: cocaco_config.timeout,
-            delayInitially: false,
-            refresh: false,
-        },
-    );
+    #updateDelay = new Delay(() => this.#update(), {
+        delayTime: cocaco_config.timeout,
+        delayInitially: false,
+        refresh: false,
+    });
 
     /**
      * @type {Multiverse}
@@ -90,7 +86,7 @@ class State extends Trigger {
         this.resend = resend;
 
         observer.onTrigger("observation",
-            observation => this.#observe(observation));
+                           observation => this.#observe(observation));
 
         // Use page action for enable/disable
         this.#connect.onTrigger("page_action", payload => {
@@ -145,10 +141,8 @@ class State extends Trigger {
      * plots.
      */
     #update() {
-        console.assert(
-            this.render !== null,
-            "Must generate start observation first",
-        );
+        console.assert(this.render !== null,
+                       "Must generate start observation first");
         // We could think about setting a flag whenever something actually
         // changes. For now we trigger on every observation, which is often
         // unnecessary.
@@ -161,35 +155,31 @@ class State extends Trigger {
     #updateRequest() {
         this.#updateDelay.request();
     }
-
 };
 
 // ╭───────────────────────────────────────────────────────────╮
 // │ Observation implementors                                  │
 // ╰───────────────────────────────────────────────────────────╯
 
-State.implementor.buy = function ({ player, object }) {
+State.implementor.buy = function({player, object}) {
     const name = player.name;
     const resources = State.costs[object];
     const slice = Multiverse.asSlice(resources);
-    this.multiverse.transformSpawn(
-        name,
-        Multiverse.sliceNegate(slice),
-    );
-}
+    this.multiverse.transformSpawn(name, Multiverse.sliceNegate(slice));
+};
 
-State.implementor.collusionStart = function ({ player, players }) {
+State.implementor.collusionStart = function({player, players}) {
     console.debug("New Collusion:", p(players));
     const colludingPlayersNames = [player, ...players];
     this.collusionPlanner.start(colludingPlayersNames);
-}
+};
 
-State.implementor.collusionStop = function ({ player }) {
+State.implementor.collusionStop = function({player}) {
     console.assert(player.equals(this.us), "Cannot stop collusion of others");
     this.collusionPlanner.stop();
-}
+};
 
-State.implementor.collusionOffer = function ({ player, trade, accept }) {
+State.implementor.collusionOffer = function({player, trade, accept}) {
     player; // Unused
     console.assert(player.equals(trade.giver));
     if (!this.collusionPlanner.isStarted()) {
@@ -197,16 +187,16 @@ State.implementor.collusionOffer = function ({ player, trade, accept }) {
     }
     this.multiverse.updateStats();
     const guessAndRange = this.multiverse.guessAndRange;
-    const plannerResult = this.collusionPlanner.evaluateOffer(
-        trade, guessAndRange,
-    );
+    const plannerResult =
+        this.collusionPlanner.evaluateOffer(trade, guessAndRange);
     if (plannerResult === true) {
         accept();
     } else {
         // Do not interfere with the host auto-decline that happens when we
         //  - cannot afford the trade
         //  - have an embargo
-        const haveEnough = CollusionPlanner.takerHasEnough(trade, guessAndRange);
+        const haveEnough =
+            CollusionPlanner.takerHasEnough(trade, guessAndRange);
         const weWantToDecline =
             haveEnough || cocaco_config.collude.declineImpossible;
         const isEmbargoed = this.collusionPlanner.isEmbargoedTrade(trade);
@@ -215,9 +205,9 @@ State.implementor.collusionOffer = function ({ player, trade, accept }) {
             accept(false);
         }
     }
-}
+};
 
-State.implementor.collusionAcceptance = function ({ player, trade, accept }) {
+State.implementor.collusionAcceptance = function({player, trade, accept}) {
     player; // Unused
     if (!this.collusionPlanner.isStarted()) {
         return;
@@ -247,35 +237,29 @@ State.implementor.collusionAcceptance = function ({ player, trade, accept }) {
         // It may be possible to react only to counter offers, but we do not
         // consider this at the moment.
     }
-}
+};
 
-State.implementor.discard = function ({ player, resources }) {
+State.implementor.discard = function({player, resources}) {
     const name = player.name;
     const slice = Multiverse.asSlice(resources);
     const sliceTotal = Multiverse.sliceTotal(slice);
     this.multiverse.collapseTotal(name, n => n >> 1 === sliceTotal);
-    this.multiverse.transformSpawn(
-        name,
-        Multiverse.sliceNegate(slice),
-    );
-}
+    this.multiverse.transformSpawn(name, Multiverse.sliceNegate(slice));
+};
 
-State.implementor.embargo = function ({ embargoes }) {
+State.implementor.embargo = function({embargoes}) {
     this.collusionPlanner.updateEmbargoes(embargoes);
-}
+};
 
-State.implementor.got = function ({ player, resources }) {
+State.implementor.got = function({player, resources}) {
     const name = player.name;
     const slice = Multiverse.asSlice(resources);
-    this.multiverse.transformSpawn(
-        name,
-        slice,
-    );
+    this.multiverse.transformSpawn(name, slice);
 
     this.collusionPlanner.updateGotResources(player, resources);
-}
+};
 
-State.implementor.mono = function ({ player, resource, resources }) {
+State.implementor.mono = function({player, resource, resources}) {
     // Later we could additionally:
     //  - use 'resources' to learn number of stolen cards
     //  - use non-log-message frames to get stolen count per player
@@ -283,49 +267,44 @@ State.implementor.mono = function ({ player, resource, resources }) {
     const thief = player.name;
     const stolenResource = resource;
     this.multiverse.transformMonopoly(
-        thief,
-        Multiverse.getResourceIndex(stolenResource),
-    );
+        thief, Multiverse.getResourceIndex(stolenResource));
     resources; // Ignore
-}
+};
 
-State.implementor.offer = function ({ offer, targets, isCounter }) {
+State.implementor.offer = function({offer, targets, isCounter}) {
     let offeredResources = new Resources(offer.resources).positive();
     // Offers may include unknown cards as request-for-counter. We are only
     // interested in the regular resource cards.
     offeredResources.clearSpecial();
     const slice = Multiverse.asSlice(offeredResources);
     this.multiverse.collapseMin(offer.giver.name, slice);
-    targets; // Ignore
+    targets;   // Ignore
     isCounter; // Ignore
-}
+};
 
-State.implementor.roll = function ({ player, number }) {
+State.implementor.roll = function({player, number}) {
     this.track.addRoll(number);
     if (number === 7) {
         this.track.addSeven(player.name);
     }
-}
+};
 
 /**
  * @param {{us:Player,players:Players}} players
  */
-State.implementor.start = function ({ us, players }) {
+State.implementor.start = function({us, players}) {
     let startResources = {};
     let startEmpty = playerName => startResources[playerName] = {};
     players.allNames().forEach(startEmpty);
-    this.multiverse.initWorlds(
-        startResources
-    );
+    this.multiverse.initWorlds(startResources);
     const allPlayerNames = players.allNames();
     this.track.init(allPlayerNames);
 
     console.assert(
         !this.render,
-        "Do not produce Render corpses by activating this multiple times",
-    );
-    const usedAssets = cocaco_config.ownIcons ?
-        alternativeAssets : Colony.colonistAssets;
+        "Do not produce Render corpses by activating this multiple times");
+    const usedAssets =
+        cocaco_config.ownIcons ? alternativeAssets : Colony.colonistAssets;
     const nameToColour = {};
     players.all().forEach(p => nameToColour[p.name] = p.colour);
     switch (cocaco_config.render.type) {
@@ -338,7 +317,8 @@ State.implementor.start = function ({ us, players }) {
                 // Later we could use state updates to auto-fill card counts for
                 // resource recovery.
                 null, // reset callback
-                null, null, // Recovery callback
+                null, // Recovery callback
+                null, // Recovery callback
                 usedAssets,
             );
             break;
@@ -350,8 +330,7 @@ State.implementor.start = function ({ us, players }) {
                 nameToColour,
             );
             break;
-        default:
-            console.assert(false, "Invalid render type configured");
+        default: console.assert(false, "Invalid render type configured");
     }
     this.render.render();
 
@@ -360,36 +339,28 @@ State.implementor.start = function ({ us, players }) {
     if (cocaco_config.collude.autocollude === true) {
         this.collusionPlanner.start(players.all());
     }
-}
+};
 
-State.implementor.steal = function ({ thief, victim, resource }) {
+State.implementor.steal = function({thief, victim, resource}) {
     this.track.addRob(thief.name, victim.name);
 
     // Unknown steal
     if (resource == null) {
-        this.multiverse.branchSteal(
-            victim.name,
-            thief.name,
-        );
+        this.multiverse.branchSteal(victim.name, thief.name);
         return;
     }
 
     // Known steal
     this.multiverse.transformRandomReveal(
-        victim.name,
-        Multiverse.getResourceIndex(resource),
-    );
-    this.multiverse.transformExchange(
-        victim.name,
-        thief.name,
-        Multiverse.asSlice({ [resource]: 1 }),
-    );
-}
+        victim.name, Multiverse.getResourceIndex(resource));
+    this.multiverse.transformExchange(victim.name, thief.name,
+                                      Multiverse.asSlice({[resource]: 1}));
+};
 
 /**
  * @param {Trade} trade
  */
-State.implementor.trade = function (trade) {
+State.implementor.trade = function(trade) {
     const traderName = trade.giver.name;
     let [give, take] = trade.resources.splitBySign();
     const giveSlice = Multiverse.asSlice(give);
@@ -400,23 +371,16 @@ State.implementor.trade = function (trade) {
     // ── Trade with the bank ────────────────────────────────
     if (trade.taker === "bank") {
         this.multiverse.transformSpawn(
-            traderName,
-            Multiverse.sliceSubtract(takeSlice, giveSlice),
-        );
+            traderName, Multiverse.sliceSubtract(takeSlice, giveSlice));
         return;
     }
 
     // ── Trade between players ──────────────────────────────
     const otherName = trade.taker.name;
-    this.multiverse.transformTradeByName(
-        traderName,
-        otherName,
-        give,
-        take,
-    );
-}
+    this.multiverse.transformTradeByName(traderName, otherName, give, take);
+};
 
-State.implementor.turn = function ({ player, phase }) {
+State.implementor.turn = function({player, phase}) {
     console.assert(phase === "main");
     this.noMoreFinaliseThisTurn = false;
     if (!this.collusionPlanner.isStarted()) {
@@ -432,19 +396,14 @@ State.implementor.turn = function ({ player, phase }) {
     this.multiverse.updateStats();
     const guessAndRange = this.multiverse.guessAndRange;
     let trades = this.collusionPlanner.evaluateTurn(guessAndRange);
-    trades.forEach(trade => {
-        this.sendTradeHelper(trade);
-    });
-}
+    trades.forEach(trade => { this.sendTradeHelper(trade); });
+};
 
-State.implementor.yop = function ({ player, resources }) {
+State.implementor.yop = function({player, resources}) {
     const name = player.name;
     const slice = Multiverse.asSlice(resources);
-    this.multiverse.transformSpawn(
-        name,
-        slice,
-    );
-}
+    this.multiverse.transformSpawn(name, slice);
+};
 
 // ╭───────────────────────────────────────────────────────────╮
 // │                                                           │
@@ -457,10 +416,10 @@ State.implementor.yop = function ({ player, resources }) {
  * @param {string} [which] Panel to toggle. If not given, toggle all panels.
  * @param {boolean} [value] Value to set to. If not given, toggle values.
  */
-State.prototype.toggle = function (which = null, value = null) {
+State.prototype.toggle = function(which = null, value = null) {
     if (this.render === null) {
         console.warn("Nothing to toggle");
         return;
     }
     this.render.toggle(which, value);
-}
+};

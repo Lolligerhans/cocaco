@@ -67,8 +67,9 @@ class CollusionTracker {
      */
     updateTurn(player) {
         // If the player who's turn it is changed, that means a new turn started
-        const startOfTheTurn = this.#lastTurnPlayer === null ?
-            true : !this.#lastTurnPlayer.equals(player);
+        const startOfTheTurn = this.#lastTurnPlayer === null
+                                   ? true
+                                   : !this.#lastTurnPlayer.equals(player);
         this.#lastTurnPlayer = player;
 
         if (startOfTheTurn) {
@@ -80,5 +81,4 @@ class CollusionTracker {
 
         return this.isDormant();
     }
-
 }

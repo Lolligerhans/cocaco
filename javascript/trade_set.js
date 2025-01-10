@@ -87,7 +87,6 @@ class TradeSet {
         removeElementUnordered(this.#trades, matchingIndex);
         return true;
     }
-
 }
 
 /**
@@ -168,5 +167,4 @@ class TradeResourcesSet {
         removeElementUnordered(this.#trades, matchingIndex);
         return true;
     }
-
 }

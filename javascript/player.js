@@ -84,7 +84,6 @@ class Player {
     equals(...others) {
         return others.every(o => o instanceof Player && this.id === o.id);
     }
-
 }
 
 /**
@@ -158,7 +157,8 @@ class Players {
      */
     constructor(lastName, players, playOrder) {
         console.assert(players.length >= 1); // Required
-        console.assert(players.length >= 2); // Sanity only. Remove when intended.
+        // Sanity only. Remove when intended.
+        console.assert(players.length >= 2);
         this.#allPlayers = players;
         this.#generateIds(); // Needed to sort by playOrder
         this.#orderPlayers(lastName, playOrder);
@@ -168,16 +168,13 @@ class Players {
         if (!(this.name(lastName).index === this.#allPlayers.length - 1)) {
             debugger; // BUG: should not happen
         }
-        console.assert(
-            this.name(lastName).index === this.#allPlayers.length - 1,
-            "The indicated player should be in last position",
-        );
+        console.assert(this.name(lastName).index ===
+                           this.#allPlayers.length - 1,
+                       "The indicated player should be in last position");
     }
 
     #generateIds() {
-        const addId = player => {
-            this.#ids[player.id] = player;
-        };
+        const addId = player => { this.#ids[player.id] = player; };
         this.#allPlayers.forEach(addId);
     }
 
@@ -190,9 +187,7 @@ class Players {
     }
 
     #generateNames() {
-        const addName = player => {
-            this.#names[player.name] = player;
-        };
+        const addName = player => { this.#names[player.name] = player; };
         this.#allPlayers.forEach(addName);
     }
 
@@ -282,5 +277,4 @@ class Players {
     size() {
         return this.#allPlayers.length;
     }
-
 }

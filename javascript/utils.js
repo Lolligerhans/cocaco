@@ -21,9 +21,8 @@ function p(object) {
  * @return {Object} New object with swapped key and values
  */
 function invertObject(object, transform = x => x) {
-    let res = Object.fromEntries(Object.entries(object).map(
-        ([k, v]) => [v, transform(k)]
-    ));
+    let res = Object.fromEntries(
+        Object.entries(object).map(([k, v]) => [v, transform(k)]));
     return res;
 }
 
@@ -46,19 +45,15 @@ function _combinedType(variable) {
  * @return {Object} New object representing 'object' updated by 'update'
  */
 function combineObject(object, update) {
-    const unmergable = typeof update !== "object" ||
-        update == null ||
-        object == null ||
-        _combinedType(object) !== _combinedType(update);
+    const unmergable = typeof update !== "object" || update == null ||
+                       object == null ||
+                       _combinedType(object) !== _combinedType(update);
     if (unmergable) {
         return structuredClone(update);
     }
     const cloneObject = structuredClone(object);
     const cloneUpdate = structuredClone(update);
-    updateObjectNoClone(
-        cloneObject,
-        cloneUpdate,
-    );
+    updateObjectNoClone(cloneObject, cloneUpdate);
     console.assert(!Object.values(cloneObject).includes(undefined));
     return cloneObject;
 }
@@ -89,9 +84,7 @@ function filterObject(object, predicate) {
  * @return {*} The modified object.
  */
 function mapObject(object, func) {
-    Object.entries(object).forEach(([k, v]) => {
-        object[k] = func(v, k);
-    });
+    Object.entries(object).forEach(([k, v]) => { object[k] = func(v, k); });
     return object;
 }
 
@@ -153,8 +146,8 @@ function removeElementUnordered(array, index) {
  */
 function updateObjectNoClone(object, update) {
     Object.keys(update).forEach(key => {
-        const unmergable = typeof update[key] !== "object" ||
-            update[key] == null ||
+        const unmergable =
+            typeof update[key] !== "object" || update[key] == null ||
             object[key] == null ||
             _combinedType(object[key]) !== _combinedType(update[key]);
         if (unmergable) {
@@ -162,10 +155,7 @@ function updateObjectNoClone(object, update) {
             object[key] = update[key];
         } else {
             // console.debug("Merging", key);
-            updateObjectNoClone(
-                object[key],
-                update[key],
-            );
+            updateObjectNoClone(object[key], update[key]);
         }
     });
 }

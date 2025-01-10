@@ -49,8 +49,7 @@ class Resources {
      * @type {*}
      */
     static #emptyResources = Object.fromEntries(
-        Resources.#resourceNames.map(resourceName => [resourceName, 0])
-    );
+        Resources.#resourceNames.map(resourceName => [resourceName, 0]));
 
     /**
      * Modify the object in-place, replacing each resource count with its
@@ -76,9 +75,7 @@ class Resources {
      * @return {Resources} The modified object
      */
     clearSpecial() {
-        Resources.#specialResourcesNames.forEach(
-            k => this[k] = 0
-        );
+        Resources.#specialResourcesNames.forEach(k => this[k] = 0);
     }
 
     /**
@@ -86,9 +83,7 @@ class Resources {
      */
     constructor(other = null) {
         other ??= Resources.#emptyResources;
-        Resources.#resourceNames.forEach(
-            k => this[k] = (other[k] ?? 0)
-        );
+        Resources.#resourceNames.forEach(k => this[k] = (other[k] ?? 0));
     }
 
     /**
@@ -96,10 +91,7 @@ class Resources {
      * @return {Number} Count of resource types with nonzero value
      */
     countHamming() {
-        const ret = Object.values(this).reduce(
-            (acc, x) => acc + (x !== 0),
-            0,
-        );
+        const ret = Object.values(this).reduce((acc, x) => acc + (x !== 0), 0);
         return ret;
     }
 
@@ -108,10 +100,7 @@ class Resources {
      * @return {Number} Count of resource types with negative value
      */
     countNegative() {
-        const ret = Object.values(this).reduce(
-            (acc, x) => acc + (x < 0),
-            0,
-        );
+        const ret = Object.values(this).reduce((acc, x) => acc + (x < 0), 0);
         return ret;
     }
 
@@ -120,10 +109,7 @@ class Resources {
      * @return {Number} Count resource types with positive value
      */
     countPositive() {
-        const ret = Object.values(this).reduce(
-            (acc, x) => acc + (x > 0),
-            0,
-        );
+        const ret = Object.values(this).reduce((acc, x) => acc + (x > 0), 0);
         return ret;
     }
 
@@ -151,9 +137,8 @@ class Resources {
      * @return {Boolean}
      */
     equals(otherResources) {
-        const ret = Resources.#resourceNames.every(res =>
-            this[res] === otherResources[res]
-        );
+        const ret = Resources.#resourceNames.every(res => this[res] ===
+                                                          otherResources[res]);
         return ret;
     }
 
@@ -223,9 +208,7 @@ class Resources {
      * @return {Boolean}
      */
     hasSpecial() {
-        const ret = Resources.#specialResourcesNames.some(
-            r => this[r] !== 0,
-        );
+        const ret = Resources.#specialResourcesNames.some(r => this[r] !== 0);
         return ret;
     }
 
@@ -236,8 +219,7 @@ class Resources {
     max() {
         let max = Object.entries(this).reduce(
             (current, [k, v]) => v > current[1] ? [k, v] : current,
-            [null, Number.NEGATIVE_INFINITY],
-        );
+            [null, Number.NEGATIVE_INFINITY]);
         return max;
     }
 
@@ -258,10 +240,8 @@ class Resources {
             ret.push([k, v]);
             return [k, v];
         };
-        Object.entries(this).reduce(
-            reduction,
-            [null, Number.NEGATIVE_INFINITY],
-        );
+        Object.entries(this).reduce(reduction,
+                                    [null, Number.NEGATIVE_INFINITY]);
         console.assert(ret.length >= 1);
         return ret;
     }
@@ -274,8 +254,7 @@ class Resources {
     min() {
         let min = Object.entries(this).reduce(
             (current, [k, v]) => v < current[1] ? [k, v] : current,
-            [null, Number.POSITIVE_INFINITY],
-        );
+            [null, Number.POSITIVE_INFINITY]);
         return min;
     }
 
@@ -296,10 +275,8 @@ class Resources {
             ret.push([k, v]);
             return [k, v];
         };
-        Object.entries(this).reduce(
-            reduction,
-            [null, Number.POSITIVE_INFINITY],
-        );
+        Object.entries(this).reduce(reduction,
+                                    [null, Number.POSITIVE_INFINITY]);
         console.assert(ret.length >= 1);
         return ret;
     }
@@ -314,9 +291,8 @@ class Resources {
      * @return {void}
      */
     merge(resources, operator) {
-        Resources.#resourceNames.forEach(r => {
-            this[r] = operator(this[r] ?? 0, resources[r] ?? 0);
-        });
+        Resources.#resourceNames.forEach(
+            r => { this[r] = operator(this[r] ?? 0, resources[r] ?? 0); });
     }
 
     /**
@@ -388,10 +364,8 @@ class Resources {
      * @return {Number}
      */
     sumNegative() {
-        let sum = Object.values(this).reduce(
-            (acc, x) => acc + Math.min(0, x),
-            0,
-        );
+        let sum =
+            Object.values(this).reduce((acc, x) => acc + Math.min(0, x), 0);
         return sum;
     }
 
@@ -400,13 +374,10 @@ class Resources {
      * @return {Number}
      */
     sumPositive() {
-        let sum = Object.values(this).reduce(
-            (acc, x) => acc + Math.max(0, x),
-            0,
-        );
+        let sum =
+            Object.values(this).reduce((acc, x) => acc + Math.max(0, x), 0);
         return sum;
     }
-
 
     /**
      * Convert to array of names. Example: ["wood", "wood", brick"]. Must
@@ -441,5 +412,4 @@ class Resources {
         }
         return ret;
     }
-
 }
