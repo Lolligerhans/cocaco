@@ -24,7 +24,11 @@ browser.pageAction.onClicked.addListener((tab, _onClickData) => {
 // │ Sending to dump program                                                   │
 // ╰───────────────────────────────────────────────────────────────────────────╯
 
-// nativePorts = { <id>: <native_port> }
+/**
+ * We intend for only one native port. Supporting multiple may allow working
+ * ports in concurrent tabs.
+ * @type {Object[]} Map id -> native port
+ */
 let nativePorts = {};
 
 function newNativePort(id) {
@@ -40,7 +44,7 @@ function newNativePort(id) {
         if (diff > 100)
             console.warn(`background.js: nativePorts[${response.id}]`,
                          `out of sync with content-script ${id}`);
-    })
+    });
     return port;
 }
 
