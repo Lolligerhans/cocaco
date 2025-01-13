@@ -198,7 +198,7 @@ State.implementor.collusionOffer = function({player, trade, accept}) {
         const haveEnough =
             CollusionPlanner.takerHasEnough(trade, guessAndRange);
         const weWantToDecline =
-            haveEnough || cocaco_config.collude.declineImpossible;
+            haveEnough || cocaco_config.collude.declineImpossibleCollusion;
         const isEmbargoed = this.collusionPlanner.isEmbargoedTrade(trade);
         if (weWantToDecline && !isEmbargoed) {
             // console.debug("State: Rejecting offer");

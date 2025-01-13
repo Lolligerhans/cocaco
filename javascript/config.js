@@ -33,7 +33,7 @@ cocaco_config = {
          * Cocaco.
          * @type {Boolean}
          */
-        declineImpossible: true,
+        declineImpossibleCollusion: true,
 
         /**
          * Trade at most this many resource per side. Makes the trades more bot

@@ -293,6 +293,8 @@ class CollusionPlanner {
      * Clear collusion state and stop colluding
      */
     stop() {
+        if (isStopped())
+            return;
         this.#logger.log(null, "Stop colluding");
         this.#consoleLogger.log("Stopping.", p(this.#collude.playerNames()));
         this.#collude = null;
