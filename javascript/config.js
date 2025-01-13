@@ -98,6 +98,7 @@ cocaco_config = {
         CollusionPlanner: false,
         CollusionTracker: false,
         ColonistTrade: false,
+        DevSpy: false,
         EmbargoTracker: false,
         frameInjection: false,
         Observer: false,

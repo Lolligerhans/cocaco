@@ -150,8 +150,32 @@ class Colonist {
         );
 
         // Dev spy helpers
-        // TODO: Remove once Colonist ifxed it
+        // TODO: Remove o̶n̶c̶e̶ ̶C̶o̶l̶o̶n̶i̶s̶t̶ ̶i̶f̶x̶e̶d̶ ̶i̶t̶ if Colonist fixes it
         let playerUserStates = null;
+        let devSpyElements = {}; // Appended nodes to be replaced on updates
+        let devSpyLogger = new ConsoleLog("DevSpy", "🕵");
+        /**
+         * Helper to update a dev spy element.
+         * @param {string} who Identifier for the element to update. Typically
+         *                     an index or name or "bank".
+         * @param {*} devCards Dev cards held by player/bank identified by 'who'
+         */
+        const updateDevSpyElement = (who, devCards) => {
+            const icons = devCards.map(
+                card => utf8Symbols[Colony.enumNames.devcards[card]]);
+            const messageForUser = `${who}: ${icons.join("")}`;
+            devSpyLogger.log(messageForUser);
+            let element = devSpyElements[who] ?? document.createElement("div");
+            element.className = MessageLog.className;
+            element.textContent = messageForUser;
+            if (devCards.length === 0) {
+                devSpyLogger.log("Empty:", who);
+                element.remove();
+            } else {
+                devSpyElements[who] = this.chatElement.appendChild(element);
+                element.scrollIntoView(false);
+            }
+        };
 
         /**
          * Helper mapping a colour index to the player's name
@@ -185,26 +209,12 @@ class Colonist {
         Reparse.register(
             "receive", "Colonist dev spy",
             Reparse.applyDoers.byKind({type: [4, 91], id: "130"}),
-            Reparse.entryPoints.developmentCardsState, check_development_cards,
-            cards => {
-                if (Object.hasOwn(cards, "bank")) {
-                    const names =
-                        cards.bank.map(card => Colony.enumNames.devcards[card]);
-                    const icons = names.map(name => utf8Symbols[name]);
-                    const show = `Bank: ${icons.join("")}`;
-                    // console.debug(show);
-                    this.logger.log(this.chatElement, show);
-                }
-                for (let [index, player_cards] of Object.entries(
-                         cards.players)) {
-                    const names = player_cards.map(
-                        card => Colony.enumNames.devcards[card]);
-                    const icons = names.map(name => utf8Symbols[name]);
-                    const playerName = getPlayerName(index);
-                    const show = `${playerName}: ${icons.join("")}`;
-                    // console.debug(show);
-                    this.logger.log(this.chatElement, show);
-                }
+            Reparse.entryPoints.developmentCardsState,
+            check_all_development_cards, cards => {
+                if (Object.hasOwn(cards, "bank"))
+                    updateDevSpyElement("Bank", cards.bank);
+                for (let [index, devs] of Object.entries(cards.players))
+                    updateDevSpyElement(getPlayerName(index), devs);
                 return {isDone: false};
             });
 
