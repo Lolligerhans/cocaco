@@ -479,6 +479,41 @@ function check_country_code(entryPoint) {
  * Cards are identified by the enum used by the host. Players are identified by
  * the colour enum used by the host. Translation can be done using the
  * 'playerUserStates' part of the 'gameState'.
+ *
+ * Replaces 'check_development_cards' which filters for non-emptyness. This
+ * function does not filter.
+ */
+function check_all_development_cards(entryPoint) {
+    let res = {};
+    if (Object.hasOwn(entryPoint, "bankDevelopmentCards"))
+        res.bank = entryPoint.bankDevelopmentCards.cards;
+
+    let players = {};
+    // Ignore played cards
+    for (let [player, usedAndUnused] of Object.entries(entryPoint.players)) {
+        // If only the devs bought this turn are updated this is missing
+        if (!usedAndUnused)
+            continue;
+        if (!usedAndUnused.developmentCards)
+            continue;
+        let devs = usedAndUnused.developmentCards.cards;
+        players[player] = devs;
+    }
+    res.players = players;
+    return res;
+}
+
+/**
+ * Deprecated: Remove once all uses are replaced. Use
+ * 'check_all_development_cards' instead.
+ *
+ * Generates the development card from a 'developmentCardsState' object. Can be
+ * used as the '#parse' argument when constructing a 'Reparse' instance.
+ * @param {*} entryPoint developmentCardsState object.
+ * @return {{bank:number[],players:Object.<string,number[]>}}
+ * Cards are identified by the enum used by the host. Players are identified by
+ * the colour enum used by the host. Translation can be done using the
+ * 'playerUserStates' part of the 'gameState'.
  */
 function check_development_cards(entryPoint) {
     let res = {};
