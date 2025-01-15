@@ -10,27 +10,6 @@ class Colony {
     static yellow = "LightGoldenRodYellow";
     static red = "LightCoral";
 
-    /**
-     * For dev spy. Remove when fixed.
-     */
-    static enumNames = {
-        resources: {
-            1: "wood",
-            2: "brick",
-            3: "sheep",
-            4: "wheat",
-            5: "ore",
-        },
-        devcards: {
-            10: "unknown",
-            11: "knight",
-            12: "vp",
-            13: "monopoly",
-            14: "roadBuilder",
-            15: "yop",
-        },
-    };
-
     //==========================================================
     // Static
     //==========================================================
@@ -635,61 +614,6 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
             }
             return { isDone: true };
         },
-    );
-
-    let playerUserStates = null; // For mapping index to name
-    let getPlayerName = function (colourIndex) {
-        if (playerUserStates === null) {
-            console.error("getPlayerName called before setting playerUserStates");
-            return "<unknown>"; // Only used for display so return something
-        }
-        // Two equal signs to compare with string type colourIndex
-        const player = playerUserStates.find(x => x.selectedColor == colourIndex);
-        console.assert(
-            player !== undefined,
-            `Player with colour index ${colourIndex} not found in playerUserStates`
-        );
-        return player.username;
-        // --index; // The messaging is 1-based (for player indices only)
-        // return playerUserStates[index].username;
-    };
-    Reparse.register(
-        "receive",
-        "Set PlayerUserStates",
-        Reparse.applyDoers.byKind({ type: [4], id: "130" }),
-        Reparse.entryPoints.playerUserStates,
-        state => state,
-        state => {
-            playerUserStates = state;
-            console.info("playerUserStates:", playerUserStates);
-            return { isDone: false };
-        }
-    );
-
-    Reparse.register(
-        "receive",
-        "ColonyDevState",
-        Reparse.applyDoers.byKind({ type: [4, 91], id: "130" }),
-        Reparse.entryPoints.developmentCardsState,
-        check_development_cards,
-        cards => {
-            if (Object.hasOwn(cards, "bank")) {
-                const names = cards.bank.map(card => Colony.enumNames.devcards[card]);
-                const icons = names.map(name => utf8Symbols[name]);
-                const show = `Bank: ${icons.join("")}`;
-                // console.debug(show);
-                this.logger.logChat(show);
-            }
-            for (let [index, player_cards] of Object.entries(cards.players)) {
-                const names = player_cards.map(card => Colony.enumNames.devcards[card]);
-                const icons = names.map(name => utf8Symbols[name]);
-                const playerName = getPlayerName(index);
-                const show = `${playerName}: ${icons.join("")}`;
-                // console.debug(show);
-                this.logger.logChat(show);
-            }
-            return { isDone: false };
-        }
     );
 
     socketsReady = true;

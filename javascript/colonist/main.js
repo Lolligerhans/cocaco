@@ -126,7 +126,6 @@ class Colonist {
      * 'ColonistSource'.
      * Here we add:
      *  - Country matcher
-     *  - Dev spy (that is somehow still not fixed)
      */
     registerReceiveReparsers() {
         Reparse.register(
@@ -148,75 +147,6 @@ class Colonist {
                 return {isDone: true};
             },
         );
-
-        // Dev spy helpers
-        // TODO: Remove o̶n̶c̶e̶ ̶C̶o̶l̶o̶n̶i̶s̶t̶ ̶i̶f̶x̶e̶d̶ ̶i̶t̶ if Colonist fixes it
-        let playerUserStates = null;
-        let devSpyElements = {}; // Appended nodes to be replaced on updates
-        let devSpyLogger = new ConsoleLog("DevSpy", "🕵");
-        /**
-         * Helper to update a dev spy element.
-         * @param {string} who Identifier for the element to update. Typically
-         *                     an index or name or "bank".
-         * @param {*} devCards Dev cards held by player/bank identified by 'who'
-         */
-        const updateDevSpyElement = (who, devCards) => {
-            const icons = devCards.map(
-                card => utf8Symbols[Colony.enumNames.devcards[card]]);
-            const messageForUser = `${who}: ${icons.join("")}`;
-            devSpyLogger.log(messageForUser);
-            let element = devSpyElements[who] ?? document.createElement("div");
-            element.className = MessageLog.className;
-            element.textContent = messageForUser;
-            if (devCards.length === 0) {
-                devSpyLogger.log("Empty:", who);
-                element.remove();
-            } else {
-                devSpyElements[who] = this.chatElement.appendChild(element);
-                element.scrollIntoView(false);
-            }
-        };
-
-        /**
-         * Helper mapping a colour index to the player's name
-         * @param {Number} colourIndex
-         * @return {string} Player name corresponding to the given colour
-         */
-        let getPlayerName = function(colourIndex) {
-            if (playerUserStates === null) {
-                console.error(
-                    "getPlayerName called before setting playerUserStates");
-                return "<unknown>"; // Only used for display so return something
-            }
-            // Two equal signs to compare with string type colourIndex
-            const player =
-                playerUserStates.find(x => x.selectedColor == colourIndex);
-            console.assert(player !== undefined,
-                           "colour index should be available");
-            return player.username;
-        };
-
-        // Gets a copy of the playerUserStates used as lookup for the dev spy
-        Reparse.register("receive", "Colonist set playerUserStates",
-                         Reparse.applyDoers.byKind({type: [4], id: "130"}),
-                         Reparse.entryPoints.playerUserStates, state => state,
-                         state => {
-                             playerUserStates = state;
-                             // console.info("playerUserStates:", playerUserStates);
-                             return {isDone: false};
-                         });
-
-        Reparse.register(
-            "receive", "Colonist dev spy",
-            Reparse.applyDoers.byKind({type: [4, 91], id: "130"}),
-            Reparse.entryPoints.developmentCardsState,
-            check_all_development_cards, cards => {
-                if (Object.hasOwn(cards, "bank"))
-                    updateDevSpyElement("Bank", cards.bank);
-                for (let [index, devs] of Object.entries(cards.players))
-                    updateDevSpyElement(getPlayerName(index), devs);
-                return {isDone: false};
-            });
 
         return true; // Register only once
     }
