@@ -22,6 +22,7 @@ class Colony {
             5: "ore",
         },
         devcards: {
+            10: "unknown",
             11: "knight",
             12: "vp",
             13: "monopoly",

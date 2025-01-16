@@ -54,7 +54,7 @@ function colourInterpolate(zeroToOne) {
         // Warn about invalid inputs even though we correct them. We do not mean
         // to input invalid numbers.
         0 <= zeroToOne && zeroToOne <= 1,
-        "Interfṕolation factor should be between 0 and 1");
+        `Interpolation factor should be between 0 and 1, is ${zeroToOne}`);
     // Clamp to hedge against inaccurate floats
     zeroToOne = clampProbability(zeroToOne);
     if (zeroToOne < 0.5) {

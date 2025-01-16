@@ -1,22 +1,14 @@
 "use strict";
 
-// For logging
-if (typeof cocaco_MAIN === "undefined") {
-    var cocaco = {receivedCount: 0, sendCount: 0};
-}
-
-cocaco.receivedCount = 0;
-cocaco.sendCount = 0;
-
 function reportReceive(event) {
     if (typeof event.data == "string") {
-        // console.debug("--- (Ignored message) ---");
-        return;
+        // console.debug("--- (Ignored message) ---", event);
+        return undefined;
     }
     if (typeof receive_MAIN === "undefined") {
         console.warn("Not defined: receive_MAIN");
         console.info("Load Cocaco first. Then start a new tab.");
-        return;
+        return undefined;
     }
     let returnedFrame;
     try {
@@ -27,24 +19,19 @@ function reportReceive(event) {
         console.warn("Switch to content-script failed:", e);
     }
     if (returnedFrame === null) {
-        // console.debug(
-        //     "socket_main.js: reportReceive():", cocaco.receivedCount++,
-        //     "delete:", message,
-        // );
         event.stopImmediatePropagation();
         event.preventDefault();
     } else if (typeof returnedFrame === "undefined") {
         // Nothing
     } else {
-        // console.debug("socket_main.js: reportReceive: Replacing frame with:",
-        //     returnedFrame
-        // );
         event.data = returnedFrame;
     }
 }
 
 function reportSend(data_raw, reparse, ...rest) {
-    console.assert(rest.length === 0);
+    console.assert(
+        rest.length === 0,
+        "WebSocket.send() should regularly be called with a single argument");
     let returnedFrame;
     try {
         returnedFrame = send_MAIN(data_raw, reparse);

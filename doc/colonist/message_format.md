@@ -569,6 +569,7 @@ encoding and as indices.
 
 | Icon | Decimal | Hex | Card |
 |-|-:|:-:|:-|
+| 🂠 | 10 | 0xa | Unknown |
 | ♞ | 11 | 0xb | Knight |
 | ⭐ | 12 | 0xc | VP |
 | 📈 | 13 | 0xd | Mono |
