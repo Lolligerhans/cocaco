@@ -41,38 +41,38 @@ function reportSend(data_raw, reparse, ...rest) {
     return returnedFrame;
 }
 
-if (typeof cocaco_MAIN === "undefined") {
-    let WebSocket_real = window.WebSocket;
-    let WebSocket_decorated = function() {
-        let webSocket = new WebSocket_real(...arguments);
-        webSocket.addEventListener("message", reportReceive);
-        let send_real = webSocket.send;
-        webSocket.send =
-            (data, reparse = {native: true, doReparse: true}, ...rest) => {
-                console.assert(rest.length === 0);
-                const frame = reportSend(data, reparse);
-                // When returning
-                //  - undefined:       Regular behaviour
-                //  - null:            Delete frame
-                //  - frame (assumed): Replace frame
-                let res;
-                if (frame === null) {
-                    // console.debug("socket_main.js: send(): Deleting frame");
-                    res = undefined;
-                } else if (typeof frame === "undefined") {
-                    res = send_real.call(webSocket, data);
-                } else {
-                    // console.debug("socket_main.js: send(): Replacing frame");
-                    // console.debug("frame:", frame, "data:", data);
-                    res = send_real.call(webSocket, frame);
-                }
-                return res;
-            };
-        console.log("🛜 WebSocket decorated");
-        setWebSocket_MAIN(webSocket);
-        return webSocket;
-    };
-    window.WebSocket = WebSocket_decorated;
+if (cocaco_mutex) {
+    console.warn("🛜 Found cocaco. Not replacing socket.");
+} else {
+    var cocaco_mutex = true;
+    let WebSocketProxy = new Proxy(window.WebSocket, {
+        construct: function(target, args) {
+            console.log("🛜 New Proxy WebSocket");
+            let webSocket = new target(...args);
+            webSocket.addEventListener("message", reportReceive);
+            let sendProxy = new Proxy(webSocket.send, {
+                apply: function(target, thisArg, args) {
+                    console.assert(1 <= args.length && args.length <= 2);
+                    let data = args[0];
+                    let reparse = args[1] ?? {native: true, doReparse: true};
+                    let frame = reportSend(data, reparse);
 
-    var cocaco_MAIN = true;
+                    let res;
+                    if (frame === null) {
+                        res = undefined;
+                    } else if (typeof frame === "undefined") {
+                        res = target.apply(thisArg, [data]);
+                    } else {
+                        res = target.apply(thisArg, [frame]);
+                    }
+                    return res;
+                }
+            });
+            webSocket.send = sendProxy;
+            setWebSocket_MAIN(webSocket);
+
+            return webSocket;
+        }
+    });
+    window.WebSocket = WebSocketProxy;
 }
