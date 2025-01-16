@@ -602,7 +602,7 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
         "ColonyMatchCountries",
         Reparse.applyDoers.byKind({ type: [4] }),
         Reparse.entryPoints.playerUserStates,
-        check_country_code,
+        check_all_country_codes,
         groups => {
             let any = false;
             for (let group of groups) {

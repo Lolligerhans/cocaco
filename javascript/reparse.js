@@ -447,14 +447,13 @@ class Reparse {
 
 /**
  * Predefined function for the '#parse' function of a 'Reparse' instance.
- * Returns groups with matching country codes.
+ * Returns all country code groups.
  * @param {Object} entryPoint
  * 'playerUserStates' object. Can be obtained from 'entryPoint.playerUserStates'
  * @return {Array.<{code:string,players:string[]}>}
- * Groups of at least 2 players with matching country codes. Empty array if no
- * country codes match.
+ * Country code groups.
  */
-function check_country_code(entryPoint) {
+function check_all_country_codes(entryPoint) {
     let codes = {};
     for (let p of entryPoint) {
         p.countryCode ??= "Bot";
@@ -464,9 +463,7 @@ function check_country_code(entryPoint) {
     }
     let ret = [];
     for (let [code, players] of Object.entries(codes)) {
-        if (players.length >= 2) {
-            ret.push({code: code, players: players});
-        }
+        ret.push({code: code, players: players});
     }
     return ret;
 }

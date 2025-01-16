@@ -133,7 +133,7 @@ class Colonist {
             "Colonist match countries",
             Reparse.applyDoers.byKind({type: [4]}),
             Reparse.entryPoints.playerUserStates,
-            check_country_code,
+            check_all_country_codes,
             groups => {
                 let any = false;
                 for (let group of groups) {
