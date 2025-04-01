@@ -600,7 +600,7 @@ Colony.prototype.registerReparsers = function Colony_prototype_registerReparsers
     Reparse.register(
         "receive",
         "ColonyMatchCountries",
-        Reparse.applyDoers.byKind({ type: [4] }),
+        Reparse.applyDoers.byKind({ id: "130", type: [4] }),
         Reparse.entryPoints.playerUserStates,
         check_all_country_codes,
         groups => {

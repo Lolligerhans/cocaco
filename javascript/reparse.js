@@ -75,11 +75,7 @@ class Reparse {
             //     "Does this apply? | should=",
             //     type, " ❓ is=", message.data.type,
             // );
-            console.assert(
-                message.id && message.data.type,
-                "Can this ever not be the case?"
-            );
-            let ok = true
+            let ok = true;
             if (Object.hasOwn(kinds, "id")) {
                 if (typeof kinds.id === "number") kinds.id = [kinds.id];
                 ok = ok && kinds.id.includes(message.id);
@@ -88,6 +84,19 @@ class Reparse {
                 if (typeof kinds.type === "number") kinds.type = [kinds.type];
                 ok = ok && kinds.type.includes(message.data.type);
             }
+
+            // Sanity check
+            {
+                const hasIdAndDataType = message.id && message.data.type;
+                if (ok && !hasIdAndDataType) {
+                    console.assert(
+                        false,
+                        "This does not trigger on the messages we accounted for"
+                    );
+                    console.warn("message:", message);
+                }
+            }
+
             return ok;
         },
 
