@@ -62,11 +62,17 @@ class Colonist {
             return true;
         }
 
-        this.logElement = document.getElementById("game-log-text");
-        if (!this.logElement) {
+        let uiGame = document.getElementById("ui-game");
+        if (!uiGame) {
+            console.log("Waiting for game");
             return false;
         }
-        this.chatElement = document.getElementById("game-chat-text");
+        this.logElement = uiGame.children[0].children[0];
+        if (!this.logElement) {
+            console.error("Did not find log element");
+            return false;
+        }
+        this.chatElement = uiGame.children[0].children[1];
         if (!this.chatElement) {
             // Log and chat element should appear at the same time
             console.warn("Did not find game chat despite game log present");
