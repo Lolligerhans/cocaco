@@ -106,7 +106,7 @@ class Colonist {
                 document.getElementById("header_profile_username");
             this.playerUsername =
                 deepCopy(this.playerUsernameElement.textContent);
-            console.assert(this.playerUsernameElement !== null,
+            console.assert(this.playerUsernameElement != null,
                            "playerUsernameElement should always be present");
         }
         if (cocaco_config.fixedPlayerName === true) {
