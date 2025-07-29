@@ -112,7 +112,7 @@ class Colonist {
         if (cocaco_config.fixedPlayerName === true) {
             this.playerUsername = cocaco_config.playerName;
         }
-        if (this.playerUsername === "") {
+        if (this.playerUsername == null || this.playerUsername === "") {
             return false;
         }
 
