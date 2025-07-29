@@ -67,12 +67,13 @@ class Colonist {
             console.log("Waiting for game");
             return false;
         }
-        this.logElement = uiGame.children[0].children[0];
+        this.logElement = uiGame.children[0].children[5].children[0];
         if (!this.logElement) {
             console.error("Did not find log element");
             return false;
         }
-        this.chatElement = uiGame.children[0].children[1];
+        this.chatElement =
+            uiGame.children[0].children[5].children[1];
         if (!this.chatElement) {
             // Log and chat element should appear at the same time
             console.warn("Did not find game chat despite game log present");
