@@ -245,6 +245,14 @@ class Colony {
         ship: "ship_red_north_west",
     };
 
+    static imageNameAdditions = {
+        wood: "cf22f8083cf89c2a29e7",
+        brick: "5950ea07a7ea01bc54a5",
+        sheep: "17a6dea8d559949f0ccc",
+        wheat: "09c9d82146a64bce69b5",
+        ore: "117f64dab28e1c987958",
+    };
+
     /**
      * Cut only the resources out of imageNameSnippets
      */
@@ -253,6 +261,7 @@ class Colony {
              ({wood, brick, sheep, wheat, ore, cloth, coin, paper}))(
             Colony.imageNameSnippets);
 
+    // FIXME: Outdated. New see 'colonistAssetMap' in render_cards.js. Combine.
     static colonistAssets = {
         // clang-format off
         wood: `<img src="dist/images/${Colony.imageNameSnippets["wood"]}.svg" class="cocaco-tbl-resource-icon"/>`,

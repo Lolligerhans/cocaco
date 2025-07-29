@@ -535,7 +535,8 @@ class RenderCards {
      * @return {string} New path to be used as "src" in <img> tags
      */
     static colonistAssetMap = (_path, resource) => {
-        const newPath = `dist/images/${Colony.imageNameSnippets[resource]}.svg`;
+        const newPath = `dist/assets/${Colony.imageNameSnippets[resource]}.${
+            Colony.imageNameAdditions[resource]}.svg`;
         return newPath;
     };
 
