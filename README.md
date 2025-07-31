@@ -12,7 +12,6 @@
 | 🂠     | Track cards                   |
 | 🎲    | Analyze dice rolls            |
 | 🥷    | Record robs                   |
-| ⛵ 🛡 | All expansions                |
 | 👀    | Spectate games                |
 | ∫     | Bayesian tracking algorithm   |
 | 💡    | Include manual deductions     |
@@ -51,8 +50,8 @@ git checkout "$(git describe --tags --abbrev=0)";
 [GitHub](https://github.com/Lolligerhans/cocaco/tags).
 1. Extract the `.zip` file, producing the `cocaco/` folder.
 
-> [!NOTE]
-> Version 4 supports base game only. Use version 3 for expansions.
+<!-- > [!NOTE] -->
+<!-- > Version 4 supports base game only. Use version 3 for expansions. -->
 
 ### Installation
 
