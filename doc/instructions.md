@@ -49,6 +49,7 @@ panels are controlled by the 🂠 📊 buttons at the top.
 | URL bar 🥥 | Hide/show display |
 | 🂠 | Hide/show resource cards |
 | 📊 | Hide/show [rolls plot](#rolls-plot) |
+| ☰ | Hide/show cocaco log |
 
 ## Collusion
 

@@ -10,18 +10,30 @@ let stats = new Statistics({}, {});
 const backgroundIcon = document.createElement("img");
 backgroundIcon.src = theBrowser.runtime.getURL("assets/coconut_512.png");
 backgroundIcon.id = "background-icon";
-setInterval(() => {
+setTimeout(() => {
     let e = document.body;
     if (e)
         document.body.prepend(backgroundIcon);
-}, 3000);
+}, 5000);
 
-let e = document.getElementById("header_navigation_store");
-if (e !== null)
-    e.textContent = "(🥥 Cocaco " + version_string + ")";
-e = document.querySelector(".betaTag");
-if (e !== null)
-    e.textContent = "🥥 Cocaco " + version_string;
+/**
+ * Overwrite-else-create HTML element as visual confirmation. Does not do
+ * anything functional. May fail silently.
+ * @param {String} username Username to show within the info element
+ */
+function show_version(username = "(Unknown)") {
+    const className = "cocaco-version";
+    let e = document.querySelector('.web-header-login-button');
+    if (e === null)
+        return;
+    let versionElement =
+        document.querySelector(`.${className}`) ??
+        e.parentElement.appendChild(document.createElement('div'));
+    versionElement.className = className;
+    versionElement.textContent = `Cocaco ${version_string} 🥥 ${username}`;
+}
+
+show_version();
 
 const alternativeAssets = {
     // Missing assets for non-base game modes.
@@ -424,6 +436,8 @@ function main() {
     }
 
     if (window.location.hostname === "colonist.io") {
+        console.assert(cocaco_config.pipeline === "Colonist",
+                       "Deprecated other pipeline");
         if (cocaco_config.pipeline === "Colonist") {
             console.log("🥥 Running Colonist on colonist.io");
 

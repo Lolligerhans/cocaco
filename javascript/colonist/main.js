@@ -12,6 +12,31 @@
  */
 class Colonist {
 
+    static imageNameSnippets = {
+        wood: "card_lumber",
+        brick: "card_brick",
+        sheep: "card_wool",
+        wheat: "card_grain",
+        ore: "card_ore",
+        cloth: "card_cloth",
+        coin: "card_coin",
+        paper: "card_paper",
+        unknown: "card_rescardback",
+        road: "road_red",
+        settlement: "settlement_red",
+        devcard: "card_devcardback",
+        city: "city_red",
+        ship: "ship_red_north_west",
+    };
+
+    static imageNameAdditions = {
+        wood: "cf22f8083cf89c2a29e7",
+        brick: "5950ea07a7ea01bc54a5",
+        sheep: "17a6dea8d559949f0ccc",
+        wheat: "09c9d82146a64bce69b5",
+        ore: "117f64dab28e1c987958",
+    };
+
     /**
      * Remove some HTMLElements on a best effort basis. Its ok if this fails.
      */
@@ -34,8 +59,8 @@ class Colonist {
     clearLog() {
         console.assert(this.logger !== null);
         this.logger.clear();
-        this.logger.log(this.chatElement, `🥥 Cocaco ${version_string}`);
-        this.logger.log(this.chatElement, `🥥 Hello ${this.playerUsername}`);
+        this.logger.log(this.loggingElement, `🥥 Cocaco ${version_string}`);
+        this.logger.log(this.loggingElement, `🥥 Hello ${this.playerUsername}`);
 
         return true;
     }
@@ -54,7 +79,7 @@ class Colonist {
      * Find key HTMLElements. Progresses only when the elements are found.
      */
     findElements() {
-        // When replaying we start without log element
+        // When replaying we start without waiting for the game (or game UI)
         if (cocaco_config.replay) {
             console.info("Colonist: Replaying!");
             this.logger = new MessageLog();
@@ -62,38 +87,45 @@ class Colonist {
             return true;
         }
 
-        let uiGame = document.getElementById("ui-game");
+        const uiGame = document.getElementById("ui-game");
         if (!uiGame) {
             console.log("Waiting for game");
             return false;
         }
-        this.logElement = uiGame.children[0].children[5].children[0];
-        if (!this.logElement) {
-            console.error("Did not find log element");
-            return false;
+
+        {
+            const responsiveContainer =
+                uiGame.querySelector("[class*='responsiveContainer']");
+            console.assert(responsiveContainer,
+                           "Game log container is always expexted");
+            this.loggingElement = uiGame.querySelector(".cocaco-log") ??
+                                  responsiveContainer.insertBefore(
+                                      document.createElement("div"),
+                                      responsiveContainer.firstChild);
+            this.loggingElement.className = "cocaco cocaco-log";
+            console.assert(this.loggingElement,
+                           "Logging element generation should always succeed");
         }
-        this.chatElement =
-            uiGame.children[0].children[5].children[1];
-        if (!this.chatElement) {
-            // Log and chat element should appear at the same time
-            console.warn("Did not find game chat despite game log present");
-        }
-        if (this.chatElement) {
-            if (Colony.enlarger) {
-                this.chatElement.removeEventListener("click", Colony.enlarger,
-                                                     false);
-                Colony.enlarger = null;
+
+        {
+            if (Colonist.enlarger) {
+                this.loggingElement.removeEventListener(
+                    "click", Colonist.enlarger, false);
+                Colonist.enlarger = null;
             }
             if (cocaco_config.largeLog) {
-                Colony.enlarger = enlarge.bind(null, this.logElement);
-                this.chatElement.addEventListener("click", Colony.enlarger,
-                                                  false);
+                Colonist.enlarger = enlarge.bind(null, this.loggingElement);
+                this.loggingElement.addEventListener("click", Colonist.enlarger,
+                                                     false);
             }
         }
 
+        {
+            this.logger = new MessageLog(this.loggingElement);
+            this.logger.enabled = cocaco_config.log.main;
+        }
+
         Colonist.deleteSomeElements();
-        this.logger = new MessageLog(this.chatElement);
-        this.logger.enabled = cocaco_config.log.main;
 
         return true;
     }
@@ -103,12 +135,9 @@ class Colonist {
      */
     findName() {
         if (!cocaco_config.replay) {
-            this.playerUsernameElement =
-                document.getElementById("header_profile_username");
-            this.playerUsername =
-                deepCopy(this.playerUsernameElement.textContent);
-            console.assert(this.playerUsernameElement != null,
-                           "playerUsernameElement should always be present");
+            this.playerUsername = parse_username(document);
+            console.assert(this.playerUsername != null,
+                           "Could not find username yet");
         }
         if (cocaco_config.fixedPlayerName === true) {
             this.playerUsername = cocaco_config.playerName;
@@ -118,11 +147,7 @@ class Colonist {
         }
 
         console.debug("🥥 You are:", this.playerUsername);
-
-        let e = document.getElementById("header_navigation_store");
-        if (e !== null) {
-            e.textContent = "🥥 Cocaco " + version_string;
-        }
+        show_version(this.playerUsername);
 
         return true;
     }
@@ -144,12 +169,12 @@ class Colonist {
             groups => {
                 let any = false;
                 for (let group of groups) {
-                    this.logger.log(this.chatElement,
+                    this.logger.log(this.loggingElement,
                                     `${group.code}: ${group.players}`);
                     any = true;
                 }
                 if (any === false) {
-                    this.logger.log(this.chatElement, "No country matches");
+                    this.logger.log(this.loggingElement, "No country matches");
                 }
                 return {isDone: true};
             },
@@ -202,11 +227,8 @@ class Colonist {
      * Initializes all members to their default 'null'.
      */
     reset() {
-        // Host
-        this.chatElement = null;
-        this.logElement = null;
-        this.playerUsernameElement = null;
         this.playerUsername = null;
+        this.loggingElement = null;
         this.logger = null;
 
         // Data pipeline
@@ -215,7 +237,7 @@ class Colonist {
         this.state = null;
         this.resender = null;
 
-        // Debugging
+        // Debugging/Testing
         this.replay = null;
 
         return true;
@@ -228,7 +250,8 @@ class Colonist {
     setupState() {
         this.source = new ColonistSource();
         this.observer = new ColonistObserver(this.source, this.resender);
-        this.state = new State(this.observer, this.resender, this.chatElement);
+        this.state =
+            new State(this.observer, this.resender, this.loggingElement);
 
         // HACK: Supply playerUsername manually instead of reparsing
         this.source.setPlayerUsername(this.playerUsername);
@@ -277,7 +300,7 @@ class Colonist {
                 // May not have a log element in replay mode
                 const runTest = () => { this.resender.test(); };
 
-                this.logElement.addEventListener("click", runTest, false);
+                this.loggingElement.addEventListener("click", runTest, false);
             } else if (cocaco_config.resendTestOnClick === true) {
                 console.warn("Cannot run test during replay (no click element");
             }

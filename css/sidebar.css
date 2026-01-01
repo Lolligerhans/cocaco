@@ -8,6 +8,14 @@
 
   white-space-collapse: discard;
 
+&.cocaco-log {
+  display: flex;
+  flex-direction: column;
+  height: 3cm;
+  overflow: scroll;
+  background: white;
+}
+
 &html {
   background: #ccc;
 }

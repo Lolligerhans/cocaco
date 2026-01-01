@@ -174,3 +174,6 @@ if (cocaco_config.replay) {
 }
 
 console.dir(cocaco_config);
+
+console.assert(cocaco_config.pipeline == "Colonist",
+               "Deprecated Colony pipeline");

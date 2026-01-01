@@ -303,12 +303,15 @@ State.implementor.start = function({us, players}) {
     console.assert(
         !this.render,
         "Do not produce Render corpses by activating this multiple times");
-    const usedAssets =
-        cocaco_config.ownIcons ? alternativeAssets : Colony.colonistAssets;
     const nameToColour = {};
     players.all().forEach(p => nameToColour[p.name] = p.colour);
     switch (cocaco_config.render.type) {
         case "table":
+            // FIXME: Colony is gone, replace with Colonist equivalent. Possibly
+            //        move the assert map out of render_cards.js, then use it
+            //        for both renderers.
+            const usedAssets = cocaco_config.ownIcons ? alternativeAssets
+                                                      : Colony.colonistAssets;
             this.render = new Render(
                 this.multiverse,
                 this.track,

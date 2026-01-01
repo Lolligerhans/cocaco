@@ -33,6 +33,11 @@
     visibility: hidden;
 }
 
+.cocaco-gone
+{
+    display: none !important;
+}
+
 .cocaco-dbg-msg
 {
     color: black;

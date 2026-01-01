@@ -107,9 +107,13 @@ MessageLog.prototype.logDom = function(messageElement, ...args) {
         this.logChat(...args);
 };
 
+/**
+ * @param {HTMLElement} messageElement
+ */
 MessageLog.prototype.logMessage = function(messageElement, ...args) {
     const element = MessageLog.styledElement(...args);
-    messageElement.appendChild(element);
+    let addedElement = messageElement.appendChild(element);
+    addedElement.scrollIntoView(false);
 };
 
 MessageLog.configOptions = {
