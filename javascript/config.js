@@ -66,7 +66,10 @@ cocaco_config = {
     // Delay for UI updates
     timeout: 1000,
     // Write in/out to files
-    dump: {receive: false, send: false},
+    dump: {
+        receive: false,
+        send: false,
+    },
 
     // ── Style ──────────────────────────────────────────────────
     // Do not fetch Colonist assets. For replay/offline/testing.
