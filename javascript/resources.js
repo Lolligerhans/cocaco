@@ -296,6 +296,16 @@ class Resources {
     }
 
     /**
+     * Modify this in-palce, negating all counts. Positive entries become
+     * negative and vice versa.
+     * @return {Resources} The modified object
+     */
+    negate() {
+        this.merge({}, (x, _) => -x);
+        return this;
+    }
+
+    /**
      * Modify this in-palce, resetting positive entries to 0.
      * @param {boolean} [absoluteValue=false]
      * When true, inverts the previously negative values, returning resources
