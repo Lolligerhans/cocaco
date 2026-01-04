@@ -15,11 +15,11 @@
  * @property {Payload} payload
  * A payload depending on the type of observation.
  *
- * @typedef { BuyPayload | CollusionStartPayload | CollusionStopPayload
- *            | CollusionAcceptancePayload | CollusionOfferPayload
- *            | DiscardPayload | GotPayload | MonoPayload | OfferPayload
- *            | RollPayload | StartPayload | StealPayload | TradePayload
- *            | TurnPayload | YopPayload } Payload
+ * @typedef { AgreePayload | BuyPayload | CollusionStartPayload
+ *            | CollusionStopPayload | CollusionAcceptancePayload
+ *            | CollusionOfferPayload | DiscardPayload | GotPayload
+ *            | MonoPayload | OfferPayload | RollPayload | StartPayload
+ *            | StealPayload | TradePayload | TurnPayload | YopPayload } Payload
  */
 
 /**
@@ -74,6 +74,85 @@ class Observer extends Trigger {
     // The interface defines observation functions for game events. Ideally
     // these map to Source packets in a simple manner. Otherwise the Observer
     // must implement the logic to obtain the appropriate inputs.
+
+    /**
+     * @typedef {Object} AgreePayload
+     * @property {Trade} trade The trade in question
+     * @property {Player} player The player agreeing to the trade. The {@link
+     *                           trade} is expected to have this player on the
+     *                           receiving end.
+     *
+     * @param {AgreePayload} payload
+     *
+     * This observation allows inferring that a player has the available
+     * resources to trade from the fact that they agree to the trade. This may
+     * not include accepting a trade the player had initially created
+     * themselves.
+     *
+     * The canonical example is: Player A (who's turn it is) creates a trade
+     * offer {@see @type OfferPayload} (this partially revealing their cards).
+     * When the other players agree to that trade, they also partially reveal
+     * their cards, which this observation is for.
+     *
+     * This observation is for tracking only. Collusion-related observations are
+     * different and emitted separately.
+     *
+     * CONTINUE: User the printing implementation in state to settle these
+     *           questions.
+     *           - [x] Us agreeing to their trade. Complete and correct.
+     *           - [x] Them agreeing to our trade.
+     *           - [x] Us agreeing to our counter trade (implicit)
+     *           - [x] Them agreeing to their trade.
+     *           - [ ] Them agreeing to our counter trade to them
+     *           - [ ] Us agreeing to their counter trade to us
+     *           - [ ] Us agreeing to their counter trade to them
+     *           - [ ] Them agreeing to their counter trade to us
+     *           - [ ] Them agreeing to their counter trade to them
+     * FIXME: What happens in these special cases:
+     *       1. Do counter offers count?
+     *       2. When opponents agree to other opponents' counter offers, what
+     *          happens?
+     *       3. Are counter offers handled correctly when they are between
+     *          opponents only?
+     *      What I expect but need to verify:
+     *      1. When a counter trade is made, the tradeState automatically gets
+     *         set the corresponding "acceptingPlayers" entry for the player who
+     *         generated the counter offer.
+     *      2. When 3rd parties also agree to counter offers, they are added to
+     *         acceptingPlayers. Verify that we interpret this correctly.
+     *      3. Verify the two cases above for counter offers between two
+     *         opponents.
+     */
+    agree({trade, player}) {
+        // TODO: When taker is indeed null we need to decide if the concrete
+        //       observer has to fill in the correct taker. Alternatively we can
+        //       just write the value here to generate the observation in the
+        //       format easiest to process by the state later on. In that case
+        //       we would not need to pass the agreeing player separately since
+        //       it would be implied in the trade, though we may choose to do so
+        //       anyway in case we use it for something later, even if just for
+        //       printing things.
+        console.assert(
+            trade.taker === player,
+            "The taker may be null because the trade may not have a recipient in the source frame.");
+        // We could think about allowing either participant to be the agreeing
+        // player.
+        console.assert(trade.giver !== player);
+        console.assert(
+            trade.giver !== null,
+            "Currently we would not care if giver is indeed null, because that information is not used anyway. We just expect ot not to be");
+        console.assert(trade.resources != null);
+        console.assert(trade.resources.countPositive() > 0);
+        console.assert(trade.resources.countNegative() > 0);
+        let observation = {
+            type: "agree",
+            payload: {
+                trade: trade,
+                player: player,
+            }
+        };
+        this.#observe(observation);
+    }
 
     /**
      * A player buys/builds something

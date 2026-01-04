@@ -535,7 +535,7 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
      * @return {Player} The player who is given as "creator" in the trade soruce
      *                  packet.
      */
-    const rawCreatorName = trade => {
+    const rawCreator = trade => {
         console.assert(trade != null);
         return this.storage.players.id(trade.creator);
     };
@@ -560,6 +560,66 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
         const ret = this.storage.players.id(playerId);
         return ret;
     };
+    /**
+     * Generate the list of accepting players
+     * @param {Object} trade Trade in source packet format
+     * @return {[Player]} Array of players that accepted.
+     */
+    const acceptingPlayersOf = trade => {
+        const acceptingPlayers =
+            Object.entries(trade.playerResponses)
+                .filter(([_playerId, response]) => response === 1)
+                .map(([playerId, _response]) => playerId)
+                .map(playerId => this.storage.players.id(playerId));
+        return acceptingPlayers;
+    };
+
+    const acceptedTrades = this.storage.trade.getByResponse(1);
+
+    // ── Trade agreement (for resource tracking) ────────────────
+    // For now we accept generating thi observation every time they appear in
+    // the frame/source data, without deduplication. With any luck there may not
+    // be any duplication anyway.
+    Object.entries(acceptedTrades).forEach(([tradeId, trade]) => {
+        // console.debug(`Evaluating agreement: tradeId=${tradeId}`, trade);
+        const tradeResources =
+            ColonistObserver.getResourcesFromFrameTrade(trade);
+        // Check for null or undefined. Assume that missing values have the same
+        // semantics as explicit 'null'.
+        if (trade.counterOfferInResponseToTradeId != null) {
+            // Counter offers have resoures from the perspective of the
+            // countering player. Which trade was countered does not matter
+            // here.
+            tradeResources.negate();
+        }
+        const givingPlayer =
+            this.storage.players.id(this.storage.currentTurnPlayerColor);
+        let acceptingPlayers = acceptingPlayersOf(trade);
+        {
+            // When the player who's turn it is edits someone else's trade, the
+            // player who's turn it is does not appear in the list of accepting
+            // players. That is however fine, because that will already by
+            // inferred from the trade creation itself. We need not duplicate
+            // the inference from the implicit agreement. We do that for the
+            // other players (where rawCreator === acceptor) to keep the code
+            // simpler, but it would not be necessary either.
+
+            // acceptingPlayers.concat(rawCreator(trade));
+        }
+        for (const acceptingPlayer of acceptingPlayers) {
+            let tradeObject = new Trade({
+                giver: givingPlayer,
+                taker: acceptingPlayer,
+                resources: tradeResources,
+            });
+            console.assert(!acceptingPlayer.equals(creatorPlayer),
+                           "Logic error");
+            console.assert(tradeObject.giver !== null);
+            console.assert(tradeObject.taker !== null);
+            // Calls Observer.prototype.agree()
+            this.agree({trade: tradeObject, player: acceptingPlayer});
+        }
+    });
 
     // ── Collusion acceptance (maybe finalise) ──────────────────
     /**
@@ -615,7 +675,6 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
         };
         this.collusionAcceptance(offer);
     }; // suggestFinalisation()
-    const acceptedTrades = this.storage.trade.getByResponse(1);
     Object.entries(acceptedTrades).forEach(([tradeId, trade]) => {
         // console.debug(`Evaluating tradeId=${tradeId} finalisation`);
         const creator = creatorPlayer(trade);
@@ -627,11 +686,19 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
             // console.debug("Not finalising: Not our trade");
             return;
         }
-        const acceptingPlayers =
-            Object.entries(trade.playerResponses)
-                .filter(([_playerId, response]) => response === 1)
-                .map(([playerId, _response]) => playerId)
-                .map(playerId => this.storage.players.id(playerId));
+        const acceptingPlayers = acceptingPlayersOf(trade);
+        {
+            // TODO: Delete this regression check
+            const acceptingPlayersOld =
+                Object.entries(trade.playerResponses)
+                    .filter(([_playerId, response]) => response === 1)
+                    .map(([playerId, _response]) => playerId)
+                    .map(playerId => this.storage.players.id(playerId));
+            console.assert(JSON.stringify(acceptingPlayers) ===
+                               JSON.stringify(acceptingPlayersOld),
+                           "Delete this check when it does not regress. Old:",
+                           acceptingPlayersOld, "new:", acceptingPlayers);
+        }
         for (const acceptingPlayer of acceptingPlayers) {
             offerAcceptance([tradeId, trade], acceptingPlayer);
         }
@@ -679,7 +746,7 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
                          "Normal when starting in the middle of a game.");
             return;
         }
-        const rawTradeCreator = rawCreatorName(trade);
+        const rawTradeCreator = rawCreator(trade);
         const tradeIsOurRegularOffer =
             this.storage.us.equals(tradeCreator, rawTradeCreator);
         if (tradeIsOurRegularOffer) {

@@ -161,6 +161,12 @@ class State extends Trigger {
 // │ Observation implementors                                  │
 // ╰───────────────────────────────────────────────────────────╯
 
+State.implementor.agree = function({trade, player}) {
+    console.debug(`TODO: State: Received agreement observation: ${
+                      player.name} | agrees to ${trade.toString()}`,
+                  trade, player);
+}
+
 State.implementor.buy = function({player, object}) {
     const name = player.name;
     const resources = State.costs[object];

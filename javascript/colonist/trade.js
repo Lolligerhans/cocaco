@@ -31,6 +31,15 @@ class ColonistTrade {
      */
     #newTrades = new Set();
 
+    // LATER: Add a #newAgreements set of trades that have, since the last
+    //           update, newly received the agreement mark from any one of the
+    //           players. This may need to contain pairs of trade-player where
+    //           all accepting players may generate a new agreement indicator
+    //           separately. We can then use this check to generate agreement
+    //           observations only sporadically (i.e., only exactly once per
+    //           actual agreement, rather than every time the tradeState is
+    //           updated by the host website).
+
     /**
      * All trade IDs we have seen so far
      */
@@ -154,6 +163,21 @@ class ColonistTrade {
             }
         });
         return ret;
+    }
+
+    /**
+     * Return the currently active trade with the given trade ID.
+     * the given response.
+     * @param {string} TradeId Trade ID as used in frames
+     * @return {Object | null} The trade in input in collonist format
+     */
+    getByTradeId(tradeId) {
+        for (const [id, trade] of Object.entries(
+                 this.#tradeState.activeOffers)) {
+            if (id === tradeId)
+                return structuredClone(trade);
+        }
+        return null;
     }
 
     /**
