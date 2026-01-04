@@ -7,10 +7,10 @@
  * @typedef {Number[]} Slice Array containing a number for every resource type
  */
 
-// Use _0 because 0 confuses the computer
 /**
  * Worlds are objects with a 'chance' property, and a Slice for each player
  * index.
+ * Use _0 in the JSDoc because 0 confuses the computer.
  * @typedef {Object} World
  * @property {Number} chance
  * @property {Slice} _0
@@ -298,6 +298,9 @@ class Multiverse {
         this.#playerIndices = Object.fromEntries(
             Object.entries(this.#playerNames).map(a => a.reverse()));
 
+        /**
+         * @type {World}
+         */
         let world = {};
         for (const [name, resources] of Object.entries(startingResources)) {
             world[this.#getPlayerIndex(name)] = Multiverse.asSlice(resources);
@@ -449,11 +452,11 @@ class Multiverse {
         let playerSlices = this.#getPlayerSlices(playerIdx);
         // Return as Resources to keep implementation encapsulated
         const res = playerSlices.map(({chance, slice}) => {
-            const ret = {
+            const inResourceForm = {
                 chance: chance,
                 resources: Multiverse.sliceToResources(slice),
             };
-            return ret;
+            return inResourceForm;
         });
         return res;
     }
@@ -741,7 +744,7 @@ class Multiverse {
     }
 
     /**
-     * Compute world resource total
+     * Compute world resource total, adding up resources for all players.
      * @param {World} world
      * @return {Resources} Sum of all slices in 'world'
      */
@@ -775,7 +778,8 @@ class Multiverse {
     }
 
     static sliceHasNegative(slice) {
-        { // TODO Remove these checks eventually
+        {
+            // TODO: Remove these checks eventually
             if (!slice) {
                 console.error("unreachable");
                 debugger;
@@ -785,6 +789,8 @@ class Multiverse {
                 debugger;
             }
         }
+        console.assert(slice);
+        console.assert(slice != null);
         return slice.some(x => x < 0);
     }
 

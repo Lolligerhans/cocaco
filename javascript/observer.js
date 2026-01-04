@@ -97,8 +97,8 @@ class Observer extends Trigger {
      * This observation is for tracking only. Collusion-related observations are
      * different and emitted separately.
      *
-     * CONTINUE: User the printing implementation in state to settle these
-     *           questions.
+     * LATER: User the printing implementation in state to settle these
+     *        questions.
      *           - [x] Us agreeing to their trade. Complete and correct.
      *           - [x] Them agreeing to our trade.
      *           - [x] Us agreeing to our counter trade (implicit)
@@ -179,11 +179,14 @@ class Observer extends Trigger {
      * @property {Player} player
      * The player starting a collusion. Should always be us.
      * @property {Player[]} players
-     * List of colluding players, including 'player'.
+     * List of other colluding players. Does not include 'player' again.
      *
      * @param {CollusionStartPayload} param0
      */
     collusionStart({player, players}) {
+        console.assert(
+            !players.some(p => p.equals(player)),
+            "The comment says the player is not included but I believe it is not. Make sure.");
         let observation = {
             type: "collusionStart",
             payload: {
@@ -413,8 +416,10 @@ class Observer extends Trigger {
      * (!) Must be the first observation, emitted only once.
      *
      * @typedef {Object} StartPayload
-     * @property {Player} us The player belonging to the user
-     * @property {Players} players The 'Players' object to be used
+     * @property {Player} us The player belonging to the user. Included in
+     *                       'players'.
+     * @property {Players} players The 'Players' object to be used. Includes
+     *                             'us'.
      *
      * @param {StartPayload} param0
      */

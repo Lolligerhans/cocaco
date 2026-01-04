@@ -117,7 +117,8 @@ class Track {
     }
 
     /**
-     * Print internal state relating to robs to console
+     * Print internal state relating to robs to console when the 'printRobs'
+     * config is 'true'.
      */
     printRobs() {
         if (cocaco_config.printRobs !== true)

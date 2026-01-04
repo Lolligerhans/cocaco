@@ -359,6 +359,8 @@ class RenderCards {
                 else
                     card.style["outline-color"] = colourInterpolate(chance);
             };
+        // TODO: We should use the 'Resources' class here, but then we need to
+        //       deal with the extra resources for C&N that are still there.
         RenderCards.resourceTypes.forEach((resourceType, resourceIndex) => {
             i = 0;
             childCardIndex = resourceIndex * 19;

@@ -319,6 +319,21 @@ is_clean_master()
   fi
 }
 
+sanity_check_git_user() {
+  # This function prints errors when finding misconfigured git user name or
+  # email. Makes it easier to notice inconsistent values.
+
+  declare name email;
+  name="$(git config get user.name)";
+  email="$(git config get user.email)";
+
+  1>&2 show_variable name
+  1>&2 show_variable email
+  if [[ "$name" != "Lolligerhans" || "$email" != "lolli@ger.hans" ]]; then
+    errchoe "Expected different git user"
+  fi
+}
+
 sanity_check_version_loose() {
   # This function prints errors when finding obviously misconfigured versions.
   # Not a thorough version check.
@@ -394,6 +409,7 @@ declare -r symbols_help_string="Show symbols available in plotly";
 # │ ⚙ Boilerplate        │
 # ╰──────────────────────╯
 sanity_check_version_loose;
+sanity_check_git_user;
 # ⌂ Transition to provided command
 subcommand "${@}";
 # ╭──────────────────────╮

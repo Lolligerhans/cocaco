@@ -21,7 +21,7 @@ class ColonistObserverStorage {
      */
     us = null;
 
-    playerUserStates = null;
+    playerUserStates = null; // I believe this stores the frame object
 
     // ── Updated incrementally ──────────────────────────────────
 

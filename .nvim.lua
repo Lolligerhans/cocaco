@@ -17,6 +17,7 @@ vim.api.nvim_create_user_command(
 
 vim.keymap.set(
   "n",
+  -- Mnemonic: "code load"
   "<leader>cL",
   "<cmd>SetJsArgs<cr> | <cmd>LoadJs<cr>",
   { desc = "Load JS context" }

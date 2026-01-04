@@ -153,7 +153,7 @@ class Players {
      *                          position (with the highest index).
      * @param {Player[]} players All players. Cannot be changed later.
      * @param {Id[]} playOrder
-     * Play order represented by player IDs (colour enums).
+     * Play order represented by player IDs (colour enums for colonist).
      */
     constructor(lastName, players, playOrder) {
         console.assert(players.length >= 1); // Required
@@ -165,9 +165,6 @@ class Players {
         this.#generteIndices();
         this.#generateNames();
         this.print();
-        if (!(this.name(lastName).index === this.#allPlayers.length - 1)) {
-            debugger; // BUG: should not happen
-        }
         console.assert(this.name(lastName).index ===
                            this.#allPlayers.length - 1,
                        "The indicated player should be in last position");

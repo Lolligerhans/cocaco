@@ -93,6 +93,9 @@ class Collude {
      * CollusionPlanner. We do not actually use it for anything specific;
      * 'Collude' bases its data on the 'name' properties of the players.
      * @type {Player[]}
+     *
+     * We do not use the 'Players' class specifically because we want to
+     * identify some subset of all players, not all availables players.
      */
     #players = null;
 
@@ -165,8 +168,7 @@ class Collude {
      * @param {Player} playerTo String identifying the player, as passed to the
      *                          constructor.
      * @return {Resources} Collusion template from playerFrom to playerTo, if
-     *                     both players are colluding. 'null' if the players are
-     *                     not both colluding.
+     *                     both players are colluding. Else 'null'.
      */
     getCollusionTemplate(playerFrom, playerTo) {
         if (!this.#hasColludersByName(playerFrom.name, playerTo.name)) {

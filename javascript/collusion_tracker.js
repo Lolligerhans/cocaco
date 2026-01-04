@@ -21,6 +21,7 @@ class CollusionTracker {
      * user to trade undisturbed. Set when one of observed trades from us was
      * not previously suggested as collusion trade. Cleared at the start of
      * every turn (because simple, necessary only after our own turns).
+     * @type {boolean}
      */
     #isDormant = false;
 

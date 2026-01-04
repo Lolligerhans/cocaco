@@ -161,11 +161,19 @@ class State extends Trigger {
 // │ Observation implementors                                  │
 // ╰───────────────────────────────────────────────────────────╯
 
+// NOTE: Constructing this State.implementor object thwarts the LSP. It may be
+//       preferred to have a separate class 'Implementor' that just contains
+//       a reference to the State object for lookup. The subfunctions can then
+//       just be regular methods that which the LSP may be able to understand.
+//       For example, the LSP does not know that this.track is the Object of
+//       type 'Track' known as 'State.track'. With explicit class the LSP would
+//       at least know the type, even if "go to references" my not succeed.
+
 State.implementor.agree = function({trade, player}) {
     console.debug(`TODO: State: Received agreement observation: ${
                       player.name} | agrees to ${trade.toString()}`,
                   trade, player);
-}
+};
 
 State.implementor.buy = function({player, object}) {
     const name = player.name;
@@ -199,10 +207,12 @@ State.implementor.collusionOffer = function({player, trade, accept}) {
         accept();
     } else {
         // Do not interfere with the host auto-decline that happens when we
-        //  - cannot afford the trade
+        //  - cannot afford the trade, or
         //  - have an embargo
         const haveEnough =
             CollusionPlanner.takerHasEnough(trade, guessAndRange);
+        // When we have enough but the 'plannerResult' is false that means we do
+        // not want to do that trade (rather than cannot).
         const weWantToDecline =
             haveEnough || cocaco_config.collude.declineImpossibleCollusion;
         const isEmbargoed = this.collusionPlanner.isEmbargoedTrade(trade);

@@ -216,6 +216,7 @@ class CollusionPlanner {
      * @return {Trade|null} Suggested trade or 'null' to not suggest any trade
      */
     #generateOurTrade(otherPlayer, guessAndRange) {
+        console.assert(!otherPlayer.equals(this.#us));
         let template =
             this.#collude.getCollusionTemplate(this.#us, otherPlayer);
         console.assert(template !== null, "If not colluding do not call this");
@@ -280,8 +281,11 @@ class CollusionPlanner {
         console.assert(players.length >= 2);
         console.assert(players.some(p => p.equals(this.#us)));
         const hint = `(chat "${cocaco_config.collude.phrases.stop}" to stop)`;
-        this.#logger.log(null,
-                         `Colluding: ${players.map(p => p.name)} ${hint}`);
+        this.#logger.log(
+            // Joining with ", " results in the same format that we currently
+            // use as trigger to activate collusion. Makes it easy to copy and
+            // paste if needed.
+            null, `Colluding: ${players.map(p => p.name).join(", ")} ${hint}`);
         if (this.#collude !== null) {
             this.#consoleLogger.log("Overwriting existing collusion group",
                                     p(this.#collude.playerNames()));
