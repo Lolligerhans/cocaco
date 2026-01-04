@@ -843,6 +843,8 @@ function histogramTest() {
  * @param {Multiverse} trackerObject
  */
 function plotResourcesAsBubbles(idToPlotInto, trackerObject, colour_map) {
+    console.error(
+        "plotResourcesAsBubbles does not use 'Player' objects over names yet");
     let playerBubbles = [];
     const totalResources = Multiverse.generateFullNamesFromWorld(trackerObject);
     for (let j = 0; j < trackerObject.playerNames.length; ++j) {

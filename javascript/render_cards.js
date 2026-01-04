@@ -19,11 +19,6 @@ class RenderCards {
 
     #assets = null;
 
-    /**
-     * @type {Object<string,string>} Map player name -> player colour
-     */
-    #colour_map = null;
-
     #logger = new ConsoleLog("RenderCards", "🖵");
 
     /**
@@ -32,9 +27,10 @@ class RenderCards {
     #multiverse = null;
 
     /**
-     * @type {string[]} Player names in order of display
+     * @type {Players} Players participating in the game. Using names does not
+     *                 work when playing against yourself on the same machine.
      */
-    #playerNames = null;
+    #players = null;
 
     /**
      * When a sidebar is currently shown, this is the DOM element. When the
@@ -66,12 +62,12 @@ class RenderCards {
      * resources.
      * @param {HTMLElement} element
      * The 'resourceCards' element containing images to add listeners to
-     * @param {string} playerName
+     * @param {Player} player
      * The player name that should be passed to the 'Multiverse' guess function
      * @param {Multiverse} multiverse
      * The 'Multiverse' card tracking object to manipulate on click
      */
-    #addResourceGuessEventListeners(element, playerName) {
+    #addResourceGuessEventListeners(element, player) {
         /**
          * Invoke the Multiverse guess function
          * @param {string} type Resource type, obtained from the image alt name
@@ -85,8 +81,8 @@ class RenderCards {
          */
         const guessPredicate = (type, count, predicate) => {
             this.#multiverse.weightGuessPredicate(
-                playerName, Multiverse.getResourceIndex(type),
-                predicate.f(count), predicate.name(count));
+                player, Multiverse.getResourceIndex(type), predicate.f(count),
+                predicate.name(count));
             this.render();
         };
         /**
@@ -108,8 +104,8 @@ class RenderCards {
             //       'notFirstCard' element.
             const onClick = (pred = ">=") => {
                 const predicate = predicates[pred];
-                this.#logger.log(
-                    `Guessing ${playerName}[${type}] ${predicate.name(count)}`);
+                this.#logger.log(`Guessing ${player.name}[${type}] ${
+                    predicate.name(count)}`);
                 guessPredicate(type, count, predicate);
             };
             element.parentNode.addEventListener("click",
@@ -148,37 +144,35 @@ class RenderCards {
 
     /**
      * Generate a new resource entry element by cloning the template
-     * @param {string} playerName
-     * @param {string} playerColour CSS colour string
+     * @param {Player} player
      * @return {HTMLElement}
      */
-    #cloneSidebarResourceEntry(playerName, playerColour) {
+    #cloneSidebarResourceEntry(player) {
         let entry = RenderCards.templates.resourceEntry.cloneNode(true);
         let nameEntry = entry.querySelector(".playerName");
-        nameEntry.textContent = playerName;
-        nameEntry.style.color = playerColour;
+        nameEntry.textContent = player.name;
+        nameEntry.style.color = player.colour;
         entry.querySelectorAll("img").forEach(node => {
             const newSrc = this.#assets[node.alt];
             // console.debug("Replacing", node.src, "with", newSrc);
             node.src = newSrc;
         });
         // console.debug("Returning entry:", entry);
-        entry.addEventListener(
-            "mouseenter", _event => this.#updateResourceWorlds(playerName));
+        entry.addEventListener("mouseenter",
+                               _event => this.#updateResourceWorlds(player));
         return entry;
     }
 
     /**
      * Generate a new resourceEntry element by cloning the template
-     * @param {string} playerName
-     * @param {string} playerColour CSS colour string
+     * @param {Player} player
      * @returns {HTMLElement}
      */
-    #cloneSidebarResourceTypeEntry(playerName, playerColour) {
+    #cloneSidebarResourceTypeEntry(player) {
         let entry = RenderCards.templates.resourceTypeEntry.cloneNode(true);
         let nameEntry = entry.querySelector(".playerName");
-        nameEntry.textContent = playerName;
-        nameEntry.style.color = playerColour;
+        nameEntry.textContent = player.name;
+        nameEntry.style.color = player.colour;
         entry.querySelectorAll("img").forEach(node => {
             const newSrc = this.#assets[node.alt];
             // console.debug("Replacing", node.src, "with", newSrc);
@@ -208,19 +202,22 @@ class RenderCards {
     /**
      * Generate new division holding the granular display of all possible hands
      * for some player.
-     * @param {string} playerName
-     * @param {string} playerColour
+     * @param {Player} player
      * @return {HTMLElement}
      */
-    #generateNewResourceWorlds(playerName, playerColour) {
+    #generateNewResourceWorlds(player) {
+        {
+            // FIXME: check if LSP is right and delete this function when it is
+            console.assert(false, "The LSP says this function is unused??");
+        }
         let resourceWorlds =
             RenderCards.templates.resourceWorlds.cloneNode(true);
         // // For testing, just append to body
         // document.body.appendChild(resourceWorlds);
         let nameEntry = resourceWorlds.querySelector(".playerName");
-        nameEntry.textContent = playerName;
-        nameEntry.style.color = playerColour;
-        const cardElements = this.#generateResourceWorldCards(playerName);
+        nameEntry.textContent = player.name;
+        nameEntry.style.color = player.colour;
+        const cardElements = this.#generateResourceWorldCards(player);
         cardElements.forEach(card => resourceWorlds.appendChild(card));
         return resourceWorlds;
     }
@@ -254,14 +251,13 @@ class RenderCards {
         addButton("logPanel", " ☰");
         let resourcesElement = sidebar.querySelector(".resources");
         let resStealChanceElem = sidebar.querySelector(".resourceStealChance");
-        for (const player of this.#playerNames) {
-            let newResourcesEntry = this.#cloneSidebarResourceEntry(
-                player, this.#colour_map[player]);
+        for (const player of this.#players.all()) {
+            let newResourcesEntry = this.#cloneSidebarResourceEntry(player);
             this.#addResourceGuessEventListeners(newResourcesEntry, player,
                                                  this.#multiverse);
             resourcesElement.appendChild(newResourcesEntry);
-            resStealChanceElem.appendChild(this.#cloneSidebarResourceTypeEntry(
-                player, this.#colour_map[player]));
+            resStealChanceElem.appendChild(
+                this.#cloneSidebarResourceTypeEntry(player));
         }
         return sidebar;
     }
@@ -270,13 +266,13 @@ class RenderCards {
      * Generate an array of HTMLElements for every possible resource combination
      * of the given player. The returned elements are meant to be added as child
      * nodes to the 'resourceEntry' element in the 'resourceWorlds' element.
-     * @param {string} playerName
+     * @param {Player} player
      * @return {HTMLElement[]}
      * Array of elements derived from 'templates.resourceCards'. Each contains
      * the cards of one world for the given player.
      */
-    #generateResourceWorldCards(playerName) {
-        const playerResources = this.#multiverse.getPlayerResources(playerName);
+    #generateResourceWorldCards(player) {
+        const playerResources = this.#multiverse.getPlayerResources(player);
         let res = [];
         playerResources.forEach(({chance, resources}) => {
             let cards = RenderCards.templates.resourceCards.cloneNode(true);
@@ -466,18 +462,17 @@ class RenderCards {
     }
 
     /**
-     * Update the resourceWorlds name and slices
-     * @param {string} playerName Name of the players who's data is to be used
+     * Update the 'resourceWorlds' name and slices
+     * @param {Player} player The players who's data is to be used
      */
-    #updateResourceWorlds(playerName) {
-        const playerColour = this.#colour_map[playerName];
+    #updateResourceWorlds(player) {
         let resourceWorldsElem = this.#sidebar.querySelector(".resourceWorlds");
         let nameEntry = resourceWorldsElem.querySelector(".playerName")
-        nameEntry.textContent = playerName;
-        nameEntry.style.color = playerColour;
+        nameEntry.textContent = player.name;
+        nameEntry.style.color = player.colour;
         let oldCards = resourceWorldsElem.querySelectorAll(".resourceCards");
         oldCards.forEach(cards => cards.remove());
-        const cardElements = this.#generateResourceWorldCards(playerName);
+        const cardElements = this.#generateResourceWorldCards(player);
         cardElements.forEach(card => resourceWorldsElem.appendChild(card));
     }
 
@@ -501,12 +496,12 @@ class RenderCards {
         const stealProbabilitiy = this.#multiverse.stealProbability;
         let entries = resourcesDiv.childNodes;
         let stealEntries = resourceStealChanceDiv.childNodes;
-        Object.entries(this.#playerNames).forEach(([index, playerName]) => {
+        Object.entries(this.#players.all()).forEach(([index, player]) => {
             const indexNumber = Number.parseInt(index);
-            this.#updateEntry(entries[indexNumber], guessAndRange[playerName],
-                              distribution[playerName]);
+            this.#updateEntry(entries[indexNumber], guessAndRange[player.index],
+                              distribution[player.index]);
             this.#updateEntrySteals(stealEntries[indexNumber],
-                                    stealProbabilitiy[playerName]);
+                                    stealProbabilitiy[player.index]);
         });
         unhide(resourcesDiv);
     }
@@ -563,23 +558,25 @@ class RenderCards {
     };
 
     /**
+     * Construct a new RenderCards object. The parameters dependency-inject
+     * read-only structures from which the information is extracted. Except
+     * 'Multiverse.prototype.updateStats()' is also called.
      * @param {Multiverse} multiverse
      * @param {Track} track
-     * @param {string[]} playerNames
-     * @param {Object.<string,string>} colour_map
+     * @param {Players} players Reference to the shared 'Players' objects
+     *                          describing all players within the game. Will
+     *                          only be read.
      * @param {(_path: string, resource: string) => string} [assetMap=RenderCards.colonistAssetMap]
      */
     constructor(
         multiverse,
         track,
-        playerNames,
-        colour_map,
+        players,
         assetMap = RenderCards.colonistAssetMap,
     ) {
         this.#multiverse = multiverse;
         this.#track = track;
-        this.#playerNames = playerNames;
-        this.#colour_map = colour_map;
+        this.#players = players;
         this.#assets = RenderCards.assets;
         if (cocaco_config.ownIcons === false && assetMap !== null) {
             mapObject(this.#assets, assetMap);

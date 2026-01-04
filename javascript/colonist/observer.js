@@ -800,6 +800,28 @@ ColonistObserver.sourceObserver.collusionStart = function(packetData) {
                      p(packetData.others));
         return;
     }
+    {
+        // We currently get the collusion players by their names as strings. We
+        // cannot disambiguate players when multiple players share the same
+        // name. In that case, deny collusion with a warning.
+        const names = this.storage.players.allNames();
+        if (new Set(names).size !== names.length) {
+            console.error(
+                "Trying to collude but some participants have identical names. Ignoring.");
+            debugger; // Give us chance to confirm what went wrong
+            return;
+        }
+    }
+    {
+        // To sanity check user input, make sure the passed names are all unique
+        const names = [player.name, ...others.map(p => p.name)];
+        if (new Set(names).size !== names.length) {
+            console.error(
+                "Trying to collude but the provided players have duplicate names. Ignoring.");
+            debugger; // Give us chance to confirm what went wrong
+            return;
+        }
+    }
     // console.log("ColonistObserver: Start colluding with", others);
     this.collusionStart({
         player: player,

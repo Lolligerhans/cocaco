@@ -131,14 +131,21 @@ class Players {
     }
 
     /**
-     * @return {string[]} New array containing all player colours in index order
+     * @return {String[]} New array containing all player colours in index order
      */
     allColours() {
         return this.#allPlayers.map(p => p.colour);
     }
 
     /**
-     * @return {string[]} New array containing all player names in index order
+     * @returns {Number[]} New array containing all player indices
+     */
+    allIndices() {
+        return Object.keys(this.#indices);
+    }
+
+    /**
+     * @return {String[]} New array containing all player names in index order
      */
     allNames() {
         return this.#allPlayers.map(p => p.name);

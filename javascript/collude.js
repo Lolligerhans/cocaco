@@ -83,15 +83,16 @@ class Collude {
     #groupTotal = {};
 
     /**
-     * Sum of resources earned by each individual member of the group
-     * @type {Object.<string,Resources>}
+     * Sum of resources earned by each individual member of the group. Uses
+     * Player::index as keys.
+     * @type {Object.<number,Resources>}
      */
     #balances = {};
 
     /**
      * This array is used to provide the 'Player' objects to the
      * CollusionPlanner. We do not actually use it for anything specific;
-     * 'Collude' bases its data on the 'name' properties of the players.
+     * 'Collude' bases its data on the 'index' properties of the players.
      * @type {Player[]}
      *
      * We do not use the 'Players' class specifically because we want to
@@ -120,20 +121,24 @@ class Collude {
     constructor(players) {
         this.#players = players;
         this.#groupTotal = new Resources();
-        // Later maybe use index instead of name. For now we use name to be
-        // simpler to debug.
-        players.forEach(p => this.#balances[p.name] = new Resources());
-        console.assert(this.#playerCount() === players.length); // No duplicates
+        players.forEach(p => this.#balances[p.index] = new Resources());
+        {
+            // Sanity check: do not allow duplicates. Insertion into the object
+            // deduplicates implicitly.
+            console.assert(this.#playerCount() ===
+                           Object.keys(this.#balances).length);
+        }
 
         Collude.#logger.log("Colluding group:", this.playerNames());
         this.print();
     }
 
     /**
-     * @param {string} playerName
+     * @param {Player} player
+     * @return {Resources}
      */
-    #delta(playerName) {
-        let delta = new Resources(this.#balances[playerName]);
+    #delta(player) {
+        let delta = new Resources(this.#balances[player.index]);
         let target = this.#target();
         delta.subtract(target);
         return delta;
@@ -163,21 +168,19 @@ class Collude {
 
     /**
      * Construct the collusion template between the given players.
-     * @param {Player} playerFrom String identifying the player, as passed to
-     *                            the constructor.
-     * @param {Player} playerTo String identifying the player, as passed to the
-     *                          constructor.
+     * @param {Player} playerFrom
+     * @param {Player} playerTo
      * @return {Resources} Collusion template from playerFrom to playerTo, if
      *                     both players are colluding. Else 'null'.
      */
     getCollusionTemplate(playerFrom, playerTo) {
-        if (!this.#hasColludersByName(playerFrom.name, playerTo.name)) {
+        if (!this.hasColluders(playerFrom, playerTo)) {
             Collude.#logger.log(playerFrom.name, Collude.formatTemplate(),
                                 playerTo.name);
             return null;
         }
-        let template = this.#delta(playerFrom.name);
-        let deltaTo = this.#delta(playerTo.name);
+        let template = this.#delta(playerFrom);
+        let deltaTo = this.#delta(playerTo);
         template.merge(deltaTo, (d0, d1) => {
             if (d0 < 0 && 0 < d1) {
                 return Math.max(d0, -d1);
@@ -197,16 +200,17 @@ class Collude {
      * @return {boolean}
      */
     hasColluders(...players) {
-        const ret = this.#hasColludersByName(...players.map(p => p.name));
+        const ret = this.#hasColludersByIndex(...players.map(p => p.index));
         return ret;
     }
 
     /**
-     * @param {...string} names 1 or more player names to test
-     * @return {boolean} true if all names belong to colluder(s), else false
+     * @param {...Number} indices 1 or more player indices to test
+     * @return {boolean} true if all indices belong to colluder(s), else false
      */
-    #hasColludersByName(...names) {
-        const ret = names.every(name => Object.hasOwn(this.#balances, name));
+    #hasColludersByIndex(...indices) {
+        const ret =
+            indices.every(index => Object.hasOwn(this.#balances, index));
         return ret;
     }
 
@@ -214,14 +218,15 @@ class Collude {
      * @return {Number}
      */
     #playerCount() {
-        return this.playerNames().length;
+        console.assert(this.#players != null);
+        return this.#players.length;
     }
 
     /**
      * @return {string[]} Names of the colluding players
      */
     playerNames() {
-        return Object.keys(this.#balances);
+        return this.#players.map(p => p.name);
     }
 
     /**
@@ -232,17 +237,16 @@ class Collude {
     }
 
     /**
-     * @param {string} playerName
+     * @param {Player} player
      */
-    print(playerName = null) {
-        if (playerName !== null) {
-            console.assert(Object.hasOwn(this.#balances, playerName));
-            Collude.#logger.log(
-                `𝚫 ${playerName} =`,
-                `${Collude.formatDelta(this.#delta(playerName))}`);
+    print(player = null) {
+        if (player !== null) {
+            console.assert(Object.hasOwn(this.#balances, player.index));
+            Collude.#logger.log(`𝚫 ${player.name} =`,
+                                `${Collude.formatDelta(this.#delta(player))}`);
         } else {
             Collude.#logger.log(`𝚺 =`, p(this.#groupTotal));
-            this.playerNames().forEach(p => this.print(p));
+            this.players().forEach(p => this.print(p));
         }
     }
 
@@ -289,15 +293,14 @@ class Collude {
      * @param {Resources} resources The obtained resources
      */
     updateGotResources(player, resources) {
-        const playerName = player.name;
-        if (!this.#hasColludersByName(playerName)) {
+        if (!this.hasColluders(player)) {
             return;
         }
         console.assert(resources.countNegative() === 0);
         this.#groupTotal.add(resources);
-        this.#balances[playerName].add(resources);
-        Collude.#logger.log("⨁", playerName, resources.toSymbols());
-        this.print(playerName);
+        this.#balances[player.index].add(resources);
+        Collude.#logger.log("⨁", player.name, resources.toSymbols());
+        this.print(player);
     }
 
     /**
@@ -312,16 +315,14 @@ class Collude {
      * is not in the collusion group).
      */
     updateTradeResources(trade) {
-        const playerNameFrom = trade.giver.name;
-        const playerNameTo = trade.taker.name;
         if (!this.hasColluders(trade.giver, trade.taker)) {
             return false;
         }
-        this.#balances[playerNameFrom].subtract(trade.resources);
-        this.#balances[playerNameTo].add(trade.resources);
+        this.#balances[trade.giver.index].subtract(trade.resources);
+        this.#balances[trade.taker.index].add(trade.resources);
         Collude.#logger.log(trade.toString());
-        this.print(playerNameFrom);
-        this.print(playerNameTo);
+        this.print(trade.giver);
+        this.print(trade.taker);
         return true;
     }
 
@@ -337,7 +338,7 @@ class Collude {
      */
     static adjustForGiver(template, playerFrom, guessAndRange) {
         let minFrom = new Resources();
-        mapObject(minFrom, (_v, k) => guessAndRange[playerFrom.name][k][0]);
+        mapObject(minFrom, (_v, k) => guessAndRange[playerFrom.index][k][0]);
         const atMostGive = (x, m) => Math.min(x, m);
         // The negative entries are not changed because the minimum available
         // resources are 0 or more.
@@ -356,7 +357,7 @@ class Collude {
      */
     static adjustForTaker(template, playerTo, guessAndRange) {
         let minTo = new Resources();
-        mapObject(minTo, (_v, k) => guessAndRange[playerTo.name][k][0]);
+        mapObject(minTo, (_v, k) => guessAndRange[playerTo.index][k][0]);
         const atMostTake = (x, m) => Math.max(x, -m);
         template.merge(minTo, atMostTake);
     }

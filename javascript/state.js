@@ -176,16 +176,15 @@ State.implementor.agree = function({trade, player}) {
 };
 
 State.implementor.buy = function({player, object}) {
-    const name = player.name;
     const resources = State.costs[object];
     const slice = Multiverse.asSlice(resources);
-    this.multiverse.transformSpawn(name, Multiverse.sliceNegate(slice));
+    this.multiverse.transformSpawn(player, Multiverse.sliceNegate(slice));
 };
 
 State.implementor.collusionStart = function({player, players}) {
+    console.assert(player.equals(this.us));
     console.debug("New Collusion:", p(players));
-    const colludingPlayersNames = [player, ...players];
-    this.collusionPlanner.start(colludingPlayersNames);
+    this.collusionPlanner.start([player, ...players]);
 };
 
 State.implementor.collusionStop = function({player}) {
@@ -256,11 +255,10 @@ State.implementor.collusionAcceptance = function({player, trade, accept}) {
 };
 
 State.implementor.discard = function({player, resources}) {
-    const name = player.name;
     const slice = Multiverse.asSlice(resources);
     const sliceTotal = Multiverse.sliceTotal(slice);
-    this.multiverse.collapseTotal(name, n => n >> 1 === sliceTotal);
-    this.multiverse.transformSpawn(name, Multiverse.sliceNegate(slice));
+    this.multiverse.collapseTotal(player, n => n >> 1 === sliceTotal);
+    this.multiverse.transformSpawn(player, Multiverse.sliceNegate(slice));
 };
 
 State.implementor.embargo = function({embargoes}) {
@@ -268,9 +266,8 @@ State.implementor.embargo = function({embargoes}) {
 };
 
 State.implementor.got = function({player, resources}) {
-    const name = player.name;
     const slice = Multiverse.asSlice(resources);
-    this.multiverse.transformSpawn(name, slice);
+    this.multiverse.transformSpawn(player, slice);
 
     this.collusionPlanner.updateGotResources(player, resources);
 };
@@ -280,10 +277,9 @@ State.implementor.mono = function({player, resource, resources}) {
     //  - use 'resources' to learn number of stolen cards
     //  - use non-log-message frames to get stolen count per player
     //  - use player-total counts to re-measure stolen count afterwards
-    const thief = player.name;
     const stolenResource = resource;
     this.multiverse.transformMonopoly(
-        thief, Multiverse.getResourceIndex(stolenResource));
+        player, Multiverse.getResourceIndex(stolenResource));
     resources; // Ignore
 };
 
@@ -293,7 +289,7 @@ State.implementor.offer = function({offer, targets, isCounter}) {
     // interested in the regular resource cards.
     offeredResources.clearSpecial();
     const slice = Multiverse.asSlice(offeredResources);
-    this.multiverse.collapseMin(offer.giver.name, slice);
+    this.multiverse.collapseMin(offer.giver, slice);
     targets;   // Ignore
     isCounter; // Ignore
 };
@@ -301,7 +297,7 @@ State.implementor.offer = function({offer, targets, isCounter}) {
 State.implementor.roll = function({player, number}) {
     this.track.addRoll(number);
     if (number === 7) {
-        this.track.addSeven(player.name);
+        this.track.addSeven(player);
     }
 };
 
@@ -310,17 +306,16 @@ State.implementor.roll = function({player, number}) {
  */
 State.implementor.start = function({us, players}) {
     let startResources = {};
-    let startEmpty = playerName => startResources[playerName] = {};
-    players.allNames().forEach(startEmpty);
-    this.multiverse.initWorlds(startResources);
-    const allPlayerNames = players.allNames();
-    this.track.init(allPlayerNames);
+    const startEmpty = player => startResources[player.index] = {};
+    players.all().forEach(startEmpty);
+    this.multiverse.initWorlds(players, startResources);
+    this.track.init(players);
 
     console.assert(
         !this.render,
         "Do not produce Render corpses by activating this multiple times");
-    const nameToColour = {};
-    players.all().forEach(p => nameToColour[p.name] = p.colour);
+    // const nameToColour = {};
+    // players.all().forEach(p => nameToColour[p.name] = p.colour);
     switch (cocaco_config.render.type) {
         case "table":
             // FIXME: Colony is gone, replace with Colonist equivalent. Possibly
@@ -345,8 +340,9 @@ State.implementor.start = function({us, players}) {
             this.render = new RenderCards(
                 this.multiverse,
                 this.track,
-                allPlayerNames,
-                nameToColour,
+                players,
+                // allPlayerNames,
+                // nameToColour,
             );
             break;
         default: console.assert(false, "Invalid render type configured");
@@ -361,18 +357,18 @@ State.implementor.start = function({us, players}) {
 };
 
 State.implementor.steal = function({thief, victim, resource}) {
-    this.track.addRob(thief.name, victim.name);
+    this.track.addRob(thief, victim);
 
     // Unknown steal
     if (resource == null) {
-        this.multiverse.branchSteal(victim.name, thief.name);
+        this.multiverse.branchSteal(victim, thief);
         return;
     }
 
     // Known steal
     this.multiverse.transformRandomReveal(
-        victim.name, Multiverse.getResourceIndex(resource));
-    this.multiverse.transformExchange(victim.name, thief.name,
+        victim, Multiverse.getResourceIndex(resource));
+    this.multiverse.transformExchange(victim, thief,
                                       Multiverse.asSlice({[resource]: 1}));
 };
 
@@ -380,7 +376,6 @@ State.implementor.steal = function({thief, victim, resource}) {
  * @param {Trade} trade
  */
 State.implementor.trade = function(trade) {
-    const traderName = trade.giver.name;
     let [give, take] = trade.resources.splitBySign();
     const giveSlice = Multiverse.asSlice(give);
     const takeSlice = Multiverse.asSlice(take);
@@ -390,13 +385,12 @@ State.implementor.trade = function(trade) {
     // ── Trade with the bank ────────────────────────────────
     if (trade.taker === "bank") {
         this.multiverse.transformSpawn(
-            traderName, Multiverse.sliceSubtract(takeSlice, giveSlice));
+            trade.giver, Multiverse.sliceSubtract(takeSlice, giveSlice));
         return;
     }
 
     // ── Trade between players ──────────────────────────────
-    const otherName = trade.taker.name;
-    this.multiverse.transformTradeByName(traderName, otherName, give, take);
+    this.multiverse.transformTradeByName(trade.giver, trade.taker, give, take);
 };
 
 State.implementor.turn = function({player, phase}) {
@@ -419,9 +413,8 @@ State.implementor.turn = function({player, phase}) {
 };
 
 State.implementor.yop = function({player, resources}) {
-    const name = player.name;
     const slice = Multiverse.asSlice(resources);
-    this.multiverse.transformSpawn(name, slice);
+    this.multiverse.transformSpawn(player, slice);
 };
 
 // ╭───────────────────────────────────────────────────────────╮

@@ -70,6 +70,8 @@ class Render {
         recoverNamesCallback, // Goes in the corner cell
         iconAssets,           // {"road": '<img src=...>', ...}
     ) {
+        console.error(
+            "The 'Render' class is not yet adopted to using players over indices!");
         this.#configShown.enable("resourceTable");
 
         // Callbacks may be null

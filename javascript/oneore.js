@@ -598,6 +598,7 @@ toggleTracker: function()
 // as argument, telling it to always execute, even if no new messages appeared.
 mainLoop: function(continueIf)
 {
+    console.error("Outdated use of Multiverse. Need to move to 'Players' class.");
     if (continueIf() === false)
     {
         console.info("🧭", `Leaving main loop. Current index: ${twosheep.activeIndex}`);

@@ -1,7 +1,9 @@
 "use strict";
 
 /**
- * Simple counting structure for tracking events
+ * Simple counting structure for tracking events. In the tracking objects,
+ * players are represented by theri index (Player::index) used as unique
+ * identifier (rather than possibly duplicate names).
  */
 class Track {
 
@@ -17,7 +19,8 @@ class Track {
 
     /**
      * Maps how often a thief has stolen from a victim as robs[thief][victim].
-     * @type {{[thief: string]: {[victim: string]: number}}}
+     * Both parties are represented by Player::index (aka. Number).
+     * @type {{[thief: Number]: {[victim: Number]: Number}}}
      */
     robs = {};
 
@@ -28,13 +31,13 @@ class Track {
 
     /**
      * Amount of cards stolen from each player
-     * @type {{[player: string]: number}}
+     * @type {{[player: Number]: Number}}
      */
     robsSeven = {};
 
     /**
      * Amount of cards stolen by each player
-     * @type {{[player: string]: number}}
+     * @type {{[player: Number]: Number}}
      */
     robsTaken = {};
 
@@ -100,9 +103,12 @@ class Track {
         // Empty
     }
 
-    init(playerNames) {
+    /**
+     * @param {Players} players
+     */
+    init(players) {
         this.initRolls();
-        this.initRobs(playerNames);
+        this.initRobs(players);
     }
 
     /**
@@ -161,32 +167,27 @@ class Track {
 
     /**
      * Increment the rob counters. Does not change roll counters.
-     * @param {string} thief Name of the thief
-     * @param {string} victim Name of the victim
+     * @param {Player} thief
+     * @param {Player} victim
      * @param {Number} [count=1] Number of robs
      */
     addRob(thief, victim, count = 1) {
         console.assert(typeof (count) === "number",
                        "addRob: count must be a number");
-        this.robs[thief][victim] += count;
-        this.robsTaken[thief] += count;
-        this.robsLost[victim] += count;
+        this.robs[thief.index][victim.index] += count;
+        this.robsTaken[thief.index] += count;
+        this.robsLost[victim.index] += count;
         this.robsTotal += count;
         this.printRobs();
     }
 
     /**
      * Increment seven counter. Does not affect robs. Call addRob() separately.
-     * @param {string} player Name of the player who rolled the 7.
+     * @param {Player} player The player who rolled the 7.
      */
     addSeven(player) {
-        if (this.robsSeven[player] === undefined) {
-            // FIXME make error once working
-            console.warn(
-                `addSeven: ${player} not in ${Object.keys(this.robsSeven)}`);
-            return;
-        }
-        this.robsSeven[player] += 1;
+        console.assert(this.robsSeven[player.index] != undefined);
+        this.robsSeven[player.index] += 1;
     }
 
     /**
@@ -214,20 +215,20 @@ class Track {
 // │ Private                                                                   │
 // ╰───────────────────────────────────────────────────────────────────────────╯
 
-Track.prototype.initRobs = function(playerNames) {
+Track.prototype.initRobs = function(players) {
     this.robs = {};
     this.robsTaken = {};
     this.robsLost = {};
     this.robsTotal = 0;
     this.robsSeven = {};
-    for (const player of playerNames) {
-        this.robs[player] = {};
-        for (const p of playerNames) {
-            this.robs[player][p] = 0;
+    for (const player of players.all()) {
+        this.robs[player.index] = {};
+        for (const p of players.all()) {
+            this.robs[player.index][p.index] = 0;
         }
-        this.robsTaken[player] = 0;
-        this.robsLost[player] = 0;
-        this.robsSeven[player] = 0;
+        this.robsTaken[player.index] = 0;
+        this.robsLost[player.index] = 0;
+        this.robsSeven[player.index] = 0;
     }
     this.printRobs();
 };
