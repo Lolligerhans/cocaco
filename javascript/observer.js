@@ -473,11 +473,15 @@ Observer.property.resource = function(arg) {
     return arg;
 };
 
+// DEPRECATED: I believe we use the class 'Trade' now instead. Check if we can
+//             just delete this code. Then also delete transfer and trade
+//             properties from doc/pipelines.md.
 Observer.property.transfer = function({
     from = null,
     to = null,
     resources = new Resources(),
 }) {
+    console.assert(false, "Verify deprectation");
     console.assert(resources instanceof Resources);
     const transfer = {
         from: Observer.property.trader(from),

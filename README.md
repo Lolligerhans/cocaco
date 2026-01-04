@@ -90,6 +90,7 @@ for help.
 | Inspiration | [Explorer][Explorer] which we [forked][Original] under the same name up to version 3 |
 | Diagram plots | [Plotly][Plotly] |
 | Icon | [Food and restaurant icons created by @mingyue - Flaticon](https://www.flaticon.com/free-icons/food-and-restaurant "food and restaurant icons") |
+| MessagePack (de)serialization | [msgpack.js][MessagePack] |
 | statistics.js/ | [statistics.js](https://thisancog.github.io/statistics.js/index.html "Documentation") |
 
 <!--
@@ -102,3 +103,4 @@ for help.
 [Explorer]: https://github.com/glasperfan/explorer "Explorer repository"
 [Original]: https://github.com/Lolligerhans/explorer "Old fork"
 [Plotly]: https://plotly.com/javascript/ "Plotly homepage"
+[MessagePack]: https://github.com/ygoe/msgpack.js "GitHub repository"

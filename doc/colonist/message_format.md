@@ -356,9 +356,9 @@ Index starts at "0". `from` is the player's colour index.
 
 #### gameLogState
 
-Game log states are when setting or updating the content of the game log DOM
-element. Its property names reflect the index of each message in the DOM
-element. The content of these properties is described [Text
+Game log states are received when setting or updating the content of the game
+log/chat DOM elements. Its property names reflect the index of each message in
+the DOM element. The content of these properties is described [Text
 Format](text_format.md) (named after their characteristic "text" property).
 
 - `gameLogState`
@@ -486,7 +486,7 @@ meaning from the [trade response action](#action-50-trade-response)'s `response`
 field.
 
 If the offer was made as a counter offer, the `counterOfferInResponseToTradeId`
-field is set to the original trade's ID. In this case, `creator` does *not*
+field is set to the original trade's ID. In this case, `creator` does **not**
 identify the player offering `offeredResources`. The `creator` field of the
 referenced trade has to used instead. If the offer is original, the
 `counterOfferInResponseToTradeId` field is missing.
@@ -782,7 +782,7 @@ then counter-offer in the host GUI.
 Note that the `response` meaning is different in the received `tradeState`
 frames.
 
-Sending a `resposne` toggles the check box in the trade, not setting it.
+Sending a `response` toggles the check box in the trade, not setting it.
 
 Decline (1) is sent automatically and immediately if the trade cannot be
 afforded. No decline is sent during an embargo against the offering player (?).

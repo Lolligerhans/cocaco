@@ -134,8 +134,11 @@ command_version()
   echo "${text_bo}[🥥]${text_normal} $version";
 }
 
-command_provide_manifest()
+command_dump_install()
 {
+  set_args "--help" "$@";
+  eval "$get_args";
+
   generate_dump_manifest;
 
   declare -r manifest_dir="$HOME/.mozilla/native-messaging-hosts";
@@ -374,6 +377,13 @@ OPTIONS
   --list: List available files instead of showing one.";
 declare -r version_help_string="Show extension verison";
 declare -r check_help_string="Verify files with git-fsck";
+declare -r dump_install_help_string="Install dump utility
+SYNOPSIS
+  dump_install
+DESCRIPTION
+  Places the 'dump' manifest into the appropriate path. Uses fixed paths, may
+  not work outside of Ubuntu.
+  This is only needed when enabling frame dumping in the config."
 declare -r release_help_string="Release HEAD->master
 DESCRIPTION
   Create version tag. Push remotes. Push tags.

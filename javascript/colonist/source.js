@@ -98,8 +98,8 @@ class ColonistSource extends Trigger {
 // ╰───────────────────────────────────────────────────────────╯
 
 /**
- * Register reparsers to obtain the necessary frames from the @see Reparse
- * module.
+ * Register reparsers to obtain the necessary frames from the
+ * {@see @type Reparse} module.
  */
 ColonistSource.prototype.registerPacketGenerators = function() {
     // It is generally a good idea to use 'setInterval()' when reacting to data,
@@ -154,6 +154,7 @@ ColonistSource.prototype.registerPacketGenerators = function() {
         packets => {
             packets.forEach(packet => {
                 if (packet === null) {
+                    console.error("unreachable (?)");
                     debugger; // TEST: Can this happen?
                     return {isDone: false};
                 }

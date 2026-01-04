@@ -1,8 +1,8 @@
 "use strinct";
 
 /**
- * The available connection types. The {@see Connect} instance uses these to
- * multiplex the messaging API. On events, a trigger with the same name is
+ * The available connection types. The {@see @type Connect} instance uses these
+ * to multiplex the messaging API. On events, a trigger with the same name is
  * activated.
  * @typedef {"page_action"} ConnectionType
  *
@@ -19,7 +19,7 @@
  *
  * TODO: ports
  */
-class Connect extends Trigger{
+class Connect extends Trigger {
 
     /**
      * Initializes ports and listeners
@@ -44,5 +44,4 @@ class Connect extends Trigger{
     #dispatch(request) {
         this.activateTrigger(request.type, request.payload);
     }
-
 };

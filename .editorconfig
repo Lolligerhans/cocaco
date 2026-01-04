@@ -3,6 +3,11 @@ root = true
 [*.{js}]
   indent_size = 4
   indent_style = space
+
 [*.{css,html,json,md}]
+  indent_size = 2
+  indent_style = space
+
+[run.sh]
   indent_size = 2
   indent_style = space

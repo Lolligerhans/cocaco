@@ -192,6 +192,9 @@ transfer: {
 }
 ```
 
+> [!WARNING] Deprecated
+> I believe we just use the class `Trade` instead now.
+
 ##### `trade` property
 
 A bidirectional card exchange. Give and take should both be present. For
@@ -200,6 +203,9 @@ monodirectional exchanges, use a [transfer](#transfer-property) instead.
 If the trade is between a [player](#player-property) and the `"bank"`, the trade
 must be from the player's perspective. I.e., both `give.from` and `take.to` must
 refer to the player.
+
+> [!WARNING] Deprecated
+> I believe we just use the class `Trade` instead now.
 
 ```JSON
 trade: {

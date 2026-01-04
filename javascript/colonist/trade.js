@@ -7,7 +7,7 @@
 
 /**
  * Keep track of the Colonist trade state by updating a tradeState object on new
- * frames. The trade state is mostly about trade offers. When a "trade" is
+ * frames. The trade state is mostly about trade offers. When a "trade" value is
  * mentioned in this class, that refers to this description of offered trades as
  * represented in the tradeState within the Data frames.
  */
@@ -142,7 +142,8 @@ class ColonistTrade {
     /**
      * Return all trades currently active and responded to by any player with
      * the given response.
-     * @param {number} [response=1] Response to filer by
+     * @param {number} [response=1] Response to filer by. See 'activeOffers' and
+     *                              'playerResponse' in the documentation.
      * @return {Object<string,*>} Mapping trade ID to trade
      */
     getByResponse(response = 1) {

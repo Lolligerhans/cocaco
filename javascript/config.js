@@ -90,7 +90,7 @@ cocaco_config = {
     // Print card tracking state to console
     printWorlds: false,
     /**
-     * Logger of individual modules. 'ConsoleLog' ready this for default values.
+     * Logger of individual modules. 'ConsoleLog' reads this for default values.
      * @type {Object.<string,Boolean>}
      */
     log: {

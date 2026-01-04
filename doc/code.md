@@ -212,8 +212,8 @@ Cocaco.
 Cocaco can dump the WebSocket connection to disc. This requires a native
 application. The python script `dump/cocaco_dump.py` implements this native
 partner application. This application require additional setup by (manually)
-following `command_provide_manifest()` from [the runscript](/run.sh) (the
-script is not runnable).
+following `command_dump_install()` from [the runscript](/run.sh) (the script is
+not runnable on others' machines).
 
 ### EmbargoTracker
 

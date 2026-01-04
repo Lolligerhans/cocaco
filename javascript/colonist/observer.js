@@ -61,6 +61,7 @@ class ColonistObserver extends Observer {
      * @return {Resources} New Object representing the same resources
      */
     static cardsToResources(cards) {
+        console.assert(cards != null);
         const nameList = cards.map(r => ColonistObserver.cardMap[r]);
         const resources = Resources.fromList(nameList);
         return resources;
@@ -529,12 +530,15 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
         this.embargo(activeEmbargoes.map(mapEmbargoPair));
     }
 
+    // ── Determine trade creator in both meanings ───────────────
     /**
      * @return {Player} The player who is given as "creator" in the trade soruce
      *                  packet.
      */
-    const rawCreatorName =
-        trade => { return this.storage.players.id(trade.creator); };
+    const rawCreatorName = trade => {
+        console.assert(trade != null);
+        return this.storage.players.id(trade.creator);
+    };
     /**
      * Lookup the creator of a trade using the 'Trade' storage object. This does
      * some logic to ensure that we are not tricked when counter-trade-offers
@@ -616,6 +620,7 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
         // console.debug(`Evaluating tradeId=${tradeId} finalisation`);
         const creator = creatorPlayer(trade);
         if (creator === null) {
+            console.error("unreachable");
             return; // Error
         }
         if (!creator.equals(this.storage.us)) {

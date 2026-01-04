@@ -68,7 +68,7 @@ let contentScriptPorts = [];
 
 /**
  * Maps IDs to nnumbr of received messages
- * @tpye {Object.<string, Number>}
+ * @type {Object.<string, Number>}
  */
 let contentScriptAck = {};
 
