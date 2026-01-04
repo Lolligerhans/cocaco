@@ -170,9 +170,11 @@ class State extends Trigger {
 //       at least know the type, even if "go to references" my not succeed.
 
 State.implementor.agree = function({trade, player}) {
-    console.debug(`TODO: State: Received agreement observation: ${
-                      player.name} | agrees to ${trade.toString()}`,
-                  trade, player);
+    console.assert(player.equals(trade.taker));
+    console.assert(trade.resources.hasSpecial() === false,
+                   "Players can only agree to trade normal resources ");
+    const resources = new Resources(trade.resources).negative().abs();
+    this.multiverse.collapseMin(player, Multiverse.asSlice(resources));
 };
 
 State.implementor.buy = function({player, object}) {
