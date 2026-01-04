@@ -647,9 +647,15 @@ function receive_MAIN(
             receivedMessages.push(
                 {frame: frame, dataLength: encodedFrame.byteLength});
             let type = frame.data.type ?? -1;
-            console.debug("🛜 📥", receivedMessages.length, "|", type, "(",
-                          encodedFrame.byteLength, ")", frame);
-            if (receivedMessages.length % 10 === 0) {
+            console.assert(frame.id != null);
+            {
+                // Frame ID for timestamps. 1 per second sent, too many. Use
+                // !(===) to hedge against undefined, even if it should exist.
+                if (!(frame.id === "136")) // TODO: Magic number
+                    console.debug("🛜 📥", receivedMessages.length, "|", type,
+                                  "(", encodedFrame.byteLength, ")", frame);
+            }
+            if (receivedMessages.length % 60 === 0) {
                 console.debug("(receivedMessages):", receivedMessages);
             }
         }
@@ -684,12 +690,20 @@ function send_MAIN(encodedFrame, reparse) {
             if (reparse.native === false) {
                 visibility = reparse.doReparse ? "🔔" : "🔕";
             }
-            console.debug("🛜 📤", sentMessages.length, `${visibility} |`,
-                          sequence, action, "|", frame.v0, frame.v1,
-                          `(${encodedFrame.byteLength}B)`, frame.message, frame,
-                          encodedFrame);
+            {
+                // Frame ID for timestamps is 136. 1 per second sent, too many.
+                // Use !(===) to hedge against undefined, even if it should
+                // exist.
+                if (!(frame.message.id &&
+                      frame.message.id === "136")) // TODO: Magic number
+                    console.debug("🛜 📤", sentMessages.length,
+                                  `${visibility} |`, sequence, action, "|",
+                                  frame.v0, frame.v1,
+                                  `(${encodedFrame.byteLength}B)`,
+                                  frame.message, frame, encodedFrame);
+            }
             // console.debug("raw:", JSON.stringify(frame));
-            if (sentMessages.length % 10 === 0) {
+            if (sentMessages.length % 60 === 0) {
                 console.debug("(all sentMessages):", sentMessages);
             }
         }
