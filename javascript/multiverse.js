@@ -410,6 +410,9 @@ class Multiverse {
         console.assert(slice[Multiverse.getResourceIndex("unknown")] === 0,
                        "Argument 'slice' must not contain unknown cards");
 
+        // TODO: Maybe use generic collapse(f: world -> bool) helper. Actually
+        //       doing all the transforming is not needed most of the time.
+
         // Remove offending worlds
         this.transformSpawn(player, Multiverse.sliceNegate(slice));
         // Restore original resources

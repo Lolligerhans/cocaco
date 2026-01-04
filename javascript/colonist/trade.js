@@ -20,7 +20,7 @@ class ColonistTrade {
 
     /**
      * Store the creators (as colour enum) for each trade to later look them up
-     * @type {Object.<TradeId, Number>}
+     * @type {Object.<TradeId, number>}
      */
     #creators = {};
 

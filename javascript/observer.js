@@ -96,32 +96,6 @@ class Observer extends Trigger {
      *
      * This observation is for tracking only. Collusion-related observations are
      * different and emitted separately.
-     *
-     * LATER: User the printing implementation in state to settle these
-     *        questions.
-     *           - [x] Us agreeing to their trade. Complete and correct.
-     *           - [x] Them agreeing to our trade.
-     *           - [x] Us agreeing to our counter trade (implicit)
-     *           - [x] Them agreeing to their trade.
-     *           - [ ] Them agreeing to our counter trade to them
-     *           - [ ] Us agreeing to their counter trade to us
-     *           - [ ] Us agreeing to their counter trade to them
-     *           - [ ] Them agreeing to their counter trade to us
-     *           - [ ] Them agreeing to their counter trade to them
-     * FIXME: What happens in these special cases:
-     *       1. Do counter offers count?
-     *       2. When opponents agree to other opponents' counter offers, what
-     *          happens?
-     *       3. Are counter offers handled correctly when they are between
-     *          opponents only?
-     *      What I expect but need to verify:
-     *      1. When a counter trade is made, the tradeState automatically gets
-     *         set the corresponding "acceptingPlayers" entry for the player who
-     *         generated the counter offer.
-     *      2. When 3rd parties also agree to counter offers, they are added to
-     *         acceptingPlayers. Verify that we interpret this correctly.
-     *      3. Verify the two cases above for counter offers between two
-     *         opponents.
      */
     agree({trade, player}) {
         // TODO: When taker is indeed null we need to decide if the concrete

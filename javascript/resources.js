@@ -285,9 +285,9 @@ class Resources {
      * Modify 'this' in-place by applying an element-wise operation with
      * a second Resources object.
      * @param {Resources} resources A resources object
-     * @param {function(Number,Number):Number} operator
+     * @param {function(number,number):number} operator
      * Binary operation operator(this.x, other.x) to generate the element-wise
-     * combination with the 'other' resources.
+     * combination with the other resources.
      * @return {void}
      */
     merge(resources, operator) {

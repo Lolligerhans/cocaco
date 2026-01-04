@@ -83,13 +83,13 @@ All frames consist of id and data; most have this form:
 
 ```JSON
 {
-  id: "130",
-  data: {
-    type: 91,
-    payload: {
+  "id": "130",
+  "data": {
+    "type": 91,
+    "payload": {
       …
     },
-    sequence: 1
+    "sequence": 1
   }
 }
 ```
@@ -98,13 +98,27 @@ Frames have an `id` and a `type`. Both indicate the content type.
 
 The id is the top level indicator, distinguishing between in-game data and
 meta-, control- or other data. Maybe `id` denotes the source of the frame in the
-backend code.
+back end code.
 
 In-game related frames have `id="130"` and a `type` represented by an integer.
 The `type` determines what keys are present and/or allowed, and how they are
 interpreted.
 
 `sequence` counts up from `0` (?).
+
+### id=136
+
+Timestamp only (?). Pings every second, presumably to fix the
+timer-shows-wrong-time-left problem that existed previously.
+
+```JSON
+{
+  "id": "136",
+  "data": {
+    "timestamp": 1700000000000
+  }
+}
+```
 
 ### Types with id=133
 
@@ -737,9 +751,23 @@ message: {
 
 `payload` = city spot
 
+#### action 47: ?
+
+This was sent one time when creating a counter offer. Not sure what it does.
+
 #### action 49: Trade offer
 
-`counterOfferInResponseToTradeId` is `null` for original trades.
+`counterOfferInResponseToTradeId` is `null` for original trades. Then,
+`offeredResources` refers to the resources given by the player who's turn it is.
+Only bots can create trade offers without the `counterOfferInResponseToTradeId`
+property. In this case it has the same meaning as `null`.
+
+When `counterOfferInResponseToTradeId` is set (i.e., the trade was made as
+a counter offer), `wantedResources` refers to the resources given by the player
+who's turn it is (reversed semantics).
+
+It is be best to ignore the chain of `counterOfferInResponseToTradeId`s and
+track the player who's turn it is separately.
 
 ```JSON
 message: {

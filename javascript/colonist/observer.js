@@ -577,9 +577,11 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
     const acceptedTrades = this.storage.trade.getByResponse(1);
 
     // ── Trade agreement (for resource tracking) ────────────────
-    // For now we accept generating thi observation every time they appear in
+    // For now we accept generating this observation every time they appear in
     // the frame/source data, without deduplication. With any luck there may not
     // be any duplication anyway.
+    // NOTE: If this leads to problems it may be needed to change the reparser
+    //       order in 'ColonistSource' to read gameState before gameLogState.
     Object.entries(acceptedTrades).forEach(([tradeId, trade]) => {
         // console.debug(`Evaluating agreement: tradeId=${tradeId}`, trade);
         const tradeResources =
@@ -612,8 +614,10 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
                 taker: acceptingPlayer,
                 resources: tradeResources,
             });
-            console.assert(!acceptingPlayer.equals(creatorPlayer),
-                           "Logic error");
+            console.assert(
+                !acceptingPlayer.equals(givingPlayer),
+                `rawCreator ${givingPlayer.id} is also accepting as ${
+                    acceptingPlayer.id}`);
             console.assert(tradeObject.giver !== null);
             console.assert(tradeObject.taker !== null);
             // Calls Observer.prototype.agree()

@@ -567,6 +567,11 @@ function handle(event = null) {
     let ret;
     while (!incoming.isEmpty()) {
         const event = incoming.take();
+        if (!incoming.isEmpty()) {
+            console.warn("Unable to react to incoming frames");
+            // TODO: Should ret be overwritten? What is ret used for!? This code is
+            //       messed up.
+        }
         ret = dispatch(event);
     }
     incoming.leave();
