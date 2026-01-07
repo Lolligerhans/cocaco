@@ -752,6 +752,7 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
         }
         const rawTradeCreator = rawCreator(trade);
         const tradeIsOurRegularOffer =
+            this.storage.us !== null &&
             this.storage.us.equals(tradeCreator, rawTradeCreator);
         if (tradeIsOurRegularOffer) {
             // console.debug(
@@ -761,6 +762,7 @@ ColonistObserver.sourceObserver.tradeState = function(packetData, isUpdate) {
             return;
         }
         const tradeIsOurCounterOffer =
+            this.storage.us !== null &&
             this.storage.us.equals(rawTradeCreator) &&
             !this.storage.us.equals(tradeCreator);
         if (tradeIsOurCounterOffer) {

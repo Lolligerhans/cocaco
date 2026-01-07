@@ -84,14 +84,20 @@ class CollusionPlanner {
     #logger;
 
     /**
-     * @param {Player} us The object corresponding to the user
+     * For spectator mode, we allow 'us === null'. This may be unsuitable for
+     * setting up the internals; 'start()' must never be called in this case.
+     *
+     * This implicitly ends up with NOPs because 'isStart()' will remain false.
+     * The logic is simpler than checking everywhere in state.js.
+     * @param {Player|null} us The object corresponding to the user, or 'null'.
      * @param {HTMLElement} outputElement Dom element to log into
      */
     constructor(us, outputElement) {
         this.#us = us;
         this.#collusionTracker = new CollusionTracker();
         this.#logger = new MessageLog(outputElement);
-        this.#consoleLogger.log("Created for", us.name);
+        this.#consoleLogger.log("Created for",
+                                (us ?? {name: "<Spectating>"}.name));
     }
 
     /**

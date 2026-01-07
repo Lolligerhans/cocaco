@@ -54,7 +54,8 @@ class State extends Trigger {
     outputElement = null;
 
     /**
-     * @type {Player}
+     * @type {Player|null} The player object corresponding to the user, once
+     *                     known. Remains 'null' when spectating.
      */
     us = null;
 
@@ -354,7 +355,11 @@ State.implementor.start = function({us, players}) {
     this.us = us;
     this.collusionPlanner = new CollusionPlanner(us, this.outputElement);
     if (cocaco_config.collude.autocollude === true) {
-        this.collusionPlanner.start(players.all());
+        if (this.us === null) {
+            console.warn("No player 'us': no autocollude in spectator mode");
+        } else {
+            this.collusionPlanner.start(players.all());
+        }
     }
 };
 

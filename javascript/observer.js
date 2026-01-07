@@ -390,8 +390,8 @@ class Observer extends Trigger {
      * (!) Must be the first observation, emitted only once.
      *
      * @typedef {Object} StartPayload
-     * @property {Player} us The player belonging to the user. Included in
-     *                       'players'.
+     * @property {Player|null} us The player belonging to the user. Included in
+     *                            'players'. In spectator mode can be 'null'.
      * @property {Players} players The 'Players' object to be used. Includes
      *                             'us'.
      *
@@ -400,8 +400,12 @@ class Observer extends Trigger {
     start({us, players}) {
         console.assert(players.size() === 4,
                        "Can remove this check when more players are intended");
-        console.assert(players.name(us.name) !== null,
-                       "We should participate in the game");
+        if (us === null) {
+            console.warn(`Spectating only: Starting without user.`);
+        } else {
+            console.assert(players.name(us.name) !== null,
+                           "We should participate in the game");
+        }
         console.assert(players instanceof Players);
         let observation = {
             type: "start",

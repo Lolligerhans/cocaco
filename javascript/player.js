@@ -77,7 +77,8 @@ class Player {
     /**
      * Compare to other players. Two players are equal if their player IDs
      * compare equal using ===. The behaviour for 0 arguments is not specified.
-     * @param {...Player} others 1 or more players to compare to
+     * @param {...Player|null} others 1 or more players to compare to. 'null'
+     *                                compares as not equal.
      * @return {boolean} Return true if this player is equal to each of the
      *                   other players.
      */
@@ -156,8 +157,9 @@ class Players {
      * their position in the arguments. Requires a name to be selected as last
      * player. If the players are in the correct order, any display code can
      * then simply show the players in the index order.
-     * @param {string} lastname Name of the player to be put in the last
-     *                          position (with the highest index).
+     * @param {string|null} lastName Name of the player to be put in the last
+     *                               position (with the highest index). Allow
+     *                               'null' for spectator mode.
      * @param {Player[]} players All players. Cannot be changed later.
      * @param {Id[]} playOrder
      * Play order represented by player IDs (colour enums for colonist).
@@ -172,9 +174,13 @@ class Players {
         this.#generteIndices();
         this.#generateNames();
         this.print();
-        console.assert(this.name(lastName).index ===
-                           this.#allPlayers.length - 1,
-                       "The indicated player should be in last position");
+        {
+            const lastPlayer = this.name(lastName);
+            console.assert(lastPlayer === null ||
+                               this.name(lastName).index ===
+                                   this.#allPlayers.length - 1,
+                           `Player ${lastName} should be in last position`);
+        }
     }
 
     #generateIds() {
@@ -215,11 +221,11 @@ class Players {
     /**
      * Get player by name
      * @param {string} name
-     * @return {Player|undefined}
-     * The player with the given name when existing. Else undefined.
+     * @return {Player|null}
+     * The player with the given name when existing. Else 'null'.
      */
     name(name) {
-        return this.#names[name];
+        return this.#names[name] ?? null;
     }
 
     /**
@@ -230,10 +236,11 @@ class Players {
     }
 
     /**
-     * Reorder players such that the player with name 'lastName' is in last
-     * place.
-     * @param {string} lastName
-     * @param {Id[]} playOrder If provided, order players in this order
+     * Rotate/reorder players such that the player with name 'lastName' is in
+     * last place.
+     * @param {string|null} lastName
+     * @param {Id[]} playOrder If provided, order players in this order before
+     *                         rotating 'lastName' to the end.
      */
     #orderPlayers(lastName, playOrder = null) {
         // Since the order is not crucial, skip 'playOrder' as fallback
@@ -263,7 +270,16 @@ class Players {
         return ret;
     }
 
+    /**
+     * When 'lastName' is is not found in '#allPlayers', this function has no
+     * effect. Specifically so when 'lastName === null'.
+     * @param {string|null} lastName The first player with matching name is
+     *                               rotated to the end of the '#allPlayers'
+     *                               array.
+     */
     #rotateNameToLastPlayer(lastName) {
+        // Concatenate the original array with itself and find a slice with
+        // 'lastName' at its end.
         const double = this.#allPlayers.concat(this.#allPlayers);
         const firstOccurence = double.findIndex(p => p.name === lastName);
         const [start, end] = [
