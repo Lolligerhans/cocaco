@@ -7,14 +7,25 @@ const version_string = theBrowser.runtime.getManifest().version;
 
 let stats = new Statistics({}, {});
 
-const backgroundIcon = document.createElement("img");
-backgroundIcon.src = theBrowser.runtime.getURL("assets/coconut_512.png");
-backgroundIcon.id = "background-icon";
-setTimeout(() => {
-    let e = document.body;
-    if (e)
-        document.body.prepend(backgroundIcon);
-}, 5000);
+/*
+ * Add background to confirm extension to be running. Does not do anything
+ * functional. May fail silently.
+ */
+function add_background() {
+    const backgroundIcon = document.createElement("img");
+    backgroundIcon.src = theBrowser.runtime.getURL("assets/coconut_512.png");
+    backgroundIcon.id = "background-icon";
+    setTimeout(
+        () => {
+            let documentBody = document.body;
+            if (documentBody)
+                documentBody.prepend(backgroundIcon);
+        },
+        // Give the website time to settle.
+        2000);
+}
+
+add_background();
 
 /**
  * Overwrite-else-create HTML element as visual confirmation. Does not do
@@ -22,15 +33,13 @@ setTimeout(() => {
  * @param {String} username Username to show within the info element
  */
 function show_version(username = "(Unknown)") {
-    const className = "cocaco-version";
-    let e = document.querySelector('.web-header-login-button');
-    if (e === null)
+    // Overwrite the "Leaderboard" text
+    let leaderboardElement =
+        document.querySelector('.web-sidebar-leaderboard span');
+    if (leaderboardElement === null)
         return;
-    let versionElement =
-        document.querySelector(`.${className}`) ??
-        e.parentElement.appendChild(document.createElement('div'));
-    versionElement.className = className;
-    versionElement.textContent = `Cocaco ${version_string} 🥥 ${username}`;
+    const targetTextContent = `Cocaco ${version_string} 🥥 ${username}`;
+    leaderboardElement.textContent = targetTextContent;
 }
 
 show_version();

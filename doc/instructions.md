@@ -7,7 +7,7 @@ Follow [#Installation](../README.md#installation).
 1. Visit [Colonist][Colonist]
 1. Reload by pressing `F5`
 
-A successful start is indicated by a coconut icon in the background:
+A coconut icon will show in the background:
 
 ![Icon](/assets/coconut_32.png?raw=true)
 
