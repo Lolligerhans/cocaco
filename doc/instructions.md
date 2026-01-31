@@ -2,14 +2,9 @@
 
 Follow [#Installation](../README.md#installation).
 
-> [!NOTE]
-> Version 3 instructions are [here](https://github.com/Lolligerhans/cocaco/blob/v3.4.6/doc/usage.md)
-
 ## Starting
 
 1. Visit [Colonist][Colonist]
-1. Open the 🧩 Extensions pop-up menu. It is located at the top right.
-1. Click on the gear  ⚙️  next to `🥥 Correct Card Counter`. Select `Always Allow`.
 1. Reload by pressing `F5`
 
 A successful start is indicated by a coconut icon in the background:
@@ -30,10 +25,10 @@ Uncertain cards have a coloured outline:
 
 Click on uncertain cards to adjust probabilities.
 
-| Card action | Effect |
-|-:|:-|
-| Left click | Increase probability |
-| Right click | Reduce probability |
+| Card action | Effect               |
+|------------:|:---------------------|
+|  Left click | Increase probability |
+| Right click | Reduce probability   |
 
 When hovering the card display, cocaco additionally shows:
 
@@ -43,13 +38,13 @@ When hovering the card display, cocaco additionally shows:
 The display can be hidden by clicking the 🥥 icon in the URL bar. Individual
 panels are controlled by the 🂠 📊 buttons at the top.
 
-| Display action | Effect |
-|-:|:-|
-| `Ctrl` `+`, `Ctrl` `-` | Resize |
-| URL bar 🥥 | Hide/show display |
-| 🂠 | Hide/show resource cards |
-| 📊 | Hide/show [rolls plot](#rolls-plot) |
-| ☰ | Hide/show cocaco log |
+|         Display action | Effect                              |
+|-----------------------:|:------------------------------------|
+| `Ctrl` `+`, `Ctrl` `-` | Resize                              |
+|             URL bar 🥥 | Hide/show display                   |
+|                      🂠 | Hide/show resource cards            |
+|                     📊 | Hide/show [rolls plot](#rolls-plot) |
+|                     ☰ | Hide/show cocaco log                |
 
 ## Collusion
 

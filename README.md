@@ -25,7 +25,7 @@
 
 1. [Linux download](#linux-download) or [Manual download](#manual-download)
 2. [Installation](#installation)
-3. Start extension after visiting [Colonist][Colonist]
+3. Reload [Colonist][Colonist] after installing Cocaco
 
 Done!
 
@@ -57,10 +57,10 @@ git checkout "$(git describe --tags --abbrev=0)";
 
 Install as [temporary extension](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/ "Tutorial") in Firefox:
 
-- Visit URL [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
+- Visit URL [`about:debugging#/runtime/this-firefox`](about:debugging#/runtime/this-firefox)
 - Temporary Extensions
 - Load Temporary Add-on...
-- Select _cocaco/manifest.json_
+- Select `cocaco/manifest.json`
 
 <!--Chrome worked in the Game Log version, but socket is FF only.-->
 <!-- - [Chrome](https://www.cnet.com/tech/services-and-software/how-to-install-chrome-extensions-manually/ "Tutorial") -->
