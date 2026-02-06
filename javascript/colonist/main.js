@@ -42,8 +42,14 @@ class Colonist {
      */
     static deleteSomeElements() {
         const ids = [
-            "remove_ad_in_game_left", "remove_ad_in_game_right",
-            "in_game_ab_right", "in_game_ab_left"
+            "remove_ad_in_game_left",
+            "remove_ad_in_game_right",
+            // It used to by misspelled, can remove later
+            "in_game_ab_right",
+            "in_game_ab_left",
+            // Is no longer misspelled
+            "in_game_ad_right",
+            "in_game_ad_left",
         ];
         for (const id of ids) {
             let e = document.getElementById(id);
