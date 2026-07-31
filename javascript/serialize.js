@@ -38,6 +38,7 @@ function cocaco_encode_receive(frame) {
  * @return {*} Decoded frame
  */
 function cocaco_decode_send(frame) {
+    frame = Uint8Array.from(frame);
     const [v0, v1, strlen] = frame.slice(0, 3);
     // console.debug("deserialized v0 v1 strlen:", v0, v1, strlen);
     const overlen = 3 + strlen;
